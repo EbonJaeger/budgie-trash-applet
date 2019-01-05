@@ -2,7 +2,7 @@ namespace TrashApplet {
 
     public class TrashPopover : Budgie.Popover {
 
-        private List<TrashItem> trash_bin_items;
+        private HashTable<string, TrashItem> trash_bin_items;
 
         /* Widgets */
         private Gtk.Stack? stack = null;
@@ -28,7 +28,7 @@ namespace TrashApplet {
             Object(relative_to: parent);
             width_request = 600;
 
-            this.trash_bin_items = new List<TrashItem>();
+            this.trash_bin_items = new HashTable<string, TrashItem>(str_hash, str_equal);
 
             /* Views */
             this.stack = new Gtk.Stack();
@@ -103,8 +103,19 @@ namespace TrashApplet {
          */
         public void add_trash_item(string file_path, string file_name, GLib.Icon file_icon) {
             var item = new TrashItem(file_path, file_name, file_icon);
-            this.trash_bin_items.append(item);
+            this.trash_bin_items.insert(file_name, item);
             this.file_box.insert(item, -1);
+        }
+
+        /**
+         * Remove an item from the trash view.
+         * 
+         * @param file_name The name of the file to remove
+         */
+        public void remove_trash_item(string file_name) {
+            var item = trash_bin_items.get(file_name);
+            this.file_box.remove(item.get_parent());
+            this.trash_bin_items.remove(file_name);
         }
 
         private void apply_button_styles() {

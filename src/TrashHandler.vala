@@ -43,7 +43,11 @@ namespace TrashApplet {
 
                     popover.add_trash_item(file_path, file_name, file_icon);
                     break;
-                default:
+                case FileMonitorEvent.MOVED_OUT: // A file was moved out of the trash
+                    var file_name = file.get_basename();
+                    popover.remove_trash_item(file_name);
+                    break;
+                default: // We don't care about anything else
                     break;
             }
         }
