@@ -17,6 +17,7 @@ namespace TrashApplet {
         private Gtk.Separator? horizontal_separator = null;
 
         private Gtk.Button? select_all_button = null;
+        private Gtk.Button? unselect_all_button = null;
         private Gtk.Button? restore_button = null;
         private Gtk.Button? delete_button = null;
 
@@ -55,7 +56,10 @@ namespace TrashApplet {
             this.controls_area = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 
             this.select_all_button = new Gtk.Button.from_icon_name("edit-select-all-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
-            this.select_all_button.set_tooltip_text("Select All");
+            this.select_all_button.set_tooltip_text("Select all items");
+
+            this.unselect_all_button = new Gtk.Button.from_icon_name("edit-clear-all-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
+            this.unselect_all_button.set_tooltip_text("Unselect all items");
 
             this.restore_button = new Gtk.Button.from_icon_name("edit-undo-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
             this.restore_button.set_tooltip_text("Restore Items");
@@ -64,6 +68,7 @@ namespace TrashApplet {
             this.delete_button.set_tooltip_text("Delete Items");
 
             this.controls_area.pack_start(select_all_button);
+            this.controls_area.pack_start(unselect_all_button);
             this.controls_area.pack_start(restore_button);
             this.controls_area.pack_end(delete_button);
 
@@ -90,10 +95,12 @@ namespace TrashApplet {
 
         private void apply_button_styles() {
             select_all_button.get_style_context().add_class("flat");
+            unselect_all_button.get_style_context().add_class("flat");
             restore_button.get_style_context().add_class("flat");
             delete_button.get_style_context().add_class("flat");
 
             select_all_button.get_style_context().remove_class("button");
+            unselect_all_button.get_style_context().remove_class("button");
             restore_button.get_style_context().remove_class("button");
             delete_button.get_style_context().remove_class("button");
         }
