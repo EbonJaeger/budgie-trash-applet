@@ -5,7 +5,6 @@ namespace TrashApplet {
         /* State */
         private string file_path;
         private string file_name;
-        private FileType file_type;
 
         /* Widgets */
         private Gtk.Image? file_icon = null;
@@ -14,15 +13,14 @@ namespace TrashApplet {
         /**
          * Constructor
          */
-        public TrashItem(FileInfo file, string old_path) {
+        public TrashItem(string file_path, string file_name, GLib.Icon glib_icon) {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
-            
-            this.file_path = old_path;
-            this.file_name = file.get_name();
-            this.file_type = file.get_file_type();
+
+            this.file_path = file_path;
+            this.file_name = file_name;
 
             /* Create Widget stuff */
-            this.file_icon = new Gtk.Image.from_gicon(file.get_icon(), Gtk.IconSize.DIALOG);
+            this.file_icon = new Gtk.Image.from_gicon(glib_icon, Gtk.IconSize.DIALOG);
             this.name_label = new Gtk.Label(file_name);
             this.name_label.max_width_chars = 16;
             this.name_label.ellipsize = Pango.EllipsizeMode.END;

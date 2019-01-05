@@ -29,7 +29,6 @@ namespace TrashApplet {
             width_request = 600;
 
             this.trash_bin_items = new List<TrashItem>();
-            create_trash_items();
 
             /* Views */
             this.stack = new Gtk.Stack();
@@ -52,9 +51,6 @@ namespace TrashApplet {
             this.file_box.homogeneous = true;
             this.file_box.max_children_per_line = 4;
             this.file_box.selection_mode = Gtk.SelectionMode.MULTIPLE;
-            trash_bin_items.foreach((entry) => { // Add all existing items in the trash bin
-                this.file_box.insert(entry, -1);
-            });
 
             this.controls_area = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 
@@ -99,6 +95,18 @@ namespace TrashApplet {
             this.stack.set_visible_child_name(page);
         }
 
+        /**
+         * Add a new trash item.
+         * 
+         * @param info The FileInfo for the newly trashed file
+         * @param old_path The path that the file came from
+         */
+        public void add_trash_item(string file_path, string file_name, GLib.Icon file_icon) {
+            var item = new TrashItem(file_path, file_name, file_icon);
+            this.trash_bin_items.append(item);
+            this.file_box.insert(item, -1);
+        }
+
         private void apply_button_styles() {
             select_all_button.get_style_context().add_class("flat");
             unselect_all_button.get_style_context().add_class("flat");
@@ -109,42 +117,6 @@ namespace TrashApplet {
             unselect_all_button.get_style_context().remove_class("button");
             restore_button.get_style_context().remove_class("button");
             delete_button.get_style_context().remove_class("button");
-        }
-
-        private void create_trash_items() {
-            File trash_files = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/files");
-            string info_path = GLib.Environment.get_user_data_dir() + "/Trash/info/";
-
-            try {
-                var attributes = FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_ICON;
-                var enumerator = trash_files.enumerate_children(attributes, 0);
-                FileInfo info;
-                while ((info = enumerator.next_file()) != null) { // Iterate through all files in the trash bin
-                    File info_file = File.new_for_path(info_path + info.get_name() + ".trashinfo");
-
-                    var dis = new DataInputStream(info_file.read());
-                    string line = null;
-                    string path = null;
-                    while ((line = dis.read_line()) != null) { // Read the lines of the .trashinfo file
-                        if (!line.has_prefix("Path=")) { // If its not the path line, skip it
-                            continue;
-                        }
-
-                        path = line.substring(5); // This cuts out the Path= prefix in the line
-                        break;
-                    }
-
-                    if (path == null) { // Ensure that we do indeed have a path
-                        warning("Unable to get the path for %s", info.get_name());
-                        continue;
-                    }
-
-                    TrashItem trash_item = new TrashItem(info, path);
-                    this.trash_bin_items.append(trash_item);
-                }
-            } catch (Error e) {
-                warning("Unable to create trash item: %s", e.message);
-            }
         }
 
         private void connect_signals() {

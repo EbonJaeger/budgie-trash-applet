@@ -13,6 +13,8 @@ public class Applet : Budgie.Applet {
     private TrashIconButton? icon_button = null;
     private TrashPopover? popover = null;
 
+    private TrashHandler? trash_handler = null;
+
     private unowned Budgie.PopoverManager? manager = null;
 
     public string uuid { public set; public get; }
@@ -31,6 +33,9 @@ public class Applet : Budgie.Applet {
 
         this.show_all();
         connect_signals();
+
+        // Set up our trash handler
+        this.trash_handler = new TrashHandler(popover);
     }
 
     public override bool supports_settings() {
