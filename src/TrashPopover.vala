@@ -50,6 +50,7 @@ namespace TrashApplet {
             this.file_box.activate_on_single_click = true;
             this.file_box.homogeneous = true;
             this.file_box.max_children_per_line = 4;
+            this.file_box.selection_mode = Gtk.SelectionMode.MULTIPLE;
 
             this.controls_area = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 
