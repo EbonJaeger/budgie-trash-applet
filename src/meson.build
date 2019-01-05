@@ -16,7 +16,8 @@ applet_trash_deps = [
 applet_trash_sources =[
     'TrashApplet.vala',
     'TrashPopover.vala',
-    'TrashIconButton.vala'
+    'TrashIconButton.vala',
+    'TrashItem.vala'
 ]
 
 bta_vala_args = [
