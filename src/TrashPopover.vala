@@ -7,9 +7,9 @@ namespace TrashApplet {
         private Gtk.Box? main_view = null;
         private Gtk.Box? title_area = null;
         private Gtk.Label? title_label = null;
-        private Gtk.Box? items_area = null;
+        private Gtk.Box? items_count_area = null;
         private Gtk.Label? items_count = null;
-        private Gtk.Grid? file_grid = null;
+        private Gtk.FlowBox? file_box = null;
         private Gtk.Box? controls_area = null;
 
         private Gtk.Separator? horizontal_separator = null;
@@ -35,14 +35,16 @@ namespace TrashApplet {
             this.title_label = new Gtk.Label("Trash");
             this.title_area.pack_start(title_label, true, true, 0);
 
-            this.items_area = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-            this.items_area.height_request = 400;
-            this.items_area.homogeneous = false;
+            this.items_count_area = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
+            this.items_count_area.height_request = 32;
             this.items_count = new Gtk.Label("Your trash bin is currently empty!");
-            this.items_area.pack_start(items_count, true, false, 0);
-            this.file_grid = new Gtk.Grid();
-            this.file_grid.column_homogeneous = true;
-            this.items_area.pack_start(file_grid, true, true, 0);
+            this.items_count_area.pack_start(items_count, true, true, 0);
+
+            this.file_box = new Gtk.FlowBox();
+            this.file_box.height_request = 200;
+            this.file_box.activate_on_single_click = true;
+            this.file_box.homogeneous = true;
+            this.file_box.max_children_per_line = 6;
 
             this.controls_area = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 
@@ -63,7 +65,8 @@ namespace TrashApplet {
 
             this.main_view.pack_start(title_area);
             this.main_view.pack_start(horizontal_separator);
-            this.main_view.pack_start(items_area);
+            this.main_view.pack_start(items_count_area);
+            this.main_view.pack_start(file_box);
             this.main_view.pack_start(horizontal_separator);
             this.main_view.pack_end(controls_area);
 
