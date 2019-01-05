@@ -24,6 +24,8 @@ namespace TrashApplet {
             /* Create Widget stuff */
             this.file_icon = new Gtk.Image.from_gicon(file.get_icon(), Gtk.IconSize.DIALOG);
             this.name_label = new Gtk.Label(file_name);
+            this.name_label.max_width_chars = 16;
+            this.name_label.ellipsize = Pango.EllipsizeMode.END;
 
             this.tooltip_text = file_path;
 
