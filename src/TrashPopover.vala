@@ -52,6 +52,9 @@ namespace TrashApplet {
             this.file_box.homogeneous = true;
             this.file_box.max_children_per_line = 4;
             this.file_box.selection_mode = Gtk.SelectionMode.MULTIPLE;
+            trash_bin_items.foreach((entry) => { // Add all existing items in the trash bin
+                this.file_box.insert(entry, -1);
+            });
 
             this.controls_area = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 
@@ -86,6 +89,9 @@ namespace TrashApplet {
             this.stack.add_named(main_view, "main");
 
             this.stack.show_all();
+
+            connect_signals();
+
             add(this.stack);
         }
 
@@ -105,7 +111,7 @@ namespace TrashApplet {
             delete_button.get_style_context().remove_class("button");
         }
 
-        async void create_trash_items() {
+        private void create_trash_items() {
             File trash_files = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/files");
             string info_path = GLib.Environment.get_user_data_dir() + "/Trash/info/";
 
@@ -119,7 +125,7 @@ namespace TrashApplet {
                     var dis = new DataInputStream(info_file.read());
                     string line = null;
                     string path = null;
-                    while ((line = yield dis.read_line_async(Priority.DEFAULT)) != null) { // Read the lines of the .trashinfo file
+                    while ((line = dis.read_line()) != null) { // Read the lines of the .trashinfo file
                         if (!line.has_prefix("Path=")) { // If its not the path line, skip it
                             continue;
                         }
@@ -134,11 +140,25 @@ namespace TrashApplet {
                     }
 
                     TrashItem trash_item = new TrashItem(info, path);
-                    file_box.insert(trash_item, -1);
+                    this.trash_bin_items.append(trash_item);
                 }
             } catch (Error e) {
                 warning("Unable to create trash item: %s", e.message);
             }
+        }
+
+        private void connect_signals() {
+            this.select_all_button.clicked.connect(() => { // Select all button
+                file_box.foreach((child) => {
+                    file_box.select_child(child as Gtk.FlowBoxChild);
+                });
+            });
+
+            this.unselect_all_button.clicked.connect(() => { // Unselect all button
+                file_box.foreach((child) => {
+                    file_box.unselect_child(child as Gtk.FlowBoxChild);
+                });
+            });
         }
     } // End class
 } // End namespace
