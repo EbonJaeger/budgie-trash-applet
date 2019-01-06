@@ -49,7 +49,7 @@ namespace TrashApplet {
             this.file_box.height_request = 200;
             this.file_box.activate_on_single_click = true;
             this.file_box.homogeneous = true;
-            this.file_box.max_children_per_line = 4;
+            this.file_box.max_children_per_line = 3;
             this.file_box.selection_mode = Gtk.SelectionMode.MULTIPLE;
 
             this.controls_area = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
@@ -105,6 +105,7 @@ namespace TrashApplet {
             var item = new TrashItem(file_path, file_name, file_icon);
             this.trash_bin_items.insert(file_name, item);
             this.file_box.insert(item, -1);
+            set_count_label();
         }
 
         /**
@@ -116,6 +117,7 @@ namespace TrashApplet {
             var item = trash_bin_items.get(file_name);
             this.file_box.remove(item.get_parent());
             this.trash_bin_items.remove(file_name);
+            set_count_label();
         }
 
         private void apply_button_styles() {
@@ -142,6 +144,14 @@ namespace TrashApplet {
                     file_box.unselect_child(child as Gtk.FlowBoxChild);
                 });
             });
+        }
+
+        private void set_count_label() {
+            if (trash_bin_items.size() == 0) {
+                this.items_count.label = "Your trash bin is currently empty!";
+            } else {
+                this.items_count.label = "Currently %u item(s) in trash.".printf(trash_bin_items.size());
+            }
         }
     } // End class
 } // End namespace
