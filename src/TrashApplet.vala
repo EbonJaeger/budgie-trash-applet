@@ -35,7 +35,7 @@ public class Applet : Budgie.Applet {
         connect_signals();
 
         // Set up our trash handler
-        this.trash_handler = new TrashHandler(popover);
+        this.trash_handler = new TrashHandler(icon_button, popover);
     }
 
     public override bool supports_settings() {

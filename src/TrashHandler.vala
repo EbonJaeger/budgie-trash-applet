@@ -6,11 +6,15 @@ namespace TrashApplet {
         private File info_dir;
         private FileMonitor trash_monitor;
 
+        private int trash_count = 0;
+
+        private TrashIconButton icon_button;
         private TrashPopover popover;
 
-        public TrashHandler(TrashPopover popover) {
+        public TrashHandler(TrashIconButton icon_button, TrashPopover popover) {
             this.trash_dir = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/files");
             this.info_dir = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/info");
+            this.icon_button = icon_button;
             this.popover = popover;
 
             try {
@@ -41,10 +45,14 @@ namespace TrashApplet {
                         break;
                     }
 
+                    trash_count++;
+                    icon_button.update_icon(false); // A trash item is being added, so of course the bin isn't empty
                     popover.add_trash_item(file_path, file_name, file_icon);
                     break;
                 case FileMonitorEvent.MOVED_OUT: // A file was moved out of the trash
                     var file_name = file.get_basename();
+                    trash_count--;
+                    icon_button.update_icon(trash_count == 0);
                     popover.remove_trash_item(file_name);
                     break;
                 default: // We don't care about anything else
@@ -66,6 +74,7 @@ namespace TrashApplet {
                         continue;
                     }
 
+                    trash_count++;
                     popover.add_trash_item(path, info.get_name(), info.get_icon());
                 }
             } catch (Error e) {

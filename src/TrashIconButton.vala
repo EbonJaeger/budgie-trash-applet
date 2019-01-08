@@ -16,5 +16,13 @@ namespace TrashApplet {
             this.get_style_context().add_class("flat");
             this.get_style_context().remove_class("button");
         }
+
+        public void update_icon(bool is_empty) {
+            if (is_empty) {
+                set_image(icon_empty);
+            } else {
+                set_image(icon_full);
+            }
+        }
     } // End class
 } // End namespace
