@@ -8,14 +8,13 @@ namespace TrashApplet {
 
         private int trash_count = 0;
 
-        private TrashIconButton icon_button;
-        private TrashPopover popover;
+        /* Signals */
+        public signal void trash_added(string file_name, string file_path, GLib.Icon file_icon);
+        public signal void trash_removed(string file_name, bool is_empty);
 
-        public TrashHandler(TrashIconButton icon_button, TrashPopover popover) {
+        public TrashHandler() {
             this.trash_dir = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/files");
             this.info_dir = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/info");
-            this.icon_button = icon_button;
-            this.popover = popover;
 
             try {
                 this.trash_monitor = trash_dir.monitor_directory(FileMonitorFlags.WATCH_MOVES);
@@ -23,8 +22,6 @@ namespace TrashApplet {
                 warning("Unable to create TrashHandler: %s", e.message);
                 return;
             }
-
-            get_current_trash_items();
 
             this.trash_monitor.changed.connect(handle_trash_changed);
         }
@@ -46,21 +43,19 @@ namespace TrashApplet {
                     }
 
                     trash_count++;
-                    icon_button.update_icon(false); // A trash item is being added, so of course the bin isn't empty
-                    popover.add_trash_item(file_path, file_name, file_icon);
+                    trash_added(file_name, file_path, file_icon);
                     break;
                 case FileMonitorEvent.MOVED_OUT: // A file was moved out of the trash
                     var file_name = file.get_basename();
                     trash_count--;
-                    icon_button.update_icon(trash_count == 0);
-                    popover.remove_trash_item(file_name);
+                    trash_removed(file_name, (trash_count == 0));
                     break;
                 default: // We don't care about anything else
                     break;
             }
         }
 
-        private void get_current_trash_items() {
+        public void get_current_trash_items() {
             try {
                 var attributes = FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_ICON;
                 var enumerator = trash_dir.enumerate_children(attributes, 0);
@@ -75,7 +70,7 @@ namespace TrashApplet {
                     }
 
                     trash_count++;
-                    popover.add_trash_item(path, info.get_name(), info.get_icon());
+                    trash_added(info.get_name(), path, info.get_icon());
                 }
             } catch (Error e) {
                 warning("Unable to create trash item: %s", e.message);

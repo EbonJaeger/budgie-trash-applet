@@ -22,20 +22,22 @@ public class Applet : Budgie.Applet {
     public Applet(string uuid) {
         GLib.Object(uuid: uuid);
 
+        // Set up our trash handler
+        this.trash_handler = new TrashHandler();
+
         // Create the main layout
         event_box = new Gtk.EventBox();
-        this.icon_button = new TrashIconButton();
+        this.icon_button = new TrashIconButton(trash_handler);
         event_box.add(icon_button);
 
         this.add(event_box);
 
-        this.popover = new TrashPopover(icon_button);
+        this.popover = new TrashPopover(icon_button, trash_handler);
+
+        trash_handler.get_current_trash_items();
 
         this.show_all();
         connect_signals();
-
-        // Set up our trash handler
-        this.trash_handler = new TrashHandler(icon_button, popover);
     }
 
     public override bool supports_settings() {

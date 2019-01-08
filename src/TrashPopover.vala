@@ -3,6 +3,7 @@ namespace TrashApplet {
     public class TrashPopover : Budgie.Popover {
 
         private HashTable<string, TrashItem> trash_bin_items;
+        private TrashHandler trash_handler;
 
         /* Widgets */
         private Gtk.Stack? stack = null;
@@ -24,8 +25,9 @@ namespace TrashApplet {
         /**
          * Constructor
          */
-        public TrashPopover(Gtk.Widget? parent) {
+        public TrashPopover(Gtk.Widget? parent, TrashHandler trash_handler) {
             Object(relative_to: parent);
+            this.trash_handler = trash_handler;
             width_request = 600;
 
             this.trash_bin_items = new HashTable<string, TrashItem>(str_hash, str_equal);
@@ -101,7 +103,7 @@ namespace TrashApplet {
          * @param info The FileInfo for the newly trashed file
          * @param old_path The path that the file came from
          */
-        public void add_trash_item(string file_path, string file_name, GLib.Icon file_icon) {
+        public void add_trash_item(string file_name, string file_path, GLib.Icon file_icon) {
             var item = new TrashItem(file_path, file_name, file_icon);
             this.trash_bin_items.insert(file_name, item);
             this.file_box.insert(item, -1);
@@ -113,7 +115,7 @@ namespace TrashApplet {
          * 
          * @param file_name The name of the file to remove
          */
-        public void remove_trash_item(string file_name) {
+        public void remove_trash_item(string file_name, bool is_empty) {
             var item = trash_bin_items.get(file_name);
             this.file_box.remove(item.get_parent());
             this.trash_bin_items.remove(file_name);
@@ -133,6 +135,7 @@ namespace TrashApplet {
         }
 
         private void connect_signals() {
+            /* Buttons */
             this.select_all_button.clicked.connect(() => { // Select all button
                 file_box.foreach((child) => {
                     file_box.select_child(child as Gtk.FlowBoxChild);
@@ -144,6 +147,10 @@ namespace TrashApplet {
                     file_box.unselect_child(child as Gtk.FlowBoxChild);
                 });
             });
+
+            /* Trash signals */
+            trash_handler.trash_added.connect(add_trash_item);
+            trash_handler.trash_removed.connect(remove_trash_item);
         }
 
         private void set_count_label() {
