@@ -15,8 +15,6 @@ namespace TrashApplet {
         private Gtk.FlowBox? file_box = null;
         private Gtk.Box? controls_area = null;
 
-        private Gtk.Separator? horizontal_separator = null;
-
         private Gtk.Button? select_all_button = null;
         private Gtk.Button? unselect_all_button = null;
         private Gtk.Button? restore_button = null;
@@ -73,13 +71,11 @@ namespace TrashApplet {
             this.controls_area.pack_start(restore_button);
             this.controls_area.pack_end(delete_button);
 
-            this.horizontal_separator = new Gtk.Separator(Gtk.Orientation.HORIZONTAL);
-
             this.main_view.pack_start(title_area);
-            this.main_view.pack_start(horizontal_separator);
+            this.main_view.pack_start(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
             this.main_view.pack_start(items_count_area);
             this.main_view.pack_start(file_box);
-            this.main_view.pack_start(horizontal_separator);
+            this.main_view.pack_start(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
             this.main_view.pack_end(controls_area);
 
             apply_button_styles();
@@ -105,8 +101,9 @@ namespace TrashApplet {
          */
         public void add_trash_item(string file_name, string file_path, GLib.Icon file_icon) {
             var item = new TrashItem(file_path, file_name, file_icon);
-            this.trash_bin_items.insert(file_name, item);
-            this.file_box.insert(item, -1);
+            trash_bin_items.insert(file_name, item);
+            file_box.insert(item, -1);
+            file_box.unselect_child(item); // Why does Gtk hate me?
             set_count_label();
         }
 
@@ -117,7 +114,7 @@ namespace TrashApplet {
          */
         public void remove_trash_item(string file_name, bool is_empty) {
             var item = trash_bin_items.get(file_name);
-            this.file_box.remove(item.get_parent());
+            this.file_box.remove(item);
             this.trash_bin_items.remove(file_name);
             set_count_label();
         }
