@@ -13,11 +13,9 @@ namespace TrashApplet {
         private Gtk.Box? items_count_area = null;
         private Gtk.Label? items_count = null;
         private Gtk.ScrolledWindow? scroller = null;
-        private Gtk.FlowBox? file_box = null;
+        private Gtk.ListBox? file_box = null;
         private Gtk.Box? controls_area = null;
 
-        private Gtk.Button? select_all_button = null;
-        private Gtk.Button? unselect_all_button = null;
         private Gtk.Button? restore_button = null;
         private Gtk.Button? delete_button = null;
 
@@ -27,7 +25,7 @@ namespace TrashApplet {
         public TrashPopover(Gtk.Widget? parent, TrashHandler trash_handler) {
             Object(relative_to: parent);
             this.trash_handler = trash_handler;
-            width_request = 600;
+            width_request = 300;
 
             this.trash_bin_items = new HashTable<string, TrashItem>(str_hash, str_equal);
 
@@ -47,37 +45,25 @@ namespace TrashApplet {
             this.items_count_area.pack_start(items_count, true, true, 0);
 
             scroller = new Gtk.ScrolledWindow(null, null);
-            scroller.min_content_height = 400;
-            scroller.max_content_height = 400;
+            scroller.min_content_height = 300;
+            scroller.max_content_height = 300;
             scroller.hscrollbar_policy = Gtk.PolicyType.NEVER;
 
-            this.file_box = new Gtk.FlowBox();
-            this.file_box.height_request = 200;
+            this.file_box = new Gtk.ListBox();
+            this.file_box.height_request = 300;
             this.file_box.activate_on_single_click = true;
-            this.file_box.homogeneous = true;
-            file_box.column_spacing = 3;
-            file_box.row_spacing = 3;
-            this.file_box.max_children_per_line = 3;
-            this.file_box.selection_mode = Gtk.SelectionMode.MULTIPLE;
+            this.file_box.selection_mode = Gtk.SelectionMode.NONE;
 
             scroller.add(file_box);
 
             this.controls_area = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 
-            this.select_all_button = new Gtk.Button.from_icon_name("edit-select-all-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
-            this.select_all_button.set_tooltip_text("Select all items");
-
-            this.unselect_all_button = new Gtk.Button.from_icon_name("edit-clear-all-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
-            this.unselect_all_button.set_tooltip_text("Unselect all items");
-
             this.restore_button = new Gtk.Button.from_icon_name("edit-undo-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
-            this.restore_button.set_tooltip_text("Restore Items");
+            this.restore_button.set_tooltip_text("Restore all items");
 
             this.delete_button = new Gtk.Button.from_icon_name("user-trash-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
-            this.delete_button.set_tooltip_text("Delete Items");
+            this.delete_button.set_tooltip_text("Delete all items");
 
-            this.controls_area.pack_start(select_all_button);
-            this.controls_area.pack_start(unselect_all_button);
             this.controls_area.pack_start(restore_button);
             this.controls_area.pack_end(delete_button);
 
@@ -113,7 +99,6 @@ namespace TrashApplet {
             var item = new TrashItem(file_path, file_name, file_icon);
             trash_bin_items.insert(file_name, item);
             file_box.insert(item, -1);
-            file_box.unselect_child(item); // Why does Gtk hate me?
             set_count_label();
         }
 
@@ -130,30 +115,15 @@ namespace TrashApplet {
         }
 
         private void apply_button_styles() {
-            select_all_button.get_style_context().add_class("flat");
-            unselect_all_button.get_style_context().add_class("flat");
             restore_button.get_style_context().add_class("flat");
             delete_button.get_style_context().add_class("flat");
 
-            select_all_button.get_style_context().remove_class("button");
-            unselect_all_button.get_style_context().remove_class("button");
             restore_button.get_style_context().remove_class("button");
             delete_button.get_style_context().remove_class("button");
         }
 
         private void connect_signals() {
             /* Buttons */
-            this.select_all_button.clicked.connect(() => { // Select all button
-                file_box.foreach((child) => {
-                    file_box.select_child(child as Gtk.FlowBoxChild);
-                });
-            });
-
-            this.unselect_all_button.clicked.connect(() => { // Unselect all button
-                file_box.foreach((child) => {
-                    file_box.unselect_child(child as Gtk.FlowBoxChild);
-                });
-            });
 
             /* Trash signals */
             trash_handler.trash_added.connect(add_trash_item);
