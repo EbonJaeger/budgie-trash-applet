@@ -12,6 +12,7 @@ namespace TrashApplet {
         private Gtk.Label? title_label = null;
         private Gtk.Box? items_count_area = null;
         private Gtk.Label? items_count = null;
+        private Gtk.ScrolledWindow? scroller = null;
         private Gtk.FlowBox? file_box = null;
         private Gtk.Box? controls_area = null;
 
@@ -45,12 +46,21 @@ namespace TrashApplet {
             this.items_count = new Gtk.Label("Your trash bin is currently empty!");
             this.items_count_area.pack_start(items_count, true, true, 0);
 
+            scroller = new Gtk.ScrolledWindow(null, null);
+            scroller.min_content_height = 400;
+            scroller.max_content_height = 400;
+            scroller.hscrollbar_policy = Gtk.PolicyType.NEVER;
+
             this.file_box = new Gtk.FlowBox();
             this.file_box.height_request = 200;
             this.file_box.activate_on_single_click = true;
             this.file_box.homogeneous = true;
+            file_box.column_spacing = 3;
+            file_box.row_spacing = 3;
             this.file_box.max_children_per_line = 3;
             this.file_box.selection_mode = Gtk.SelectionMode.MULTIPLE;
+
+            scroller.add(file_box);
 
             this.controls_area = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 
@@ -74,7 +84,7 @@ namespace TrashApplet {
             this.main_view.pack_start(title_area);
             this.main_view.pack_start(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
             this.main_view.pack_start(items_count_area);
-            this.main_view.pack_start(file_box);
+            this.main_view.pack_start(scroller);
             this.main_view.pack_start(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
             this.main_view.pack_end(controls_area);
 

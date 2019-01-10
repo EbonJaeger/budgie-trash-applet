@@ -28,7 +28,7 @@ namespace TrashApplet {
             this.tooltip_text = file_path;
 
             container.pack_start(file_icon, true, true, 0);
-            container.pack_end(name_label);
+            container.pack_end(name_label, false, false, 0);
             add(container);
             show_all();
         }
