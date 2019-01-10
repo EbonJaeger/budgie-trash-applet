@@ -95,7 +95,7 @@ namespace TrashApplet {
          * @param old_path The path that the file came from
          */
         public void add_trash_item(string file_name, string file_path, GLib.Icon file_icon) {
-            var item = new TrashItem(file_path, file_name, file_icon);
+            var item = new TrashItem(trash_handler, file_path, file_name, file_icon);
             trash_bin_items.insert(file_name, item);
             file_box.insert(item, -1);
             set_count_label();
@@ -108,7 +108,7 @@ namespace TrashApplet {
          */
         public void remove_trash_item(string file_name, bool is_empty) {
             var item = trash_bin_items.get(file_name);
-            this.file_box.remove(item);
+            this.file_box.remove(item.get_parent());
             this.trash_bin_items.remove(file_name);
             set_count_label();
         }

@@ -50,6 +50,11 @@ namespace TrashApplet {
                     trash_count--;
                     trash_removed(file_name, (trash_count == 0));
                     break;
+                case FileMonitorEvent.DELETED: // A file was permanently deleted from the trash
+                    var file_name = file.get_basename();
+                    trash_count--;
+                    trash_removed(file_name, (trash_count == 0));
+                    break;
                 default: // We don't care about anything else
                     break;
             }
@@ -97,6 +102,55 @@ namespace TrashApplet {
             }
 
             return path;
+        }
+
+        /**
+         * Delete a file permanently from the trash.
+         * 
+         * If the file is a directory, it will be recursively deleted.
+         * 
+         * @param file_name The name of the file to delete
+         */
+        public void delete_file(string file_name) {
+            File file = File.new_for_path(trash_dir.get_path() + "/" + file_name);
+            File info_file = File.new_for_path(info_dir.get_path() + "/" + file_name + ".trashinfo");
+
+            // First, check if this is a file or directory
+            FileType type = file.query_file_type(FileQueryInfoFlags.NOFOLLOW_SYMLINKS);
+            if (type == FileType.DIRECTORY) { // Item is a directory, and directories must be empty to delete them
+                try {
+                    delete_directory(file);
+                } catch (Error e) {
+                    warning("Unable to delete directory '%s' in trash: %s", file_name, e.message);
+                    return;
+                }
+            }
+
+            try {
+                file.delete();
+                info_file.delete();
+            } catch (Error e) {
+                warning("Unable to delete '%s': %s", file_name, e.message);
+            }
+        }
+
+        /**
+         * Recursively delete a directory.
+         */
+        private void delete_directory(File dir) throws Error {
+            var attributes = FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_TYPE;
+            var enumerator = dir.enumerate_children(attributes, 0);
+
+            FileInfo info;
+            while ((info = enumerator.next_file()) != null) { // Iterate through all files in the directory
+                var child = File.new_for_path(dir.get_path() + "/" + info.get_name());
+
+                if (info.get_type() == FileType.DIRECTORY) { // Found a nested directory
+                    delete_directory(child);
+                } else {
+                    child.delete();
+                }
+            }
         }
     } // End class
 } // End namespace

@@ -3,6 +3,7 @@ namespace TrashApplet {
     public class TrashItem : Gtk.Box {
 
         /* State */
+        private TrashHandler trash_handler;
         private string file_path;
         private string file_name;
 
@@ -15,8 +16,9 @@ namespace TrashApplet {
         /**
          * Constructor
          */
-        public TrashItem(string file_path, string file_name, GLib.Icon glib_icon) {
+        public TrashItem(TrashHandler trash_handler, string file_path, string file_name, GLib.Icon glib_icon) {
             Object(orientation: Gtk.Orientation.HORIZONTAL, spacing: 0);
+            this.trash_handler = trash_handler;
             this.file_path = file_path;
             this.file_name = file_name;
 
@@ -39,6 +41,7 @@ namespace TrashApplet {
             this.tooltip_text = file_path;
 
             apply_button_styles();
+            connect_signals();
 
             pack_start(file_icon, false, false, 5);
             pack_start(name_label, true, true, 0);
@@ -53,6 +56,12 @@ namespace TrashApplet {
 
             restore_button.get_style_context().remove_class("button");
             delete_button.get_style_context().remove_class("button");
+        }
+
+        private void connect_signals() {
+            delete_button.clicked.connect(() => { // Delete button clicked
+                trash_handler.delete_file(file_name);
+            });
         }
     } // End class
 } // End namespace
