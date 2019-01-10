@@ -71,7 +71,6 @@ namespace TrashApplet {
             this.main_view.pack_start(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
             this.main_view.pack_start(items_count_area);
             this.main_view.pack_start(scroller);
-            this.main_view.pack_start(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
             this.main_view.pack_end(controls_area);
 
             apply_button_styles();
