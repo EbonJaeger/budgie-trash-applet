@@ -33,6 +33,7 @@ public class Applet : Budgie.Applet {
         this.add(event_box);
 
         this.popover = new TrashPopover(icon_button, trash_handler);
+        popover.set_page("main");
 
         trash_handler.get_current_trash_items();
 

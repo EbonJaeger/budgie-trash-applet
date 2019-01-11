@@ -4,8 +4,9 @@ namespace TrashApplet {
 
         /* State */
         private TrashHandler trash_handler;
-        private string file_path;
-        private string file_name;
+
+        public string file_path { get; private set; }
+        public string file_name { get; private set; }
 
         /* Widgets */
         private Gtk.Image? file_icon = null;

@@ -8,13 +8,18 @@ namespace TrashApplet {
         /* Widgets */
         private Gtk.Stack? stack = null;
         private Gtk.Box? main_view = null;
-        private Gtk.Box? title_area = null;
         private Gtk.Label? title_label = null;
         private Gtk.Box? items_count_area = null;
         private Gtk.Label? items_count = null;
         private Gtk.ScrolledWindow? scroller = null;
         private Gtk.ListBox? file_box = null;
         private Gtk.Box? controls_area = null;
+
+        private Gtk.Box? confirmation_view = null;
+        private Gtk.Label? confirmation_text = null;
+        private Gtk.Box confirmation_controls = null;
+        private Gtk.Button? go_back_button = null;
+        private Gtk.Button? confirm_delete_button = null;
 
         private Gtk.Button? restore_button = null;
         private Gtk.Button? delete_button = null;
@@ -33,11 +38,6 @@ namespace TrashApplet {
             this.stack = new Gtk.Stack();
 
             this.main_view = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
-
-            this.title_area = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-            this.title_area.height_request = 32;
-            this.title_label = new Gtk.Label("Trash");
-            this.title_area.pack_start(title_label, true, true, 0);
 
             this.items_count_area = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
             this.items_count_area.height_request = 32;
@@ -67,21 +67,56 @@ namespace TrashApplet {
             this.controls_area.pack_start(restore_button);
             this.controls_area.pack_end(delete_button);
 
-            this.main_view.pack_start(title_area);
+            this.main_view.pack_start(generate_title_widget(), false, false, 0);
             this.main_view.pack_start(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
             this.main_view.pack_start(items_count_area);
             this.main_view.pack_start(scroller);
             this.main_view.pack_end(controls_area);
 
-            apply_button_styles();
+            /* Delete confirmation view */
+            confirmation_view = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 
-            this.stack.add_named(main_view, "main");
+            confirmation_text = new Gtk.Label("Are you sure you want to delete all items from the trash?");
+            confirmation_text.halign = Gtk.Align.CENTER;
+            confirmation_text.justify = Gtk.Justification.LEFT;
+            confirmation_text.wrap = true;
+            confirmation_text.margin_start = 20;
+            confirmation_text.margin_end = 20;
+
+            confirmation_controls = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+            confirmation_controls.height_request = 40;
+
+            go_back_button = new Gtk.Button.with_label("No");
+            confirm_delete_button = new Gtk.Button.with_label("Yes");
+
+            confirmation_view.pack_start(generate_title_widget(), false, false, 0);
+            confirmation_view.pack_start(new Gtk.Separator(Gtk.Orientation.HORIZONTAL), false, false, 0);
+            confirmation_view.pack_start(confirmation_text, false, false, 20);
+            confirmation_controls.pack_start(go_back_button);
+            confirmation_controls.pack_end(confirm_delete_button);
+            confirmation_view.pack_end(confirmation_controls, false, false, 0);
+
+            /* End view creation */
+
+            stack.add_named(main_view, "main");
+            stack.add_named(confirmation_view, "confirmation");
 
             this.stack.show_all();
 
+            apply_button_styles();
+            set_buttons_sensitive(false);
             connect_signals();
 
             add(this.stack);
+        }
+
+        private Gtk.Box generate_title_widget() {
+            var title_area = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+            title_area.height_request = 32;
+            title_label = new Gtk.Label("Trash");
+            title_area.pack_start(title_label, true, true, 0);
+
+            return title_area;
         }
 
         public void set_page(string page) {
@@ -99,6 +134,7 @@ namespace TrashApplet {
             trash_bin_items.insert(file_name, item);
             file_box.insert(item, -1);
             set_count_label();
+            set_buttons_sensitive(true);
         }
 
         /**
@@ -111,18 +147,44 @@ namespace TrashApplet {
             this.file_box.remove(item.get_parent());
             this.trash_bin_items.remove(file_name);
             set_count_label();
+            if (trash_bin_items.size() == 0) { // No items in trash; buttons should no longer be sensitive
+                set_buttons_sensitive(false);
+            }
         }
 
         private void apply_button_styles() {
             restore_button.get_style_context().add_class("flat");
             delete_button.get_style_context().add_class("flat");
+            go_back_button.get_style_context().add_class("flat");
+            confirm_delete_button.get_style_context().add_class("flat");
 
             restore_button.get_style_context().remove_class("button");
             delete_button.get_style_context().remove_class("button");
+            go_back_button.get_style_context().remove_class("button");
+            confirm_delete_button.get_style_context().remove_class("button");
+        }
+
+        private void set_buttons_sensitive(bool is_sensitive) {
+            restore_button.sensitive = is_sensitive;
+            delete_button.sensitive = is_sensitive;
         }
 
         private void connect_signals() {
             /* Buttons */
+            delete_button.clicked.connect(() => { // Delete all button clicked
+                set_page("confirmation");
+            });
+
+            go_back_button.clicked.connect(() => { // Go back button in confirmation dialog
+                set_page("main");
+            });
+
+            confirm_delete_button.clicked.connect(() => { // Confirm deletion button in confirmation dialog
+                trash_bin_items.get_values().foreach((item) => {
+                    trash_handler.delete_file(item.file_name);
+                });
+                set_page("main");
+            });
 
             /* Trash signals */
             trash_handler.trash_added.connect(add_trash_item);
