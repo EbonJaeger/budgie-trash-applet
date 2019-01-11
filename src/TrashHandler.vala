@@ -152,5 +152,18 @@ namespace TrashApplet {
                 }
             }
         }
+
+        public void restore_file(string file_name, string restore_path) {
+            var file = File.new_for_path(trash_dir.get_path() + "/" + file_name);
+            var info_file = File.new_for_path(info_dir.get_path() + "/" + file_name + ".trashinfo");
+            var destination = File.new_for_path(restore_path);
+
+            try {
+                file.move(destination, FileCopyFlags.NONE);
+                info_file.delete();
+            } catch (Error e) {
+                warning("Unable to restore '%s' to '%s': %s", file_name, restore_path, e.message);
+            }
+        }
     } // End class
 } // End namespace

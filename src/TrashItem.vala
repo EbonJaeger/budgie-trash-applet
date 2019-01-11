@@ -63,6 +63,10 @@ namespace TrashApplet {
             delete_button.clicked.connect(() => { // Delete button clicked
                 trash_handler.delete_file(file_name);
             });
+
+            restore_button.clicked.connect(() => { // Restore button clicked
+                trash_handler.restore_file(file_name, file_path);
+            });
         }
     } // End class
 } // End namespace

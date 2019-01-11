@@ -186,6 +186,12 @@ namespace TrashApplet {
                 set_page("main");
             });
 
+            restore_button.clicked.connect(() => { // Restore all button was clicked
+                trash_bin_items.get_values().foreach((item) => {
+                    trash_handler.restore_file(item.file_name, item.file_path);
+                });
+            });
+
             /* Trash signals */
             trash_handler.trash_added.connect(add_trash_item);
             trash_handler.trash_removed.connect(remove_trash_item);
