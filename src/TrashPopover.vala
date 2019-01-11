@@ -17,7 +17,7 @@ namespace TrashApplet {
 
         private Gtk.Box? confirmation_view = null;
         private Gtk.Label? confirmation_text = null;
-        private Gtk.Box confirmation_controls = null;
+        private Gtk.Box? confirmation_controls = null;
         private Gtk.Button? go_back_button = null;
         private Gtk.Button? confirm_delete_button = null;
 
@@ -135,6 +135,14 @@ namespace TrashApplet {
             file_box.insert(item, -1);
             set_count_label();
             set_buttons_sensitive(true);
+
+            item.on_delete.connect((file_name) => {
+                trash_handler.delete_file(file_name);
+            });
+
+            item.on_restore.connect((file_name, restore_path) => {
+                trash_handler.restore_file(file_name, restore_path);
+            });
         }
 
         /**
