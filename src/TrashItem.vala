@@ -8,6 +8,7 @@ namespace TrashApplet {
 
         public string file_path { get; private set; }
         public string file_name { get; private set; }
+        public bool is_directory {get; private set; }
 
         /* Widgets */
         private Gtk.Image? file_icon = null;
@@ -24,11 +25,12 @@ namespace TrashApplet {
         /**
          * Constructor
          */
-        public TrashItem(TrashHandler trash_handler, string file_path, string file_name, GLib.Icon glib_icon) {
+        public TrashItem(TrashHandler trash_handler, string file_path, string file_name, GLib.Icon glib_icon, bool is_directory) {
             Object(orientation: Gtk.Orientation.HORIZONTAL, spacing: 0);
             this.trash_handler = trash_handler;
             this.file_path = file_path;
             this.file_name = file_name;
+            this.is_directory = is_directory;
 
             this.height_request = 32;
             this.margin = 0;

@@ -9,7 +9,7 @@ namespace TrashApplet {
         private int trash_count = 0;
 
         /* Signals */
-        public signal void trash_added(string file_name, string file_path, GLib.Icon file_icon);
+        public signal void trash_added(string file_name, string file_path, GLib.Icon file_icon, bool is_directory);
         public signal void trash_removed(string file_name, bool is_empty);
 
         public TrashHandler() {
@@ -31,19 +31,24 @@ namespace TrashApplet {
                 case FileMonitorEvent.MOVED_IN: // A file was just added to the trash
                     var file_name = file.get_basename();
                     var file_path = get_path_from_trashinfo(file_name);
-                    var attributes = FileAttribute.STANDARD_ICON;
+                    var attributes = FileAttribute.STANDARD_ICON + "," + FileAttribute.STANDARD_TYPE;
 
                     GLib.Icon file_icon = null;
+                    bool is_directory = false;
                     try {
                         var file_info = file.query_info(attributes, FileQueryInfoFlags.NONE);
                         file_icon = file_info.get_icon();
+
+                        if (file_info.get_file_type() == FileType.DIRECTORY) {
+                            is_directory = true;
+                        }
                     } catch (Error e) {
                         warning("Unable to get icon from file info for file '%s': %s", file_name, e.message);
                         break;
                     }
 
                     trash_count++;
-                    trash_added(file_name, file_path, file_icon);
+                    trash_added(file_name, file_path, file_icon, is_directory);
                     break;
                 case FileMonitorEvent.MOVED_OUT: // A file was moved out of the trash
                     var file_name = file.get_basename();
@@ -62,7 +67,7 @@ namespace TrashApplet {
 
         public void get_current_trash_items() {
             try {
-                var attributes = FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_ICON;
+                var attributes = FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_ICON + "," + FileAttribute.STANDARD_TYPE;
                 var enumerator = trash_dir.enumerate_children(attributes, 0);
 
                 FileInfo info;
@@ -74,8 +79,13 @@ namespace TrashApplet {
                         continue;
                     }
 
+                    bool is_directory = false;
+                    if (info.get_file_type() == FileType.DIRECTORY) {
+                        is_directory = true;
+                    }
+
                     trash_count++;
-                    trash_added(info.get_name(), path, info.get_icon());
+                    trash_added(info.get_name(), path, info.get_icon(), is_directory);
                 }
             } catch (Error e) {
                 warning("Unable to create trash item: %s", e.message);

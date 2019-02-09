@@ -53,6 +53,7 @@ namespace TrashApplet {
             this.file_box.height_request = 300;
             this.file_box.activate_on_single_click = true;
             this.file_box.selection_mode = Gtk.SelectionMode.NONE;
+            file_box.set_sort_func(sort_rows);
 
             scroller.add(file_box);
 
@@ -129,8 +130,8 @@ namespace TrashApplet {
          * @param info The FileInfo for the newly trashed file
          * @param old_path The path that the file came from
          */
-        public void add_trash_item(string file_name, string file_path, GLib.Icon file_icon) {
-            var item = new TrashItem(trash_handler, file_path, file_name, file_icon);
+        public void add_trash_item(string file_name, string file_path, GLib.Icon file_icon, bool is_directory) {
+            var item = new TrashItem(trash_handler, file_path, file_name, file_icon, is_directory);
             trash_bin_items.insert(file_name, item);
             file_box.insert(item, -1);
             set_count_label();
@@ -210,6 +211,30 @@ namespace TrashApplet {
                 this.items_count.label = "Your trash bin is currently empty!";
             } else {
                 this.items_count.label = "Currently %u item(s) in trash.".printf(trash_bin_items.size());
+            }
+        }
+
+        /**
+         * sort_rows will determine the order that two given rows should be in.
+         * 
+         * Directories should be above files, and both types should be sorted alphabetically.
+         * 
+         * @param row1 The first row to use for comparison
+         * @param row2 The second row to use for comparison
+         * @return < 0 if row1 should be before row2, 0 if they are equal and > 0 otherwise
+         */
+        private int sort_rows(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
+            var trash_item_1 = row1.get_child() as TrashItem;
+            var trash_item_2 = row2.get_child() as TrashItem;
+
+            if (trash_item_1.is_directory && trash_item_2.is_directory) { // Both items are directories, sort by name
+                return trash_item_1.file_name.collate(trash_item_2.file_name);
+            } else if (trash_item_1.is_directory && !trash_item_2.is_directory) { // First item is a directory
+                return -1; // First item should be above the second
+            } else if (!trash_item_1.is_directory && trash_item_2.is_directory) { // First item is a file, second is a directory
+                return 1; // Second item should be above the first
+            } else { // Both items are files, sort by file name
+                return trash_item_1.file_name.collate(trash_item_2.file_name);
             }
         }
     } // End class
