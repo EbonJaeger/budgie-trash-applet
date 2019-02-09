@@ -155,8 +155,9 @@ namespace TrashApplet {
             while ((info = enumerator.next_file()) != null) { // Iterate through all files in the directory
                 var child = File.new_for_path(dir.get_path() + "/" + info.get_name());
 
-                if (info.get_type() == FileType.DIRECTORY) { // Found a nested directory
+                if (info.get_file_type() == FileType.DIRECTORY) { // Found a nested directory
                     delete_directory(child);
+                    child.delete();
                 } else {
                     child.delete();
                 }
