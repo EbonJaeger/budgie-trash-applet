@@ -16,7 +16,9 @@ namespace TrashApplet {
         private Gtk.Box? controls_area = null;
 
         private Gtk.Box? confirmation_view = null;
+        private Gtk.Box? confirmation_box = null;
         private Gtk.Label? confirmation_text = null;
+        private Gtk.Label? confirmation_warning = null;
         private Gtk.Box? confirmation_controls = null;
         private Gtk.Button? go_back_button = null;
         private Gtk.Button? confirm_delete_button = null;
@@ -36,6 +38,7 @@ namespace TrashApplet {
 
             /* Views */
             this.stack = new Gtk.Stack();
+            stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT);
 
             this.main_view = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 
@@ -77,12 +80,25 @@ namespace TrashApplet {
             /* Delete confirmation view */
             confirmation_view = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 
-            confirmation_text = new Gtk.Label("Are you sure you want to delete all items from the trash?");
+            confirmation_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
+
+            confirmation_text = new Gtk.Label("");
+            confirmation_text.set_markup("<b>Really delete all items from the trash?</b>");
             confirmation_text.halign = Gtk.Align.CENTER;
+            confirmation_text.valign = Gtk.Align.CENTER;
             confirmation_text.justify = Gtk.Justification.LEFT;
             confirmation_text.wrap = true;
-            confirmation_text.margin_start = 20;
-            confirmation_text.margin_end = 20;
+
+            confirmation_warning = new Gtk.Label("");
+            confirmation_warning.set_markup("<b>This operation cannot be undone!</b>");
+            confirmation_warning.halign = Gtk.Align.CENTER;
+            confirmation_warning.valign = Gtk.Align.CENTER;
+            confirmation_warning.justify = Gtk.Justification.LEFT;
+            confirmation_warning.wrap = true;
+            confirmation_warning.get_style_context().add_class("dim-label");
+
+            confirmation_box.pack_start(confirmation_text, false, false, 20);
+            confirmation_box.pack_start(confirmation_warning, false, false, 20);
 
             confirmation_controls = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
             confirmation_controls.height_request = 40;
@@ -92,7 +108,7 @@ namespace TrashApplet {
 
             confirmation_view.pack_start(generate_title_widget(), false, false, 0);
             confirmation_view.pack_start(new Gtk.Separator(Gtk.Orientation.HORIZONTAL), false, false, 0);
-            confirmation_view.pack_start(confirmation_text, false, false, 20);
+            confirmation_view.pack_start(confirmation_box, true, true, 20);
             confirmation_controls.pack_start(go_back_button);
             confirmation_controls.pack_end(confirm_delete_button);
             confirmation_view.pack_end(confirmation_controls, false, false, 0);
@@ -114,7 +130,8 @@ namespace TrashApplet {
         private Gtk.Box generate_title_widget() {
             var title_area = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
             title_area.height_request = 32;
-            title_label = new Gtk.Label("Trash");
+            title_label = new Gtk.Label("");
+            title_label.set_markup("<b>Trash</b>");
             title_area.pack_start(title_label, true, true, 0);
 
             return title_area;
@@ -164,8 +181,7 @@ namespace TrashApplet {
         private void apply_button_styles() {
             restore_button.get_style_context().add_class("flat");
             delete_button.get_style_context().add_class("flat");
-            go_back_button.get_style_context().add_class("flat");
-            confirm_delete_button.get_style_context().add_class("flat");
+            confirm_delete_button.get_style_context().add_class("destructive-action");
 
             restore_button.get_style_context().remove_class("button");
             delete_button.get_style_context().remove_class("button");
@@ -210,7 +226,7 @@ namespace TrashApplet {
             if (trash_bin_items.size() == 0) {
                 this.items_count.label = "Your trash bin is currently empty!";
             } else {
-                this.items_count.label = "Currently %u item(s) in trash.".printf(trash_bin_items.size());
+                this.items_count.set_markup("Currently <b>%u</b> item(s) in trash.".printf(trash_bin_items.size()));
             }
         }
 

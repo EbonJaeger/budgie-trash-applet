@@ -73,6 +73,7 @@ namespace TrashApplet {
             delete_button.get_style_context().add_class("flat");
             go_back_button.get_style_context().add_class("flat");
             confirm_button.get_style_context().add_class("flat");
+            confirm_button.get_style_context().add_class("destructive-action");
 
             restore_button.get_style_context().remove_class("button");
             delete_button.get_style_context().remove_class("button");
