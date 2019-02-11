@@ -1,6 +1,8 @@
 # Budgie Trash Applet
 Manage items in your trash bin right from the Budgie panel.
 
+![Main View](https://i.imgur.com/vEH0ZASm.png) ![Confirm Delete](https://i.imgur.com/fSFhYMZm.png) ![Confirm Delete All](https://i.imgur.com/ZlmmJwnm.png)
+
 ---
 
 ## Development
