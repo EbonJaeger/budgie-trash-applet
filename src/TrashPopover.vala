@@ -5,6 +5,8 @@ namespace TrashApplet {
         private HashTable<string, TrashItem> trash_bin_items;
         private TrashHandler trash_handler;
 
+        private bool restoring = false;
+
         /* Widgets */
         private Gtk.Stack? stack = null;
         private Gtk.Box? main_view = null;
@@ -21,7 +23,7 @@ namespace TrashApplet {
         private Gtk.Label? confirmation_warning = null;
         private Gtk.Box? confirmation_controls = null;
         private Gtk.Button? go_back_button = null;
-        private Gtk.Button? confirm_delete_button = null;
+        private Gtk.Button? confirm_button = null;
 
         private Gtk.Button? restore_button = null;
         private Gtk.Button? delete_button = null;
@@ -83,14 +85,12 @@ namespace TrashApplet {
             confirmation_box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 
             confirmation_text = new Gtk.Label("");
-            confirmation_text.set_markup("<b>Really delete all items from the trash?</b>");
             confirmation_text.halign = Gtk.Align.CENTER;
             confirmation_text.valign = Gtk.Align.CENTER;
             confirmation_text.justify = Gtk.Justification.LEFT;
             confirmation_text.wrap = true;
 
             confirmation_warning = new Gtk.Label("");
-            confirmation_warning.set_markup("<b>This operation cannot be undone!</b>");
             confirmation_warning.halign = Gtk.Align.CENTER;
             confirmation_warning.valign = Gtk.Align.CENTER;
             confirmation_warning.justify = Gtk.Justification.LEFT;
@@ -104,13 +104,13 @@ namespace TrashApplet {
             confirmation_controls.height_request = 40;
 
             go_back_button = new Gtk.Button.with_label("No");
-            confirm_delete_button = new Gtk.Button.with_label("Yes");
+            confirm_button = new Gtk.Button.with_label("Yes");
 
             confirmation_view.pack_start(generate_title_widget(), false, false, 0);
             confirmation_view.pack_start(new Gtk.Separator(Gtk.Orientation.HORIZONTAL), false, false, 0);
             confirmation_view.pack_start(confirmation_box, true, true, 20);
             confirmation_controls.pack_start(go_back_button);
-            confirmation_controls.pack_end(confirm_delete_button);
+            confirmation_controls.pack_end(confirm_button);
             confirmation_view.pack_end(confirmation_controls, false, false, 0);
 
             /* End view creation */
@@ -181,12 +181,12 @@ namespace TrashApplet {
         private void apply_button_styles() {
             restore_button.get_style_context().add_class("flat");
             delete_button.get_style_context().add_class("flat");
-            confirm_delete_button.get_style_context().add_class("destructive-action");
+            confirm_button.get_style_context().add_class("destructive-action");
 
             restore_button.get_style_context().remove_class("button");
             delete_button.get_style_context().remove_class("button");
             go_back_button.get_style_context().remove_class("button");
-            confirm_delete_button.get_style_context().remove_class("button");
+            confirm_button.get_style_context().remove_class("button");
         }
 
         private void set_buttons_sensitive(bool is_sensitive) {
@@ -197,6 +197,8 @@ namespace TrashApplet {
         private void connect_signals() {
             /* Buttons */
             delete_button.clicked.connect(() => { // Delete all button clicked
+                restoring = false;
+                set_confirmation_text();
                 set_page("confirmation");
             });
 
@@ -204,17 +206,24 @@ namespace TrashApplet {
                 set_page("main");
             });
 
-            confirm_delete_button.clicked.connect(() => { // Confirm deletion button in confirmation dialog
-                trash_bin_items.get_values().foreach((item) => {
-                    trash_handler.delete_file(item.file_name);
-                });
+            confirm_button.clicked.connect(() => { // Confirm deletion button in confirmation dialog
+                if (restoring) {
+                    trash_bin_items.get_values().foreach((item) => {
+                        trash_handler.restore_file(item.file_name, item.file_path);
+                    });
+                } else {
+                    trash_bin_items.get_values().foreach((item) => {
+                        trash_handler.delete_file(item.file_name);
+                    });
+                }
+
                 set_page("main");
             });
 
             restore_button.clicked.connect(() => { // Restore all button was clicked
-                trash_bin_items.get_values().foreach((item) => {
-                    trash_handler.restore_file(item.file_name, item.file_path);
-                });
+                restoring = true;
+                set_confirmation_text();
+                set_page("confirmation");
             });
 
             /* Trash signals */
@@ -227,6 +236,16 @@ namespace TrashApplet {
                 this.items_count.label = "Your trash bin is currently empty!";
             } else {
                 this.items_count.set_markup("Currently <b>%u</b> item(s) in trash.".printf(trash_bin_items.size()));
+            }
+        }
+
+        private void set_confirmation_text() {
+            if (restoring) {
+                confirmation_text.set_markup("<b>%s</b>".printf("Really restore all items in the trash?"));
+                confirmation_warning.set_markup("");
+            } else {
+                confirmation_text.set_markup("<b>%s</b>".printf("Really delete all items from the trash?"));
+                confirmation_warning.set_markup("<b>%s</b>".printf("This operation cannot be undone!"));
             }
         }
 
