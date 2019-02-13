@@ -127,9 +127,9 @@ namespace TrashApplet {
             this.restoring = restore;
 
             if (restore) {
-                revealer_text.set_markup("<b>%s</b>".printf("Really restore this file?"));
+                revealer_text.set_markup("<b>%s</b>".printf("Really restore this item?"));
             } else {
-                revealer_text.set_markup("<b>%s</b>".printf("Really delete this file?"));
+                revealer_text.set_markup("<b>%s</b>".printf("Really delete this item?"));
             }
 
             restore_button.sensitive = false;
