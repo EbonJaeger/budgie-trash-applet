@@ -1,4 +1,4 @@
-namespace TrashApplet { 
+namespace TrashApplet.Widgets { 
 
     public class TrashItem : Gtk.Box {
 

@@ -1,6 +1,6 @@
-namespace TrashApplet {
+namespace TrashApplet.Widgets {
 
-    public class TrashPopover : Budgie.Popover {
+    public class MainPopover : Budgie.Popover {
 
         private HashTable<string, TrashItem> trash_bin_items;
         private TrashHandler trash_handler;
@@ -31,7 +31,7 @@ namespace TrashApplet {
         /**
          * Constructor
          */
-        public TrashPopover(Gtk.Widget? parent, TrashHandler trash_handler) {
+        public MainPopover(Gtk.Widget? parent, TrashHandler trash_handler) {
             Object(relative_to: parent);
             this.trash_handler = trash_handler;
             width_request = 300;

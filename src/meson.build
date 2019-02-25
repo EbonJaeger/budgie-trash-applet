@@ -15,9 +15,9 @@ applet_trash_deps = [
 
 applet_trash_sources =[
     'TrashApplet.vala',
-    'TrashPopover.vala',
-    'TrashIconButton.vala',
-    'TrashItem.vala',
+    'Widgets/MainPopover.vala',
+    'Widgets/IconButton.vala',
+    'Widgets/TrashItem.vala',
     'TrashHandler.vala'
 ]
 

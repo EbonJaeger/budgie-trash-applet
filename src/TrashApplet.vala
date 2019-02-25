@@ -10,8 +10,8 @@ public class Plugin : GLib.Object, Budgie.Plugin {
 public class Applet : Budgie.Applet {
 
     private Gtk.EventBox? event_box = null;
-    private TrashIconButton? icon_button = null;
-    private TrashPopover? popover = null;
+    private Widgets.IconButton? icon_button = null;
+    private Widgets.MainPopover? popover = null;
 
     private TrashHandler? trash_handler = null;
 
@@ -27,12 +27,12 @@ public class Applet : Budgie.Applet {
 
         // Create the main layout
         event_box = new Gtk.EventBox();
-        this.icon_button = new TrashIconButton(trash_handler);
+        this.icon_button = new Widgets.IconButton(trash_handler);
         event_box.add(icon_button);
 
         this.add(event_box);
 
-        this.popover = new TrashPopover(icon_button, trash_handler);
+        this.popover = new Widgets.MainPopover(icon_button, trash_handler);
         popover.set_page("main");
 
         trash_handler.get_current_trash_items();
