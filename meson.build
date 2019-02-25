@@ -3,6 +3,24 @@ project('budgie-trash-applet',
         version: '0.0.1',
 )
 
+am_cflags = [
+    '-fstack-protector',
+    '-pedantic',
+    '-Wstrict-prototypes',
+    '-Wundef',
+    '-Werror-implicit-function-declaration',
+    '-Wformat',
+    '-Wformat-security',
+    '-Werror=format-security',
+    '-Wconversion',
+    '-Wunused-variable',
+    '-Wunreachable-code',
+    '-Wall',
+    '-W'
+]
+
+add_global_arguments(am_cflags, language: 'c')
+
 # Dependencies
 dep_budgie = dependency('budgie-1.0', version: '>= 2')
 dep_gtk3 = dependency('gtk+-3.0', version: '>= 3.22.0')
