@@ -8,6 +8,7 @@ namespace TrashApplet.Widgets {
 
         /* Widgets */
         private Gtk.Box? store_header = null;
+        private Gtk.Image? drive_icon = null;
         private Gtk.Label? store_label = null;
         private Gtk.Button? restore_button = null;
         private Gtk.Button? delete_button = null;
@@ -29,7 +30,14 @@ namespace TrashApplet.Widgets {
             /* Widget initialization */
             store_header = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
             store_header.height_request = 32;
+            store_header.tooltip_text = trash_store.get_drive_name();
+            drive_icon = new Gtk.Image.from_gicon(trash_store.get_drive_icon(), Gtk.IconSize.SMALL_TOOLBAR);
             store_label = new Gtk.Label(trash_store.get_drive_name());
+            store_label.max_width_chars = 30;
+            store_label.ellipsize = Pango.EllipsizeMode.END;
+            store_label.halign = Gtk.Align.START;
+            store_label.justify = Gtk.Justification.LEFT;
+            store_header.pack_start(drive_icon, false, false, 10);
             store_header.pack_start(store_label, true, true, 0);
 
             restore_button = new Gtk.Button.from_icon_name("edit-undo-symbolic", Gtk.IconSize.SMALL_TOOLBAR);

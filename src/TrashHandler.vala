@@ -11,6 +11,7 @@ namespace TrashApplet {
         private File info_dir;
 
         private string drive_name;
+        private Icon drive_icon;
 
         private FileMonitor trash_monitor;
 
@@ -20,10 +21,11 @@ namespace TrashApplet {
         public signal void trash_added(string file_name, string file_path, GLib.Icon file_icon, bool is_directory);
         public signal void trash_removed(string file_name, bool is_empty);
 
-        public TrashStore(File trash_dir, File info_dir, string drive_name) {
+        public TrashStore(File trash_dir, File info_dir, string drive_name, Icon drive_icon) {
             this.trash_dir = trash_dir;
             this.info_dir = info_dir;
             this.drive_name = drive_name;
+            this.drive_icon = drive_icon;
 
             try {
                 this.trash_monitor = trash_dir.monitor_directory(FileMonitorFlags.WATCH_MOVES);
@@ -70,6 +72,10 @@ namespace TrashApplet {
 
         public string get_drive_name() {
             return this.drive_name;
+        }
+
+        public Icon get_drive_icon() {
+            return this.drive_icon;
         }
 
         /**
@@ -216,7 +222,8 @@ namespace TrashApplet {
             // Set up the main trash store
             var trash_dir = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/files");
             var info_dir = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/info");
-            var default_trash_store = new TrashStore(trash_dir, info_dir, "This PC");
+            var icon = Icon.new_for_string("drive-harddisk-symbolic");
+            var default_trash_store = new TrashStore(trash_dir, info_dir, "This PC", icon);
             this.trash_stores.insert("default", default_trash_store);
 
             // TODO: Initialize any other trash stores that are currently present
