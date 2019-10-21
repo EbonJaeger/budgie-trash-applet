@@ -10,7 +10,8 @@ custom_target(
 applet_trash_deps = [
     dep_budgie,
     dep_gtk3,
-    dep_glib
+    dep_glib,
+    dep_accountsservice
 ]
 
 applet_trash_sources =[
@@ -18,12 +19,15 @@ applet_trash_sources =[
     'Widgets/MainPopover.vala',
     'Widgets/IconButton.vala',
     'Widgets/TrashItem.vala',
+    'Widgets/TrashStoreWidget.vala',
     'TrashHandler.vala'
 ]
 
 bta_vala_args = [
     '--pkg', 'gtk+-3.0',
-    '--pkg', 'glib-2.0'
+    '--pkg', 'glib-2.0',
+    '--pkg', 'accountsservice',
+    '--vapidir', join_paths(meson.source_root(), 'vapi')
 ]
 
 shared_library(

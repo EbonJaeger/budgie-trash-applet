@@ -25,6 +25,7 @@ add_global_arguments(am_cflags, language: 'c')
 dep_budgie = dependency('budgie-1.0', version: '>= 2')
 dep_gtk3 = dependency('gtk+-3.0', version: '>= 3.22.0')
 dep_glib = dependency('glib-2.0', version: '>= 2.46.0')
+dep_accountsservice = dependency('accountsservice', version: '>= 0.6.40')
 
 intltool = find_program('intltool-merge')
 

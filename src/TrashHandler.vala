@@ -1,9 +1,17 @@
-namespace TrashApplet { 
+namespace TrashApplet {
 
-    public class TrashHandler {
-
+    /**
+     * TrashStore represents a trash bin on the user's system.
+     * 
+     * Removable drives may have their own trash locations that should be tracked,
+     * along with the user's main trash bin.
+     */
+    public class TrashStore {
         private File trash_dir;
         private File info_dir;
+
+        private string drive_name;
+
         private FileMonitor trash_monitor;
 
         private int trash_count = 0;
@@ -12,59 +20,27 @@ namespace TrashApplet {
         public signal void trash_added(string file_name, string file_path, GLib.Icon file_icon, bool is_directory);
         public signal void trash_removed(string file_name, bool is_empty);
 
-        public TrashHandler() {
-            this.trash_dir = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/files");
-            this.info_dir = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/info");
+        public TrashStore(File trash_dir, File info_dir, string drive_name) {
+            this.trash_dir = trash_dir;
+            this.info_dir = info_dir;
+            this.drive_name = drive_name;
 
             try {
                 this.trash_monitor = trash_dir.monitor_directory(FileMonitorFlags.WATCH_MOVES);
             } catch (Error e) {
-                warning("Unable to create TrashHandler: %s", e.message);
+                warning("Unable to create a TrashStore: %s", e.message);
                 return;
             }
 
             this.trash_monitor.changed.connect(handle_trash_changed);
         }
 
-        private void handle_trash_changed(File file, File? other_file, FileMonitorEvent event) {
-            switch (event) {
-                case FileMonitorEvent.MOVED_IN: // A file was just added to the trash
-                    var file_name = file.get_basename();
-                    var file_path = get_path_from_trashinfo(file_name);
-                    var attributes = FileAttribute.STANDARD_ICON + "," + FileAttribute.STANDARD_TYPE;
-
-                    GLib.Icon file_icon = null;
-                    bool is_directory = false;
-                    try {
-                        var file_info = file.query_info(attributes, FileQueryInfoFlags.NONE);
-                        file_icon = file_info.get_icon();
-
-                        if (file_info.get_file_type() == FileType.DIRECTORY) {
-                            is_directory = true;
-                        }
-                    } catch (Error e) {
-                        warning("Unable to get icon from file info for file '%s': %s", file_name, e.message);
-                        break;
-                    }
-
-                    trash_count++;
-                    trash_added(file_name, file_path, file_icon, is_directory);
-                    break;
-                case FileMonitorEvent.MOVED_OUT: // A file was moved out of the trash
-                    var file_name = file.get_basename();
-                    trash_count--;
-                    trash_removed(file_name, (trash_count == 0));
-                    break;
-                case FileMonitorEvent.DELETED: // A file was permanently deleted from the trash
-                    var file_name = file.get_basename();
-                    trash_count--;
-                    trash_removed(file_name, (trash_count == 0));
-                    break;
-                default: // We don't care about anything else
-                    break;
-            }
-        }
-
+        /**
+         * Gets all of the current items in this store's trash bin.
+         * 
+         * A `trash_added` signal is emitted for each found trash item so
+         * the UI can add each one accordingly.
+         */
         public void get_current_trash_items() {
             try {
                 var attributes = FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_ICON + "," + FileAttribute.STANDARD_TYPE;
@@ -92,26 +68,8 @@ namespace TrashApplet {
             }
         }
 
-        private string? get_path_from_trashinfo(string file_name) {
-            File info_file = File.new_for_path(info_dir.get_path() + "/" + file_name + ".trashinfo");
-            string line = null;
-            string path = null;
-
-            try {
-                var dis = new DataInputStream(info_file.read());
-                while ((line = dis.read_line()) != null) { // Read the lines of the .trashinfo file
-                    if (!line.has_prefix("Path=")) { // If its not the path line, skip it
-                        continue;
-                    }
-
-                    path = line.substring(5); // This cuts out the Path= prefix in the line
-                    break;
-                }
-            } catch (Error e) {
-                warning("Error reading data from .trashinfo: %s", e.message);
-            }
-
-            return path;
+        public string get_drive_name() {
+            return this.drive_name;
         }
 
         /**
@@ -175,6 +133,103 @@ namespace TrashApplet {
             } catch (Error e) {
                 warning("Unable to restore '%s' to '%s': %s", file_name, restore_path, e.message);
             }
+        }
+
+        private void handle_trash_changed(File file, File? other_file, FileMonitorEvent event) {
+            switch (event) {
+                case FileMonitorEvent.MOVED_IN: // A file was just added to the trash
+                    var file_name = file.get_basename();
+                    var file_path = get_path_from_trashinfo(file_name);
+                    var attributes = FileAttribute.STANDARD_ICON + "," + FileAttribute.STANDARD_TYPE;
+
+                    GLib.Icon file_icon = null;
+                    bool is_directory = false;
+                    try {
+                        var file_info = file.query_info(attributes, FileQueryInfoFlags.NONE);
+                        file_icon = file_info.get_icon();
+
+                        if (file_info.get_file_type() == FileType.DIRECTORY) {
+                            is_directory = true;
+                        }
+                    } catch (Error e) {
+                        warning("Unable to get icon from file info for file '%s': %s", file_name, e.message);
+                        break;
+                    }
+
+                    trash_count++;
+                    trash_added(file_name, file_path, file_icon, is_directory);
+                    break;
+                case FileMonitorEvent.MOVED_OUT: // A file was moved out of the trash
+                    var file_name = file.get_basename();
+                    trash_count--;
+                    trash_removed(file_name, (trash_count == 0));
+                    break;
+                case FileMonitorEvent.DELETED: // A file was permanently deleted from the trash
+                    var file_name = file.get_basename();
+                    trash_count--;
+                    trash_removed(file_name, (trash_count == 0));
+                    break;
+                default: // We don't care about anything else
+                    break;
+            }
+        }
+
+        private string? get_path_from_trashinfo(string file_name) {
+            File info_file = File.new_for_path(info_dir.get_path() + "/" + file_name + ".trashinfo");
+            string line = null;
+            string path = null;
+
+            try {
+                var dis = new DataInputStream(info_file.read());
+                while ((line = dis.read_line()) != null) { // Read the lines of the .trashinfo file
+                    if (!line.has_prefix("Path=")) { // If its not the path line, skip it
+                        continue;
+                    }
+
+                    path = line.substring(5); // This cuts out the Path= prefix in the line
+                    break;
+                }
+            } catch (Error e) {
+                warning("Error reading data from .trashinfo: %s", e.message);
+            }
+
+            return path;
+        }
+    }
+
+    public class TrashHandler {
+        private HashTable<string, TrashStore> trash_stores;
+        private uint? uid; // UID of the current user
+
+        /* Signals */
+        public signal void trash_store_added(TrashStore trash_store);
+        public signal void trash_store_removed(TrashStore trash_store);
+
+        public TrashHandler() {
+            this.trash_stores = new HashTable<string, TrashStore>(str_hash, str_equal);
+
+            var user_manager = Act.UserManager.get_default();
+            var user_name = GLib.Environment.get_user_name();
+            this.uid = user_manager.get_user(user_name).get_uid();
+            warning("Got UID '%u'", uid);
+
+            // Set up the main trash store
+            var trash_dir = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/files");
+            var info_dir = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/info");
+            var default_trash_store = new TrashStore(trash_dir, info_dir, "This PC");
+            this.trash_stores.insert("default", default_trash_store);
+
+            // TODO: Initialize any other trash stores that are currently present
+        }
+
+        public void get_current_trash_items() {
+            trash_stores.get_values().foreach((entry) => {
+                entry.get_current_trash_items();
+            });
+        }
+
+        public List<weak TrashStore> get_trash_stores() {
+            return trash_stores.get_values();
         }
     } // End class
 } // End namespace

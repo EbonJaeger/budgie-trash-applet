@@ -3,7 +3,6 @@ namespace TrashApplet.Widgets {
     public class TrashItem : Gtk.Box {
 
         /* State */
-        private TrashHandler trash_handler;
         private bool restoring = false;
 
         public string file_path { get; private set; }
@@ -31,9 +30,8 @@ namespace TrashApplet.Widgets {
         /**
          * Constructor
          */
-        public TrashItem(TrashHandler trash_handler, string file_path, string file_name, GLib.Icon glib_icon, bool is_directory) {
+        public TrashItem(string file_path, string file_name, GLib.Icon glib_icon, bool is_directory) {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
-            this.trash_handler = trash_handler;
             this.file_path = file_path;
             this.file_name = file_name;
             this.is_directory = is_directory;

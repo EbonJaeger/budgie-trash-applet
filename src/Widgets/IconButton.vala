@@ -18,17 +18,6 @@ namespace TrashApplet.Widgets {
 
             this.get_style_context().add_class("flat");
             this.get_style_context().remove_class("button");
-
-            // Hook up signals
-            trash_handler.trash_added.connect(() => { // Trash was added
-                set_image(icon_full);
-            });
-
-            trash_handler.trash_removed.connect((file_name, is_empty) => { // Trash was removed
-                if (is_empty) {
-                    set_image(icon_empty);
-                }
-            });
         }
     } // End class
 } // End namespace
