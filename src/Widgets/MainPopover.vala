@@ -3,12 +3,14 @@ namespace TrashApplet.Widgets {
     public class MainPopover : Budgie.Popover {
 
         private TrashHandler trash_handler;
+        private HashTable<string, TrashStoreWidget> trash_stores;
 
         /* Widgets */
         private Gtk.Stack? stack = null;
         private Gtk.Box? main_view = null;
         private Gtk.Label? title_label = null;
         private Gtk.ScrolledWindow? scroller = null;
+        private Gtk.ListBox? drive_box = null;
 
         /**
          * Constructor
@@ -16,6 +18,7 @@ namespace TrashApplet.Widgets {
         public MainPopover(Gtk.Widget? parent, TrashHandler trash_handler) {
             Object(relative_to: parent);
             this.trash_handler = trash_handler;
+            this.trash_stores = new HashTable<string, TrashStoreWidget>(str_hash, str_equal);
             width_request = 300;
 
             /* Views */
@@ -28,6 +31,13 @@ namespace TrashApplet.Widgets {
             scroller.min_content_height = 300;
             scroller.max_content_height = 300;
             scroller.hscrollbar_policy = Gtk.PolicyType.NEVER;
+
+            drive_box = new Gtk.ListBox();
+            drive_box.height_request = 300;
+            drive_box.activate_on_single_click = true;
+            drive_box.selection_mode = Gtk.SelectionMode.NONE;
+
+            scroller.add(drive_box);
 
             this.main_view.pack_start(generate_title_widget(), false, false, 0);
             this.main_view.pack_start(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
@@ -43,11 +53,11 @@ namespace TrashApplet.Widgets {
             add(this.stack);
 
             // Look for any starting stores
-            warning("Number of trash stores: %u", trash_handler.get_trash_stores().length());
             if (trash_handler.get_trash_stores().length() > 0) {
                 trash_handler.get_trash_stores().foreach((trash_store) => {
                     var store_widget = new TrashStoreWidget(trash_store);
-                    scroller.add(store_widget);
+                    drive_box.insert(store_widget, -1);
+                    trash_stores.insert(trash_store.get_drive_name(), store_widget);
                 });
             }
         }
@@ -69,16 +79,21 @@ namespace TrashApplet.Widgets {
         private void connect_signals() {
             trash_handler.trash_store_added.connect((trash_store) => { // Trash store was added
                 var store_widget = new TrashStoreWidget(trash_store);
-                scroller.add(store_widget);
+                trash_store.get_current_trash_items();
+                drive_box.insert(store_widget, -1);
+                trash_stores.insert(trash_store.get_drive_name(), store_widget);
             });
 
             trash_handler.trash_store_removed.connect((trash_store) => { // Trash store was removed
-                scroller.foreach((store) => {
+                drive_box.foreach((store) => {
                     if (store.get_name() == trash_store.get_drive_name()) {
-                        scroller.remove(store);
+                        drive_box.remove(store);
                         return;
                     }
                 });
+                var store = trash_stores.get(trash_store.get_drive_name());
+                drive_box.remove(store.get_parent());
+                trash_stores.remove(trash_store.get_drive_name());
             });
         }
     } // End class

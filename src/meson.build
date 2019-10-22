@@ -10,8 +10,7 @@ custom_target(
 applet_trash_deps = [
     dep_budgie,
     dep_gtk3,
-    dep_glib,
-    dep_accountsservice
+    dep_glib
 ]
 
 applet_trash_sources =[
@@ -25,9 +24,7 @@ applet_trash_sources =[
 
 bta_vala_args = [
     '--pkg', 'gtk+-3.0',
-    '--pkg', 'glib-2.0',
-    '--pkg', 'accountsservice',
-    '--vapidir', join_paths(meson.source_root(), 'vapi')
+    '--pkg', 'glib-2.0'
 ]
 
 shared_library(

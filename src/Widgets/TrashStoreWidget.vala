@@ -27,6 +27,10 @@ namespace TrashApplet.Widgets {
             this.trash_store = trash_store;
             trash_items = new HashTable<string, TrashItem>(str_hash, str_equal);
 
+            margin_start = 5;
+            margin_top = 5;
+            margin_bottom = 5;
+
             /* Widget initialization */
             store_header = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
             store_header.height_request = 32;
@@ -65,7 +69,6 @@ namespace TrashApplet.Widgets {
             revealer.add(revealer_container);
 
             file_box = new Gtk.ListBox();
-            file_box.height_request = 300;
             file_box.activate_on_single_click = true;
             file_box.selection_mode = Gtk.SelectionMode.NONE;
             file_box.set_sort_func(sort_rows);
@@ -75,7 +78,7 @@ namespace TrashApplet.Widgets {
 
             pack_start(store_header);
             pack_start(revealer, false, false, 0);
-            pack_end(file_box);
+            pack_start(file_box);
             show_all();
         }
 
