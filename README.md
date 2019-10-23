@@ -1,7 +1,7 @@
 # Budgie Trash Applet
 Manage items in your trash bin right from the Budgie panel.
 
-![Main View](https://i.imgur.com/vEH0ZASm.png) ![Confirm Delete](https://i.imgur.com/fSFhYMZm.png) ![Confirm Delete All](https://i.imgur.com/ZlmmJwnm.png)
+![Main View](https://i.imgur.com/riBmriJ.png) ![Confirm Delete All](https://i.imgur.com/DW7ZlRj.png) ![Confirm Restore](https://i.imgur.com/QZkqu07.png)
 
 ---
 
@@ -9,7 +9,6 @@ Manage items in your trash bin right from the Budgie panel.
 
 ### Dependencies
 ```
-accountsservice >= 0.6.40
 budgie-1.0 >= 2
 gtk+-3.0 >= 3.22
 glib-2.0 >= 2.46.0
@@ -17,7 +16,6 @@ vala
 ```
 You can get these on Solus with the following packages:
 ```
-accountsservice-devel
 budgie-desktop-devel
 libgtk-3-devel
 glib2-devel
