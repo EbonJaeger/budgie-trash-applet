@@ -36,7 +36,7 @@ namespace TrashApplet.Widgets {
             this.file_name = file_name;
             this.is_directory = is_directory;
 
-            this.margin = 0;
+            get_style_context().add_class("trash-item");
 
             /* Create Widget stuff */
             file_container = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);

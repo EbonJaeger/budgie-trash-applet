@@ -26,13 +26,11 @@ namespace TrashApplet.Widgets {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
             this.trash_store = trash_store;
             trash_items = new HashTable<string, TrashItem>(str_hash, str_equal);
-
-            margin_start = 5;
-            margin_top = 5;
-            margin_bottom = 5;
+            get_style_context().add_class("trash-store-widget");
 
             /* Widget initialization */
             store_header = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+            store_header.get_style_context().add_class("trash-store-header");
             store_header.height_request = 32;
             store_header.tooltip_text = trash_store.get_drive_name();
             drive_icon = new Gtk.Image.from_gicon(trash_store.get_drive_icon(), Gtk.IconSize.SMALL_TOOLBAR);
@@ -46,8 +44,9 @@ namespace TrashApplet.Widgets {
 
             restore_button = new Gtk.Button.from_icon_name("edit-undo-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
             restore_button.tooltip_text = "Restore all items";
-            delete_button = new Gtk.Button.from_icon_name("user-trash-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
+            delete_button = new Gtk.Button.from_icon_name("list-remove-all-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
             delete_button.tooltip_text = "Delete all items";
+            set_buttons_sensitive(false);
             store_header.pack_end(delete_button, false, false, 0);
             store_header.pack_end(restore_button, false, false, 0);
 
@@ -69,6 +68,8 @@ namespace TrashApplet.Widgets {
             revealer.add(revealer_container);
 
             file_box = new Gtk.ListBox();
+            file_box.get_style_context().add_class("trash-file-box");
+            file_box.get_style_context().add_class("empty");
             file_box.activate_on_single_click = true;
             file_box.selection_mode = Gtk.SelectionMode.NONE;
             file_box.set_sort_func(sort_rows);
@@ -92,7 +93,7 @@ namespace TrashApplet.Widgets {
             var item = new TrashItem(file_path, file_name, file_icon, is_directory);
             trash_items.insert(file_name, item);
             file_box.insert(item, -1);
-            //set_count_label();
+            file_box.get_style_context().remove_class("empty");
             set_buttons_sensitive(true);
 
             item.on_delete.connect((file_name) => {
@@ -116,6 +117,7 @@ namespace TrashApplet.Widgets {
 
             //set_count_label();
             if (trash_items.size() == 0) { // No items in trash; buttons should no longer be sensitive
+                file_box.get_style_context().add_class("empty");
                 set_buttons_sensitive(false);
             }
         }

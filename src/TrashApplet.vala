@@ -25,6 +25,16 @@ public class Applet : Budgie.Applet {
         // Set up our trash handler
         this.trash_handler = new TrashHandler();
 
+        // Load CSS styling
+        Gdk.Screen screen = this.get_display().get_default_screen();
+        Gtk.CssProvider provider = new Gtk.CssProvider();
+        string style_file = "/com/github/EbonJaeger/budgie-trash-applet/style/style.css";
+        GLib.Timeout.add(1000, () => {
+            provider.load_from_resource(style_file);
+            Gtk.StyleContext.add_provider_for_screen(screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+            return false;
+        });
+
         // Create the main layout
         event_box = new Gtk.EventBox();
         this.icon_button = new Widgets.IconButton(trash_handler);

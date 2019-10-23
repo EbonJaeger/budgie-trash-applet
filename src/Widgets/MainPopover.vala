@@ -8,6 +8,7 @@ namespace TrashApplet.Widgets {
         /* Widgets */
         private Gtk.Stack? stack = null;
         private Gtk.Box? main_view = null;
+        private Gtk.Box? title_header = null;
         private Gtk.Label? title_label = null;
         private Gtk.ScrolledWindow? scroller = null;
         private Gtk.ListBox? drive_box = null;
@@ -27,20 +28,26 @@ namespace TrashApplet.Widgets {
 
             this.main_view = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 
+            title_header = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+            title_header.height_request = 32;
+            title_header.get_style_context().add_class("trash-applet-header");
+            title_label = new Gtk.Label("Trash");
+            title_header.pack_start(title_label, true, true, 0);
+
             scroller = new Gtk.ScrolledWindow(null, null);
             scroller.min_content_height = 300;
             scroller.max_content_height = 300;
-            scroller.hscrollbar_policy = Gtk.PolicyType.NEVER;
+            scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
 
             drive_box = new Gtk.ListBox();
             drive_box.height_request = 300;
+            drive_box.get_style_context().add_class("trash-applet-list");
             drive_box.activate_on_single_click = true;
             drive_box.selection_mode = Gtk.SelectionMode.NONE;
 
             scroller.add(drive_box);
 
-            this.main_view.pack_start(generate_title_widget(), false, false, 0);
-            this.main_view.pack_start(new Gtk.Separator(Gtk.Orientation.HORIZONTAL));
+            this.main_view.pack_start(title_header, false, false, 0);
             this.main_view.pack_start(scroller);
             /* End view creation */
 
@@ -60,16 +67,6 @@ namespace TrashApplet.Widgets {
                     trash_stores.insert(trash_store.get_drive_name(), store_widget);
                 });
             }
-        }
-
-        private Gtk.Box generate_title_widget() {
-            var title_area = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-            title_area.height_request = 32;
-            title_label = new Gtk.Label("");
-            title_label.set_markup("<b>Trash</b>");
-            title_area.pack_start(title_label, true, true, 0);
-
-            return title_area;
         }
 
         public void set_page(string page) {
