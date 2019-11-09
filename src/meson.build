@@ -27,6 +27,7 @@ applet_trash_sources =[
     'Widgets/TrashItem.vala',
     'Widgets/TrashStoreWidget.vala',
     'TrashHandler.vala',
+    'TrashStore.vala',
     res
 ]
 
