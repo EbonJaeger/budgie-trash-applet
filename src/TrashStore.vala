@@ -7,6 +7,7 @@ namespace TrashApplet {
      * along with the user's main trash bin.
      */
     public class TrashStore {
+        private Applet applet;
         private File trash_dir;
         private File info_dir;
 
@@ -22,7 +23,8 @@ namespace TrashApplet {
         public signal void trash_added(string file_name, string file_path, GLib.Icon file_icon, bool is_directory);
         public signal void trash_removed(string file_name, bool is_empty);
 
-        public TrashStore(File trash_dir, File info_dir, string drive_name, string? drive_path, Icon drive_icon) {
+        public TrashStore(Applet applet, File trash_dir, File info_dir, string drive_name, string? drive_path, Icon drive_icon) {
+            this.applet = applet;
             this.trash_dir = trash_dir;
             this.info_dir = info_dir;
             this.drive_name = drive_name;
@@ -65,7 +67,7 @@ namespace TrashApplet {
                     }
 
                     trash_count++;
-                    trash_added(info.get_name(), path, info.get_icon(), is_directory);
+                    trash_added(info.get_name(), path.replace("%20", " "), info.get_icon(), is_directory);
                 }
             } catch (Error e) {
                 warning("Unable to create trash item: %s", e.message);
@@ -98,6 +100,7 @@ namespace TrashApplet {
                     delete_directory(file);
                 } catch (Error e) {
                     warning("Unable to delete directory '%s' in trash: %s", file_name, e.message);
+                    applet.show_notification("Error deleting directory", "Unable to permanently delete '%s': %s".printf(file_name, e.message));
                     return;
                 }
             }
@@ -107,6 +110,7 @@ namespace TrashApplet {
                 info_file.delete();
             } catch (Error e) {
                 warning("Unable to delete '%s': %s", file_name, e.message);
+                applet.show_notification("Error deleting item", "Unable to permanently delete '%s': %s".printf(file_name, e.message));
             }
         }
 
@@ -133,19 +137,21 @@ namespace TrashApplet {
         public void restore_file(string file_name, string restore_path) {
             var file = File.new_for_path(trash_dir.get_path() + "/" + file_name);
             var info_file = File.new_for_path(info_dir.get_path() + "/" + file_name + ".trashinfo");
-            
+            var rpath = restore_path.replace("%20", " "); // Handling spaces in 2019.
+
             File destination;
             if (drive_path != null) {
-                destination = File.new_for_path(drive_path + "/" + restore_path);
+                destination = File.new_for_path(drive_path + "/" + rpath);
             } else {
-                destination = File.new_for_path(restore_path);
+                destination = File.new_for_path(rpath);
             }
 
             try {
                 file.move(destination, FileCopyFlags.NONE);
                 info_file.delete();
             } catch (Error e) {
-                warning("Unable to restore '%s' to '%s': %s", file_name, restore_path, e.message);
+                warning("Unable to restore '%s' to '%s': %s", file_name, rpath, e.message);
+                applet.show_notification("Error restoring item", "Unable to restore '%s' to %s: %s".printf(file_name, rpath, e.message));
             }
         }
 

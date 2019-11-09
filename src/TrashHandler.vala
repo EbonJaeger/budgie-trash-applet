@@ -11,6 +11,7 @@ namespace TrashApplet {
      * trash bin on creation.
      */
     public class TrashHandler {
+        private Applet applet;
         private HashTable<string, TrashStore> trash_stores;
         private VolumeMonitor monitor;
         private int uid;
@@ -31,14 +32,15 @@ namespace TrashApplet {
          */
         public signal void trash_store_removed(TrashStore trash_store);
 
-        public TrashHandler() {
+        public TrashHandler(Applet applet) {
+            this.applet = applet;
             this.trash_stores = new HashTable<string, TrashStore>(str_hash, str_equal);
 
             // Set up the main trash store
             var default_trash_dir = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/files");
             var default_info_dir = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/info");
             var icon = Icon.new_for_string("drive-harddisk-symbolic");
-            var default_trash_store = new TrashStore(default_trash_dir, default_info_dir, "This PC", null, icon);
+            var default_trash_store = new TrashStore(applet, default_trash_dir, default_info_dir, "This PC", null, icon);
             this.trash_stores.insert("default", default_trash_store);
 
             // Get the current user's UID to get their trash directory on removable drives
@@ -77,7 +79,7 @@ namespace TrashApplet {
                         var dir = File.new_for_path(location.get_path() + "/" + info.get_name());
                         var trash_dir = File.new_for_path(dir.get_path() + "/files");
                         var info_dir = File.new_for_path(dir.get_path() + "/info");
-                        var trash_store = new TrashStore(trash_dir, info_dir, mount.get_name(), mount.get_default_location().get_path(), mount.get_symbolic_icon());
+                        var trash_store = new TrashStore(applet, trash_dir, info_dir, mount.get_name(), mount.get_default_location().get_path(), mount.get_symbolic_icon());
                         this.trash_stores.insert(mount.get_name(), trash_store);
                         trash_store_added(trash_store);
                         return;
@@ -85,6 +87,7 @@ namespace TrashApplet {
                 }
             } catch (Error e) {
                 warning("Error while searching for trash bin in '%s': %s", mount.get_name(), e.message);
+                applet.show_notification("Unable to mount trash bin", "Unable to mount trash for '%s': %s".printf(mount.get_name(), e.message));
                 return;
             }
         }
