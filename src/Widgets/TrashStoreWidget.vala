@@ -181,6 +181,11 @@ namespace TrashApplet.Widgets {
                 delete_button.sensitive = true;
                 revealer.set_reveal_child(false);
             });
+
+            file_box.row_activated.connect((row) => {
+                var widget = (TrashItem) row.get_child();
+                widget.toggle_info_revealer();
+            });
         }
 
         private void set_buttons_sensitive(bool is_sensitive) {

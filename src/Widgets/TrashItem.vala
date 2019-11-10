@@ -19,6 +19,11 @@ namespace TrashApplet.Widgets {
         private Gtk.Button? restore_button = null;
         private Gtk.Button? delete_button = null;
 
+        private Gtk.Revealer? info_revealer = null;
+        private Gtk.Box? info_container = null;
+        private Gtk.Label? path_label = null;
+        private Gtk.Label? date_label = null;
+
         private Gtk.Revealer? revealer = null;
         private Gtk.Box? revealer_container = null;
         private Gtk.Label? revealer_text = null;
@@ -45,7 +50,6 @@ namespace TrashApplet.Widgets {
             /* Create Widget stuff */
             file_container = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
             file_container.height_request = 32;
-            file_container.tooltip_text = file_path;
             file_icon = new Gtk.Image.from_gicon(glib_icon, Gtk.IconSize.SMALL_TOOLBAR);
             display_text = new Gtk.Label(file_name);
             display_text.max_width_chars = 30;
@@ -62,6 +66,27 @@ namespace TrashApplet.Widgets {
             file_container.pack_start(display_text, true, true, 0);
             file_container.pack_end(delete_button, false, false, 0);
             file_container.pack_end(restore_button, false, false, 0);
+
+            info_revealer = new Gtk.Revealer();
+            info_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN);
+            info_revealer.set_reveal_child(false);
+            info_revealer.get_style_context().add_class("trash-info-revealer");
+            info_container = new Gtk.Box(Gtk.Orientation.VERTICAL, 5);
+
+            path_label = new Gtk.Label("Path: %s".printf(file_path));
+            path_label.tooltip_text = file_path;
+            path_label.ellipsize = Pango.EllipsizeMode.END;
+            path_label.halign = Gtk.Align.START;
+            path_label.justify = Gtk.Justification.LEFT;
+
+            var time = deletion_time.format("%Y-%m-%d %H:%M %Z");
+            date_label = new Gtk.Label("Deleted on: %s".printf(time));
+            date_label.halign = Gtk.Align.START;
+            date_label.justify = Gtk.Justification.LEFT;
+
+            info_container.pack_start(path_label, true, true, 0);
+            info_container.pack_start(date_label, true, true, 0);
+            info_revealer.add(info_container);
 
             revealer = new Gtk.Revealer();
             revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN);
@@ -85,7 +110,16 @@ namespace TrashApplet.Widgets {
 
             pack_start(file_container);
             pack_end(revealer, false, false, 0);
+            pack_end(info_revealer, false, false, 0);
             show_all();
+        }
+
+        public void toggle_info_revealer() {
+            if (info_revealer.get_reveal_child()) { // Currently shown; hide the revealer
+                info_revealer.set_reveal_child(false);
+            } else { // Show the revealer
+                info_revealer.set_reveal_child(true);
+            }
         }
 
         private void apply_button_styles() {

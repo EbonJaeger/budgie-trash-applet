@@ -55,6 +55,16 @@
     margin: 0;
 }
 
+.trash-info-revealer {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.trash-info-revealer > box > label {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
 .trash-applet-controls {
     border-top: 1px solid mix(@theme_base_color, #000000,  0.35);
     padding-top: 5px;
