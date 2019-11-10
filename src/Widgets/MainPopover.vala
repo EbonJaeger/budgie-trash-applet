@@ -1,15 +1,9 @@
 namespace TrashApplet.Widgets {
 
-    public enum SortType {
-        NAME,
-        DATE
-    }
-
     public class MainPopover : Budgie.Popover {
 
         private TrashHandler trash_handler;
         private HashTable<string, TrashStoreWidget> trash_stores;
-        private SortType sort_type;
 
         /* Widgets */
         private Gtk.Stack? stack = null;
@@ -19,9 +13,10 @@ namespace TrashApplet.Widgets {
         private Gtk.ScrolledWindow? scroller = null;
         private Gtk.ListBox? drive_box = null;
 
-        private Gtk.Box? controls_box = null;
-        private Gtk.RadioButton? sort_name_button = null;
-        private Gtk.RadioButton? sort_date_button = null;
+        private Gtk.Box? footer = null;
+        private Gtk.Button? settings_button = null;
+
+        private SettingsView? settings_view = null;
 
         /**
          * Constructor
@@ -57,40 +52,43 @@ namespace TrashApplet.Widgets {
 
             scroller.add(drive_box);
 
-            controls_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-            controls_box.height_request = 32;
-            controls_box.get_style_context().add_class("trash-applet-controls");
-            sort_name_button = new Gtk.RadioButton.with_label(null, "A-Z");
-            sort_name_button.tooltip_text = "Sort files alphabetically";
-            sort_date_button = new Gtk.RadioButton.with_label_from_widget(sort_name_button, "Date");
-            sort_date_button.tooltip_text = "Sort files by deletion time";
-
-            sort_name_button.set_active(true);
-            sort_type = SortType.NAME;
-            controls_box.pack_start(sort_name_button, false, false, 0);
-            controls_box.pack_start(sort_date_button, false, false, 0);
+            footer = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+            footer.height_request = 32;
+            footer.get_style_context().add_class("trash-applet-footer");
+            settings_button = new Gtk.Button.from_icon_name("emblem-system-symbolic", Gtk.IconSize.BUTTON);
+            settings_button.tooltip_text = "Go to applet options";
+            settings_button.get_style_context().add_class("flat");
+            settings_button.get_style_context().remove_class("button");
+            footer.pack_start(settings_button, true, false, 0);
 
             main_view.pack_start(title_header, false, false, 0);
             main_view.pack_start(scroller);
-            main_view.pack_end(controls_box);
+            main_view.pack_end(footer);
             /* End view creation */
 
-            stack.add_named(main_view, "main");
+            settings_view = new SettingsView(this);
 
-            this.stack.show_all();
+            stack.add_named(main_view, "main");
+            stack.add_named(settings_view, "settings");
+
+            stack.show_all();
 
             connect_signals();
 
-            add(this.stack);
+            add(stack);
 
             // Look for any starting stores
             if (trash_handler.get_trash_stores().length() > 0) {
                 trash_handler.get_trash_stores().foreach((trash_store) => {
-                    var store_widget = new TrashStoreWidget(trash_store, sort_type);
+                    var store_widget = new TrashStoreWidget(trash_store, settings_view.sort_type);
                     drive_box.insert(store_widget, -1);
                     trash_stores.insert(trash_store.get_drive_name(), store_widget);
                 });
             }
+        }
+
+        public List<weak TrashStoreWidget> get_trash_store_widgets() {
+            return trash_stores.get_values();
         }
 
         public void set_page(string page) {
@@ -99,7 +97,7 @@ namespace TrashApplet.Widgets {
 
         private void connect_signals() {
             trash_handler.trash_store_added.connect((trash_store) => { // Trash store was added
-                var store_widget = new TrashStoreWidget(trash_store, sort_type);
+                var store_widget = new TrashStoreWidget(trash_store, settings_view.sort_type);
                 trash_store.get_current_trash_items();
                 drive_box.insert(store_widget, -1);
                 trash_stores.insert(trash_store.get_drive_name(), store_widget);
@@ -117,18 +115,8 @@ namespace TrashApplet.Widgets {
                 trash_stores.remove(trash_store.get_drive_name());
             });
 
-            sort_name_button.clicked.connect(() => {
-                foreach (var store in trash_stores.get_values()) {
-                    sort_type = SortType.NAME;
-                    store.set_sort_type(sort_type);
-                }
-            });
-
-            sort_date_button.clicked.connect(() => {
-                foreach (var store in trash_stores.get_values()) {
-                    sort_type = SortType.DATE;
-                    store.set_sort_type(sort_type);
-                }
+            settings_button.clicked.connect(() => {
+                set_page("settings");
             });
         }
     } // End class

@@ -24,6 +24,7 @@ applet_trash_sources =[
     'TrashApplet.vala',
     'Widgets/MainPopover.vala',
     'Widgets/IconButton.vala',
+    'Widgets/SettingsView.vala',
     'Widgets/TrashItem.vala',
     'Widgets/TrashStoreWidget.vala',
     'TrashHandler.vala',

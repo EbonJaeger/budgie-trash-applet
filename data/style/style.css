@@ -65,7 +65,16 @@
     margin-right: 5px;
 }
 
-.trash-applet-controls {
+.trash-settings-box {
+    background-color: @theme_bg_color;
+}
+
+.trash-settings-box > box > label {
+    border-bottom: 0.5px solid mix(@theme_base_color, #000000,  0.35);
+    margin: 10px;
+}
+
+.trash-applet-footer {
     border-top: 1px solid mix(@theme_base_color, #000000,  0.35);
     padding-top: 5px;
     padding-bottom: 5px;
