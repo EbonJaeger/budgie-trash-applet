@@ -54,3 +54,9 @@
 .trash-item {
     margin: 0;
 }
+
+.trash-applet-controls {
+    border-top: 1px solid mix(@theme_base_color, #000000,  0.35);
+    padding-top: 5px;
+    padding-bottom: 5px;
+}

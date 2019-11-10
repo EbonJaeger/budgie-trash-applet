@@ -1,3 +1,5 @@
+using GLib;
+
 namespace TrashApplet.Widgets { 
 
     public class TrashItem : Gtk.Box {
@@ -7,7 +9,8 @@ namespace TrashApplet.Widgets {
 
         public string file_path { get; private set; }
         public string file_name { get; private set; }
-        public bool is_directory {get; private set; }
+        public bool is_directory { get; private set; }
+        public DateTime deletion_time { get; private set; }
 
         /* Widgets */
         private Gtk.Box file_container = null;
@@ -30,10 +33,11 @@ namespace TrashApplet.Widgets {
         /**
          * Constructor
          */
-        public TrashItem(string file_path, string file_name, GLib.Icon glib_icon, bool is_directory) {
+        public TrashItem(string file_path, string file_name, Icon glib_icon, DateTime deletion_time, bool is_directory) {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
             this.file_path = file_path;
             this.file_name = file_name;
+            this.deletion_time = deletion_time;
             this.is_directory = is_directory;
 
             get_style_context().add_class("trash-item");

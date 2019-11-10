@@ -22,7 +22,7 @@ namespace TrashApplet.Widgets {
 
         private Gtk.ListBox? file_box = null;
 
-        public TrashStoreWidget(TrashStore trash_store) {
+        public TrashStoreWidget(TrashStore trash_store, SortType sort_type) {
             Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
             this.trash_store = trash_store;
             trash_items = new HashTable<string, TrashItem>(str_hash, str_equal);
@@ -72,7 +72,7 @@ namespace TrashApplet.Widgets {
             file_box.get_style_context().add_class("empty");
             file_box.activate_on_single_click = true;
             file_box.selection_mode = Gtk.SelectionMode.NONE;
-            file_box.set_sort_func(sort_rows);
+            set_sort_type(sort_type);
 
             apply_button_styles();
             connect_signals();
@@ -89,8 +89,8 @@ namespace TrashApplet.Widgets {
          * @param info The FileInfo for the newly trashed file
          * @param old_path The path that the file came from
          */
-        public void add_trash_item(string file_name, string file_path, GLib.Icon file_icon, bool is_directory) {
-            var item = new TrashItem(file_path, file_name, file_icon, is_directory);
+        public void add_trash_item(string file_name, string file_path, GLib.Icon file_icon, DateTime deletion_time, bool is_directory) {
+            var item = new TrashItem(file_path, file_name, file_icon, deletion_time, is_directory);
             trash_items.insert(file_name, item);
             file_box.insert(item, -1);
             file_box.get_style_context().remove_class("empty");
@@ -124,6 +124,17 @@ namespace TrashApplet.Widgets {
 
         public string get_name() {
             return store_label.get_label();
+        }
+
+        public void set_sort_type(SortType type) {
+            switch (type) {
+            case NAME:
+                file_box.set_sort_func(sort_by_name);
+                break;
+            case DATE:
+                file_box.set_sort_func(sort_by_date);
+                break;
+            }
         }
 
         private void apply_button_styles() {
@@ -192,7 +203,7 @@ namespace TrashApplet.Widgets {
         }
 
         /**
-         * sort_rows will determine the order that two given rows should be in.
+         * sort_by_name will determine the order that two given rows should be in.
          * 
          * Directories should be above files, and both types should be sorted alphabetically.
          * 
@@ -200,7 +211,7 @@ namespace TrashApplet.Widgets {
          * @param row2 The second row to use for comparison
          * @return < 0 if row1 should be before row2, 0 if they are equal and > 0 otherwise
          */
-        private int sort_rows(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
+        private int sort_by_name(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
             var trash_item_1 = row1.get_child() as TrashItem;
             var trash_item_2 = row2.get_child() as TrashItem;
 
@@ -213,6 +224,13 @@ namespace TrashApplet.Widgets {
             } else { // Both items are files, sort by file name
                 return trash_item_1.file_name.collate(trash_item_2.file_name);
             }
+        }
+
+        private int sort_by_date(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
+            var trash_item_1 = row1.get_child() as TrashItem;
+            var trash_item_2 = row2.get_child() as TrashItem;
+
+            return trash_item_1.deletion_time.compare(trash_item_2.deletion_time);
         }
     }
 }

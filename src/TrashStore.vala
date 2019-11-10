@@ -20,7 +20,7 @@ namespace TrashApplet {
         private int trash_count = 0;
 
         /* Signals */
-        public signal void trash_added(string file_name, string file_path, GLib.Icon file_icon, bool is_directory);
+        public signal void trash_added(string file_name, string file_path, GLib.Icon file_icon, DateTime deletion_time, bool is_directory);
         public signal void trash_removed(string file_name, bool is_empty);
 
         public TrashStore(Applet applet, File trash_dir, File info_dir, string drive_name, string? drive_path, Icon drive_icon) {
@@ -49,7 +49,9 @@ namespace TrashApplet {
          */
         public void get_current_trash_items() {
             try {
-                var attributes = FileAttribute.STANDARD_NAME + "," + FileAttribute.STANDARD_ICON + "," + FileAttribute.STANDARD_TYPE;
+                var attributes = FileAttribute.STANDARD_NAME + "," +
+                                 FileAttribute.STANDARD_ICON + "," +
+                                 FileAttribute.STANDARD_TYPE;
                 var enumerator = trash_dir.enumerate_children(attributes, 0);
 
                 FileInfo info;
@@ -66,8 +68,10 @@ namespace TrashApplet {
                         is_directory = true;
                     }
 
+                    var deletion_time = get_deletion_date(info.get_name());
+
                     trash_count++;
-                    trash_added(info.get_name(), path.replace("%20", " "), info.get_icon(), is_directory);
+                    trash_added(info.get_name(), path.replace("%20", " "), info.get_icon(), deletion_time, is_directory);
                 }
             } catch (Error e) {
                 warning("Unable to create trash item: %s", e.message);
@@ -160,7 +164,8 @@ namespace TrashApplet {
                 case FileMonitorEvent.MOVED_IN: // A file was just added to the trash
                     var file_name = file.get_basename();
                     var file_path = get_path_from_trashinfo(file_name);
-                    var attributes = FileAttribute.STANDARD_ICON + "," + FileAttribute.STANDARD_TYPE;
+                    var attributes = FileAttribute.STANDARD_ICON + "," + 
+                                     FileAttribute.STANDARD_TYPE;
 
                     GLib.Icon file_icon = null;
                     bool is_directory = false;
@@ -176,8 +181,10 @@ namespace TrashApplet {
                         break;
                     }
 
+                    var deletion_time = new DateTime.now_local();
+
                     trash_count++;
-                    trash_added(file_name, file_path, file_icon, is_directory);
+                    trash_added(file_name, file_path, file_icon, deletion_time, is_directory);
                     break;
                 case FileMonitorEvent.MOVED_OUT: // A file was moved out of the trash
                     var file_name = file.get_basename();
@@ -214,6 +221,28 @@ namespace TrashApplet {
             }
 
             return path;
+        }
+
+        private DateTime get_deletion_date(string file_name) {
+            File info_file = File.new_for_path(info_dir.get_path() + "/" + file_name + ".trashinfo");
+            string line = null;
+            string date_string = null;
+
+            try {
+                var dis = new DataInputStream(info_file.read());
+                while ((line = dis.read_line()) != null) { // Read the lines of the .trashinfo file
+                    if (!line.has_prefix("DeletionDate=")) { // If its not the deletion date line, skip it
+                        continue;
+                    }
+
+                    date_string = line.replace("DeletionDate=", "");
+                    break;
+                }
+            } catch (Error e) {
+                warning("Error reading data from .trashinfo: %s", e.message);
+            }
+
+            return new DateTime.from_iso8601(date_string, new TimeZone.local());
         }
     }
 }
