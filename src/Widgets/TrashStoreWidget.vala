@@ -128,11 +128,20 @@ namespace TrashApplet.Widgets {
 
         public void set_sort_type(SortType type) {
             switch (type) {
-            case NAME:
+            case TYPE:
+                file_box.set_sort_func(sort_by_type);
+                break;
+            case ALPHABETICAL:
                 file_box.set_sort_func(sort_by_name);
                 break;
-            case DATE:
-                file_box.set_sort_func(sort_by_date);
+            case NEWEST_FIRST:
+                file_box.set_sort_func(sort_by_newest);
+                break;
+            case OLDEST_FIRST:
+                file_box.set_sort_func(sort_by_oldest);
+                break;
+            case REVERSE_ALPHABETICAL:
+                file_box.set_sort_func(sort_by_name_reverse);
                 break;
             }
         }
@@ -208,7 +217,37 @@ namespace TrashApplet.Widgets {
         }
 
         /**
-         * sort_by_name will determine the order that two given rows should be in.
+         * sort_by_name will determine the order that two given rows should be in 
+         * using pure alphabetical order.
+         * 
+         * @param row1 The first row to use for comparison
+         * @param row2 The second row to use for comparison
+         * @return < 0 if row1 should be before row2, 0 if they are equal and > 0 otherwise
+         */
+        private int sort_by_name(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
+            var trash_item_1 = row1.get_child() as TrashItem;
+            var trash_item_2 = row2.get_child() as TrashItem;
+
+            return trash_item_1.file_name.collate(trash_item_2.file_name);
+        }
+
+        /**
+         * sort_by_name_reverse will determine the order that two given rows should be in 
+         * using reverse alphabetical order.
+         * 
+         * @param row1 The first row to use for comparison
+         * @param row2 The second row to use for comparison
+         * @return < 0 if row1 should be before row2, 0 if they are equal and > 0 otherwise
+         */
+        private int sort_by_name_reverse(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
+            var trash_item_1 = row1.get_child() as TrashItem;
+            var trash_item_2 = row2.get_child() as TrashItem;
+
+            return trash_item_2.file_name.collate(trash_item_1.file_name);
+        }
+
+        /**
+         * sort_by_type will determine the order that two given rows should be in.
          * 
          * Directories should be above files, and both types should be sorted alphabetically.
          * 
@@ -216,7 +255,7 @@ namespace TrashApplet.Widgets {
          * @param row2 The second row to use for comparison
          * @return < 0 if row1 should be before row2, 0 if they are equal and > 0 otherwise
          */
-        private int sort_by_name(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
+        private int sort_by_type(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
             var trash_item_1 = row1.get_child() as TrashItem;
             var trash_item_2 = row2.get_child() as TrashItem;
 
@@ -231,7 +270,14 @@ namespace TrashApplet.Widgets {
             }
         }
 
-        private int sort_by_date(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
+        private int sort_by_newest(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
+            var trash_item_1 = row1.get_child() as TrashItem;
+            var trash_item_2 = row2.get_child() as TrashItem;
+
+            return trash_item_2.deletion_time.compare(trash_item_1.deletion_time);
+        }
+
+        private int sort_by_oldest(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
             var trash_item_1 = row1.get_child() as TrashItem;
             var trash_item_2 = row2.get_child() as TrashItem;
 

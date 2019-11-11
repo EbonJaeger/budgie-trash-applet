@@ -1,8 +1,11 @@
 namespace TrashApplet.Widgets {
 
     public enum SortType {
-        NAME,
-        DATE
+        ALPHABETICAL,
+        NEWEST_FIRST,
+        OLDEST_FIRST,
+        REVERSE_ALPHABETICAL,
+        TYPE
     }
 
     public class SettingsView : Gtk.Box {
@@ -18,8 +21,11 @@ namespace TrashApplet.Widgets {
         private Gtk.Box? settings_box = null;
         private Gtk.Box? sorting_section = null;
         private Gtk.Label? sorting_header = null;
-        private Gtk.RadioButton? sort_name_button = null;
-        private Gtk.RadioButton? sort_date_button = null;
+        private Gtk.RadioButton? sort_alphabetical_button = null;
+        private Gtk.RadioButton? sort_reverse_alphabetical_button = null;
+        private Gtk.RadioButton? sort_oldest_button = null;
+        private Gtk.RadioButton? sort_newest_button = null;
+        private Gtk.RadioButton? sort_type_button = null;
 
         private Gtk.Box? footer = null;
         private Gtk.Button? return_button = null;
@@ -51,15 +57,21 @@ namespace TrashApplet.Widgets {
             sorting_header.halign = Gtk.Align.START;
             sorting_header.justify = Gtk.Justification.LEFT;
 
-            sort_name_button = new Gtk.RadioButton.with_label(null, "A-Z");
-            sort_date_button = new Gtk.RadioButton.with_label_from_widget(sort_name_button, "Oldest First");
+            sort_type_button = new Gtk.RadioButton.with_label(null, "Type");
+            sort_alphabetical_button = new Gtk.RadioButton.with_label_from_widget(sort_type_button, "A-Z");
+            sort_reverse_alphabetical_button = new Gtk.RadioButton.with_label_from_widget(sort_alphabetical_button, "Z-A");
+            sort_oldest_button = new Gtk.RadioButton.with_label_from_widget(sort_alphabetical_button, "Oldest First");
+            sort_newest_button = new Gtk.RadioButton.with_label_from_widget(sort_alphabetical_button, "Newest First");
 
-            sort_name_button.set_active(true);
-            sort_type = SortType.NAME;
+            sort_type_button.set_active(true);
+            sort_type = SortType.TYPE;
 
             sorting_section.pack_start(sorting_header, false, false, 0);
-            sorting_section.pack_start(sort_name_button, false, false, 0);
-            sorting_section.pack_start(sort_date_button, false, false, 0);
+            sorting_section.pack_start(sort_type_button, false, false, 0);
+            sorting_section.pack_start(sort_alphabetical_button, false, false, 0);
+            sorting_section.pack_start(sort_reverse_alphabetical_button, false, false, 0);
+            sorting_section.pack_start(sort_oldest_button, false, false, 0);
+            sorting_section.pack_start(sort_newest_button, false, false, 0);
 
             settings_box.pack_start(sorting_section);
 
@@ -84,16 +96,37 @@ namespace TrashApplet.Widgets {
         }
 
         private void connect_signals() {
-            sort_name_button.clicked.connect(() => {
+            sort_type_button.clicked.connect(() => {
                 foreach (var store in popover.get_trash_store_widgets()) {
-                    sort_type = SortType.NAME;
+                    sort_type = SortType.TYPE;
+                    store.set_sort_type(sort_type);
+                }
+            });
+            
+            sort_alphabetical_button.clicked.connect(() => {
+                foreach (var store in popover.get_trash_store_widgets()) {
+                    sort_type = SortType.ALPHABETICAL;
                     store.set_sort_type(sort_type);
                 }
             });
 
-            sort_date_button.clicked.connect(() => {
+            sort_reverse_alphabetical_button.clicked.connect(() => {
                 foreach (var store in popover.get_trash_store_widgets()) {
-                    sort_type = SortType.DATE;
+                    sort_type = SortType.REVERSE_ALPHABETICAL;
+                    store.set_sort_type(sort_type);
+                }
+            });
+
+            sort_newest_button.clicked.connect(() => {
+                foreach (var store in popover.get_trash_store_widgets()) {
+                    sort_type = SortType.NEWEST_FIRST;
+                    store.set_sort_type(sort_type);
+                }
+            });
+
+            sort_oldest_button.clicked.connect(() => {
+                foreach (var store in popover.get_trash_store_widgets()) {
+                    sort_type = SortType.OLDEST_FIRST;
                     store.set_sort_type(sort_type);
                 }
             });
