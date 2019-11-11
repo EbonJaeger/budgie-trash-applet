@@ -1,3 +1,5 @@
+using GLib;
+
 namespace TrashApplet {
 
     /**
@@ -37,8 +39,8 @@ namespace TrashApplet {
             this.trash_stores = new HashTable<string, TrashStore>(str_hash, str_equal);
 
             // Set up the main trash store
-            var default_trash_dir = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/files");
-            var default_info_dir = File.new_for_path(GLib.Environment.get_user_data_dir() + "/Trash/info");
+            var default_trash_dir = File.new_for_path(Environment.get_user_data_dir() + "/Trash/files");
+            var default_info_dir = File.new_for_path(Environment.get_user_data_dir() + "/Trash/info");
             var icon = Icon.new_for_string("drive-harddisk-symbolic");
             var default_trash_store = new TrashStore(applet, default_trash_dir, default_info_dir, "This PC", null, icon);
             this.trash_stores.insert("default", default_trash_store);

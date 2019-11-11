@@ -1,65 +1,67 @@
+using Gtk;
+
 namespace TrashApplet.Widgets { 
     
-    public class TrashStoreWidget : Gtk.Box {
+    public class TrashStoreWidget : Box {
 
         private TrashStore trash_store;
         private HashTable<string, TrashItem> trash_items;
         private bool restoring = false;
 
         /* Widgets */
-        private Gtk.Box? store_header = null;
-        private Gtk.Image? drive_icon = null;
-        private Gtk.Label? store_label = null;
-        private Gtk.Button? restore_button = null;
-        private Gtk.Button? delete_button = null;
+        private Box? store_header = null;
+        private Image? drive_icon = null;
+        private Label? store_label = null;
+        private Button? restore_button = null;
+        private Button? delete_button = null;
 
-        private Gtk.Revealer? revealer = null;
-        private Gtk.Box? revealer_container = null;
-        private Gtk.Label? revealer_text = null;
-        private Gtk.Box? revealer_buttons = null;
-        private Gtk.Button? go_back_button = null;
-        private Gtk.Button? confirm_button = null;
+        private Revealer? revealer = null;
+        private Box? revealer_container = null;
+        private Label? revealer_text = null;
+        private Box? revealer_buttons = null;
+        private Button? go_back_button = null;
+        private Button? confirm_button = null;
 
-        private Gtk.ListBox? file_box = null;
+        private ListBox? file_box = null;
 
         public TrashStoreWidget(TrashStore trash_store, SortType sort_type) {
-            Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
+            Object(orientation: Orientation.VERTICAL, spacing: 0);
             this.trash_store = trash_store;
             trash_items = new HashTable<string, TrashItem>(str_hash, str_equal);
             get_style_context().add_class("trash-store-widget");
 
             /* Widget initialization */
-            store_header = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+            store_header = new Box(Orientation.HORIZONTAL, 0);
             store_header.get_style_context().add_class("trash-store-header");
             store_header.height_request = 32;
             store_header.tooltip_text = trash_store.get_drive_name();
-            drive_icon = new Gtk.Image.from_gicon(trash_store.get_drive_icon(), Gtk.IconSize.SMALL_TOOLBAR);
-            store_label = new Gtk.Label(trash_store.get_drive_name());
+            drive_icon = new Image.from_gicon(trash_store.get_drive_icon(), IconSize.SMALL_TOOLBAR);
+            store_label = new Label(trash_store.get_drive_name());
             store_label.max_width_chars = 30;
             store_label.ellipsize = Pango.EllipsizeMode.END;
-            store_label.halign = Gtk.Align.START;
-            store_label.justify = Gtk.Justification.LEFT;
+            store_label.halign = Align.START;
+            store_label.justify = Justification.LEFT;
             store_header.pack_start(drive_icon, false, false, 10);
             store_header.pack_start(store_label, true, true, 0);
 
-            restore_button = new Gtk.Button.from_icon_name("edit-undo-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
+            restore_button = new Button.from_icon_name("edit-undo-symbolic", IconSize.SMALL_TOOLBAR);
             restore_button.tooltip_text = "Restore all items";
-            delete_button = new Gtk.Button.from_icon_name("list-remove-all-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
+            delete_button = new Button.from_icon_name("list-remove-all-symbolic", IconSize.SMALL_TOOLBAR);
             delete_button.tooltip_text = "Delete all items";
             set_buttons_sensitive(false);
             store_header.pack_end(delete_button, false, false, 0);
             store_header.pack_end(restore_button, false, false, 0);
 
-            revealer = new Gtk.Revealer();
-            revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN);
+            revealer = new Revealer();
+            revealer.set_transition_type(RevealerTransitionType.SLIDE_DOWN);
             revealer.set_reveal_child(false);
-            revealer_container = new Gtk.Box(Gtk.Orientation.VERTICAL, 5);
-            revealer_text = new Gtk.Label("");
+            revealer_container = new Box(Orientation.VERTICAL, 5);
+            revealer_text = new Label("");
             revealer_text.height_request = 20;
 
-            revealer_buttons = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-            go_back_button = new Gtk.Button.with_label("No");
-            confirm_button = new Gtk.Button.with_label("Yes");
+            revealer_buttons = new Box(Orientation.HORIZONTAL, 0);
+            go_back_button = new Button.with_label("No");
+            confirm_button = new Button.with_label("Yes");
             revealer_buttons.pack_start(go_back_button);
             revealer_buttons.pack_end(confirm_button);
 
@@ -67,11 +69,11 @@ namespace TrashApplet.Widgets {
             revealer_container.pack_end(revealer_buttons);
             revealer.add(revealer_container);
 
-            file_box = new Gtk.ListBox();
+            file_box = new ListBox();
             file_box.get_style_context().add_class("trash-file-box");
             file_box.get_style_context().add_class("empty");
             file_box.activate_on_single_click = true;
-            file_box.selection_mode = Gtk.SelectionMode.NONE;
+            file_box.selection_mode = SelectionMode.NONE;
             set_sort_type(sort_type);
 
             apply_button_styles();
@@ -224,7 +226,7 @@ namespace TrashApplet.Widgets {
          * @param row2 The second row to use for comparison
          * @return < 0 if row1 should be before row2, 0 if they are equal and > 0 otherwise
          */
-        private int sort_by_name(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
+        private int sort_by_name(ListBoxRow row1, ListBoxRow row2) {
             var trash_item_1 = row1.get_child() as TrashItem;
             var trash_item_2 = row2.get_child() as TrashItem;
 
@@ -239,7 +241,7 @@ namespace TrashApplet.Widgets {
          * @param row2 The second row to use for comparison
          * @return < 0 if row1 should be before row2, 0 if they are equal and > 0 otherwise
          */
-        private int sort_by_name_reverse(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
+        private int sort_by_name_reverse(ListBoxRow row1, ListBoxRow row2) {
             var trash_item_1 = row1.get_child() as TrashItem;
             var trash_item_2 = row2.get_child() as TrashItem;
 
@@ -255,7 +257,7 @@ namespace TrashApplet.Widgets {
          * @param row2 The second row to use for comparison
          * @return < 0 if row1 should be before row2, 0 if they are equal and > 0 otherwise
          */
-        private int sort_by_type(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
+        private int sort_by_type(ListBoxRow row1, ListBoxRow row2) {
             var trash_item_1 = row1.get_child() as TrashItem;
             var trash_item_2 = row2.get_child() as TrashItem;
 
@@ -270,14 +272,14 @@ namespace TrashApplet.Widgets {
             }
         }
 
-        private int sort_by_newest(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
+        private int sort_by_newest(ListBoxRow row1, ListBoxRow row2) {
             var trash_item_1 = row1.get_child() as TrashItem;
             var trash_item_2 = row2.get_child() as TrashItem;
 
             return trash_item_2.deletion_time.compare(trash_item_1.deletion_time);
         }
 
-        private int sort_by_oldest(Gtk.ListBoxRow row1, Gtk.ListBoxRow row2) {
+        private int sort_by_oldest(ListBoxRow row1, ListBoxRow row2) {
             var trash_item_1 = row1.get_child() as TrashItem;
             var trash_item_2 = row2.get_child() as TrashItem;
 

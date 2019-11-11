@@ -1,8 +1,9 @@
 using GLib;
+using Gtk;
 
 namespace TrashApplet.Widgets { 
 
-    public class TrashItem : Gtk.Box {
+    public class TrashItem : Box {
 
         /* State */
         private bool restoring = false;
@@ -13,23 +14,23 @@ namespace TrashApplet.Widgets {
         public DateTime deletion_time { get; private set; }
 
         /* Widgets */
-        private Gtk.Box file_container = null;
-        private Gtk.Image? file_icon = null;
-        private Gtk.Label? display_text = null;
-        private Gtk.Button? restore_button = null;
-        private Gtk.Button? delete_button = null;
+        private Box file_container = null;
+        private Image? file_icon = null;
+        private Label? display_text = null;
+        private Button? restore_button = null;
+        private Button? delete_button = null;
 
-        private Gtk.Revealer? info_revealer = null;
-        private Gtk.Box? info_container = null;
-        private Gtk.Label? path_label = null;
-        private Gtk.Label? date_label = null;
+        private Revealer? info_revealer = null;
+        private Box? info_container = null;
+        private Label? path_label = null;
+        private Label? date_label = null;
 
-        private Gtk.Revealer? revealer = null;
-        private Gtk.Box? revealer_container = null;
-        private Gtk.Label? revealer_text = null;
-        private Gtk.Box? revealer_buttons = null;
-        private Gtk.Button? go_back_button = null;
-        private Gtk.Button? confirm_button = null;
+        private Revealer? revealer = null;
+        private Box? revealer_container = null;
+        private Label? revealer_text = null;
+        private Box? revealer_buttons = null;
+        private Button? go_back_button = null;
+        private Button? confirm_button = null;
 
         /* Signals */
         public signal void on_delete(string file_name);
@@ -39,7 +40,7 @@ namespace TrashApplet.Widgets {
          * Constructor
          */
         public TrashItem(string file_path, string file_name, Icon glib_icon, DateTime deletion_time, bool is_directory) {
-            Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
+            Object(orientation: Orientation.VERTICAL, spacing: 0);
             this.file_path = file_path;
             this.file_name = file_name;
             this.deletion_time = deletion_time;
@@ -48,18 +49,18 @@ namespace TrashApplet.Widgets {
             get_style_context().add_class("trash-item");
 
             /* Create Widget stuff */
-            file_container = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+            file_container = new Box(Orientation.HORIZONTAL, 0);
             file_container.height_request = 32;
-            file_icon = new Gtk.Image.from_gicon(glib_icon, Gtk.IconSize.SMALL_TOOLBAR);
-            display_text = new Gtk.Label(file_name);
+            file_icon = new Image.from_gicon(glib_icon, IconSize.SMALL_TOOLBAR);
+            display_text = new Label(file_name);
             display_text.max_width_chars = 30;
             display_text.ellipsize = Pango.EllipsizeMode.END;
-            display_text.halign = Gtk.Align.START;
-            display_text.justify = Gtk.Justification.LEFT;
+            display_text.halign = Align.START;
+            display_text.justify = Justification.LEFT;
 
-            restore_button = new Gtk.Button.from_icon_name("edit-undo-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
+            restore_button = new Button.from_icon_name("edit-undo-symbolic", IconSize.SMALL_TOOLBAR);
             restore_button.tooltip_text = "Restore item";
-            delete_button = new Gtk.Button.from_icon_name("user-trash-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
+            delete_button = new Button.from_icon_name("user-trash-symbolic", IconSize.SMALL_TOOLBAR);
             delete_button.tooltip_text = "Delete item";
 
             file_container.pack_start(file_icon, false, false, 5);
@@ -67,37 +68,37 @@ namespace TrashApplet.Widgets {
             file_container.pack_end(delete_button, false, false, 0);
             file_container.pack_end(restore_button, false, false, 0);
 
-            info_revealer = new Gtk.Revealer();
-            info_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN);
+            info_revealer = new Revealer();
+            info_revealer.set_transition_type(RevealerTransitionType.SLIDE_DOWN);
             info_revealer.set_reveal_child(false);
             info_revealer.get_style_context().add_class("trash-info-revealer");
-            info_container = new Gtk.Box(Gtk.Orientation.VERTICAL, 5);
+            info_container = new Box(Orientation.VERTICAL, 5);
 
-            path_label = new Gtk.Label("Path: %s".printf(file_path));
+            path_label = new Label("Path: %s".printf(file_path));
             path_label.tooltip_text = file_path;
             path_label.ellipsize = Pango.EllipsizeMode.END;
-            path_label.halign = Gtk.Align.START;
-            path_label.justify = Gtk.Justification.LEFT;
+            path_label.halign = Align.START;
+            path_label.justify = Justification.LEFT;
 
             var time = deletion_time.format("%Y-%m-%d %H:%M %Z");
-            date_label = new Gtk.Label("Deleted on: %s".printf(time));
-            date_label.halign = Gtk.Align.START;
-            date_label.justify = Gtk.Justification.LEFT;
+            date_label = new Label("Deleted on: %s".printf(time));
+            date_label.halign = Align.START;
+            date_label.justify = Justification.LEFT;
 
             info_container.pack_start(path_label, true, true, 0);
             info_container.pack_start(date_label, true, true, 0);
             info_revealer.add(info_container);
 
-            revealer = new Gtk.Revealer();
-            revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN);
+            revealer = new Revealer();
+            revealer.set_transition_type(RevealerTransitionType.SLIDE_DOWN);
             revealer.set_reveal_child(false);
-            revealer_container = new Gtk.Box(Gtk.Orientation.VERTICAL, 5);
-            revealer_text = new Gtk.Label("");
+            revealer_container = new Box(Orientation.VERTICAL, 5);
+            revealer_text = new Label("");
             revealer_text.height_request = 20;
 
-            revealer_buttons = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-            go_back_button = new Gtk.Button.with_label("No");
-            confirm_button = new Gtk.Button.with_label("Yes");
+            revealer_buttons = new Box(Orientation.HORIZONTAL, 0);
+            go_back_button = new Button.with_label("No");
+            confirm_button = new Button.with_label("Yes");
             revealer_buttons.pack_start(go_back_button);
             revealer_buttons.pack_end(confirm_button);
 

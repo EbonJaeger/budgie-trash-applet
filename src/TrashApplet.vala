@@ -1,4 +1,5 @@
 using GLib;
+using Gtk;
 using TrashApplet.Widgets;
 
 namespace TrashApplet {
@@ -12,11 +13,11 @@ public class Plugin : Object, Budgie.Plugin {
 
 public class Applet : Budgie.Applet {
 
-    private const Gtk.TargetEntry[] targets = {
+    private const TargetEntry[] targets = {
         { "text/uri-list", 0, 0 }
     };
 
-    private Gtk.EventBox? event_box = null;
+    private EventBox? event_box = null;
     private IconButton? icon_button = null;
     private MainPopover? popover = null;
 
@@ -36,16 +37,16 @@ public class Applet : Budgie.Applet {
 
         // Load CSS styling
         Gdk.Screen screen = this.get_display().get_default_screen();
-        Gtk.CssProvider provider = new Gtk.CssProvider();
+        CssProvider provider = new CssProvider();
         string style_file = "/com/github/EbonJaeger/budgie-trash-applet/style/style.css";
         Timeout.add(1000, () => {
             provider.load_from_resource(style_file);
-            Gtk.StyleContext.add_provider_for_screen(screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+            StyleContext.add_provider_for_screen(screen, provider, STYLE_PROVIDER_PRIORITY_APPLICATION);
             return false;
         });
 
         // Create the main layout
-        event_box = new Gtk.EventBox();
+        event_box = new EventBox();
         this.icon_button = new IconButton(trash_handler);
         event_box.add(icon_button);
 
@@ -57,7 +58,7 @@ public class Applet : Budgie.Applet {
         trash_handler.get_current_trash_items();
 
         this.show_all();
-        Gtk.drag_dest_set(event_box, Gtk.DestDefaults.ALL, targets, Gdk.DragAction.COPY);
+        drag_dest_set(event_box, DestDefaults.ALL, targets, Gdk.DragAction.COPY);
         connect_signals();
     }
 
@@ -100,7 +101,7 @@ public class Applet : Budgie.Applet {
         event_box.drag_data_received.connect(on_drag_data_received);
     }
 
-    private void on_drag_data_received(Gtk.Widget widget, Gdk.DragContext context, int x, int y, Gtk.SelectionData selection_data, uint item, uint time) {
+    private void on_drag_data_received(Widget widget, Gdk.DragContext context, int x, int y, SelectionData selection_data, uint item, uint time) {
         if (item != 0) { // We don't care about this target type
             return;
         }
@@ -120,7 +121,7 @@ public class Applet : Budgie.Applet {
             }
         }
 
-        Gtk.drag_finish(context, true, true, time);
+        drag_finish(context, true, true, time);
     }
 }
 

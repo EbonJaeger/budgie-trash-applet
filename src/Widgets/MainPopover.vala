@@ -1,3 +1,5 @@
+using Gtk;
+
 namespace TrashApplet.Widgets {
 
     public class MainPopover : Budgie.Popover {
@@ -6,56 +8,56 @@ namespace TrashApplet.Widgets {
         private HashTable<string, TrashStoreWidget> trash_stores;
 
         /* Widgets */
-        private Gtk.Stack? stack = null;
-        private Gtk.Box? main_view = null;
-        private Gtk.Box? title_header = null;
-        private Gtk.Label? title_label = null;
-        private Gtk.ScrolledWindow? scroller = null;
-        private Gtk.ListBox? drive_box = null;
+        private Stack? stack = null;
+        private Box? main_view = null;
+        private Box? title_header = null;
+        private Label? title_label = null;
+        private ScrolledWindow? scroller = null;
+        private ListBox? drive_box = null;
 
-        private Gtk.Box? footer = null;
-        private Gtk.Button? settings_button = null;
+        private Box? footer = null;
+        private Button? settings_button = null;
 
         private SettingsView? settings_view = null;
 
         /**
          * Constructor
          */
-        public MainPopover(Gtk.Widget? parent, TrashHandler trash_handler) {
+        public MainPopover(Widget? parent, TrashHandler trash_handler) {
             Object(relative_to: parent);
             this.trash_handler = trash_handler;
             this.trash_stores = new HashTable<string, TrashStoreWidget>(str_hash, str_equal);
             width_request = 300;
 
             /* Views */
-            this.stack = new Gtk.Stack();
-            stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT);
+            this.stack = new Stack();
+            stack.set_transition_type(StackTransitionType.SLIDE_LEFT_RIGHT);
 
-            this.main_view = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
+            this.main_view = new Box(Orientation.VERTICAL, 0);
 
-            title_header = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+            title_header = new Box(Orientation.HORIZONTAL, 0);
             title_header.height_request = 32;
             title_header.get_style_context().add_class("trash-applet-header");
-            title_label = new Gtk.Label("Trash");
+            title_label = new Label("Trash");
             title_header.pack_start(title_label, true, true, 0);
 
-            scroller = new Gtk.ScrolledWindow(null, null);
+            scroller = new ScrolledWindow(null, null);
             scroller.min_content_height = 300;
             scroller.max_content_height = 300;
-            scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
+            scroller.set_policy(PolicyType.NEVER, PolicyType.AUTOMATIC);
 
-            drive_box = new Gtk.ListBox();
+            drive_box = new ListBox();
             drive_box.height_request = 300;
             drive_box.get_style_context().add_class("trash-applet-list");
             drive_box.activate_on_single_click = true;
-            drive_box.selection_mode = Gtk.SelectionMode.NONE;
+            drive_box.selection_mode = SelectionMode.NONE;
 
             scroller.add(drive_box);
 
-            footer = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
+            footer = new Box(Orientation.HORIZONTAL, 0);
             footer.height_request = 32;
             footer.get_style_context().add_class("trash-applet-footer");
-            settings_button = new Gtk.Button.from_icon_name("emblem-system-symbolic", Gtk.IconSize.BUTTON);
+            settings_button = new Button.from_icon_name("emblem-system-symbolic", IconSize.BUTTON);
             settings_button.tooltip_text = "Go to applet options";
             settings_button.get_style_context().add_class("flat");
             settings_button.get_style_context().remove_class("button");

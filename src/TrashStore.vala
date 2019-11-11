@@ -1,3 +1,5 @@
+using GLib;
+
 namespace TrashApplet { 
     
     /**
@@ -20,7 +22,7 @@ namespace TrashApplet {
         private int trash_count = 0;
 
         /* Signals */
-        public signal void trash_added(string file_name, string file_path, GLib.Icon file_icon, DateTime deletion_time, bool is_directory);
+        public signal void trash_added(string file_name, string file_path, Icon file_icon, DateTime deletion_time, bool is_directory);
         public signal void trash_removed(string file_name, bool is_empty);
 
         public TrashStore(Applet applet, File trash_dir, File info_dir, string drive_name, string? drive_path, Icon drive_icon) {
@@ -167,7 +169,7 @@ namespace TrashApplet {
                     var attributes = FileAttribute.STANDARD_ICON + "," + 
                                      FileAttribute.STANDARD_TYPE;
 
-                    GLib.Icon file_icon = null;
+                    Icon file_icon = null;
                     bool is_directory = false;
                     try {
                         var file_info = file.query_info(attributes, FileQueryInfoFlags.NONE);

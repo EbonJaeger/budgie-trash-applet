@@ -1,15 +1,17 @@
-namespace TrashApplet.Widgets {
-    
-    public class IconButton : Gtk.Button {
+using Gtk;
 
-        private Gtk.Image? icon_empty = null;
-        private Gtk.Image? icon_full = null;
+namespace TrashApplet.Widgets {
+
+    public class IconButton : Button {
+
+        private Image? icon_empty = null;
+        private Image? icon_full = null;
 
         private TrashHandler trash_handler;
 
         public IconButton(TrashHandler trash_handler) {
-            this.icon_empty = new Gtk.Image.from_icon_name("user-trash-symbolic", Gtk.IconSize.MENU);
-            this.icon_full = new Gtk.Image.from_icon_name("user-trash-full-symbolic", Gtk.IconSize.MENU);
+            this.icon_empty = new Image.from_icon_name("user-trash-symbolic", IconSize.MENU);
+            this.icon_full = new Image.from_icon_name("user-trash-full-symbolic", IconSize.MENU);
             this.trash_handler = trash_handler;
 
             this.set_image(icon_empty);
