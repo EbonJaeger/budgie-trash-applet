@@ -92,6 +92,8 @@ namespace TrashApplet {
          * Delete a file permanently from the trash.
          * 
          * If the file is a directory, it will be recursively deleted.
+         * This function spawns a new thread to do the deleting to
+         * avoid locking the system up when removing large files.
          * 
          * @param file_name The name of the file to delete
          */
@@ -99,21 +101,33 @@ namespace TrashApplet {
             File file = File.new_for_path(trash_dir.get_path() + "/" + file_name);
             File info_file = File.new_for_path(info_dir.get_path() + "/" + file_name + ".trashinfo");
 
-            // First, check if this is a file or directory
-            FileType type = file.query_file_type(FileQueryInfoFlags.NOFOLLOW_SYMLINKS);
-            if (type == FileType.DIRECTORY) { // Item is a directory, and directories must be empty to delete them
-                try {
-                    delete_directory(file);
-                } catch (Error e) {
-                    warning("Unable to delete directory '%s' in trash: %s", file_name, e.message);
-                    applet.show_notification("Error deleting directory", "Unable to permanently delete '%s': %s".printf(file_name, e.message));
-                    return;
-                }
-            }
-
+            // Spawn a thread to delete the file(s)
             try {
-                file.delete();
-                info_file.delete();
+                new Thread<int>.try("trash-delete-thread", () => {
+                    // First, check if this is a file or directory
+                    FileType type = file.query_file_type(FileQueryInfoFlags.NOFOLLOW_SYMLINKS);
+                    if (type == FileType.DIRECTORY) { // Item is a directory, and directories must be empty to delete them
+                        // Attempt to delete everything in the directory recursively
+                        try {
+                            delete_directory(file);
+                        } catch (Error e) {
+                            warning("Unable to delete directory '%s' in trash: %s", file_name, e.message);
+                            applet.show_notification("Error deleting directory", "Unable to permanently delete '%s': %s".printf(file_name, e.message));
+                            return -1;
+                        }
+                    }
+
+                    // Try to delete the file/directory
+                    try {
+                        file.delete();
+                        info_file.delete();
+                    } catch (Error e) {
+                        warning("Unable to delete directory '%s' in trash: %s", file_name, e.message);
+                        applet.show_notification("Error deleting directory", "Unable to permanently delete '%s': %s".printf(file_name, e.message));
+                    }
+
+                    return 0;
+                });
             } catch (Error e) {
                 warning("Unable to delete '%s': %s", file_name, e.message);
                 applet.show_notification("Error deleting item", "Unable to permanently delete '%s': %s".printf(file_name, e.message));
