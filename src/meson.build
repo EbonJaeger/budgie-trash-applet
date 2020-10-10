@@ -17,32 +17,24 @@ res = gnome.compile_resources('bta-resources', gresource_file, source_dir: data_
 applet_trash_deps = [
     dep_budgie,
     dep_gtk3,
-    dep_glib
+    dep_glib,
+    dep_gio
 ]
 
-applet_trash_sources =[
-    'TrashApplet.vala',
-    'Widgets/MainPopover.vala',
-    'Widgets/IconButton.vala',
-    'Widgets/SettingsView.vala',
-    'Widgets/TrashItem.vala',
-    'Widgets/TrashStoreWidget.vala',
-    'TrashHandler.vala',
-    'TrashStore.vala',
+applet_trash_sources = [
+    # 'trash_handler.c',
+    'trash_store.c',
+    'trash_item.c',
+    'ui/trash_item_ui.c',
+    'utils.c',
     res
-]
-
-bta_vala_args = [
-    '--gresources=' + gresource_file,
-    '--pkg', 'gtk+-3.0',
-    '--pkg', 'glib-2.0'
 ]
 
 shared_library(
     'trashapplet',
     applet_trash_sources,
     dependencies: applet_trash_deps,
-    vala_args: bta_vala_args,
+    include_directories: includeDir,
     install: true,
     install_dir: APPLET_INSTALL_DIR
 )

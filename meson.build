@@ -1,9 +1,13 @@
 project('budgie-trash-applet',
-        ['vala', 'c'],
-        version: '1.2.0'
+        'c',
+        version: '2.0.0'
 )
 
-am_cflags = [
+#
+# C Stuff
+#
+
+c_args = [
     '-fstack-protector',
     '-pedantic',
     '-Wstrict-prototypes',
@@ -19,16 +23,23 @@ am_cflags = [
     '-W'
 ]
 
-add_global_arguments(am_cflags, language: 'c')
+includeDir = include_directories('/usr/include')
 
+#
 # Dependencies
+#
+
 dep_budgie = dependency('budgie-1.0', version: '>= 2')
 dep_gtk3 = dependency('gtk+-3.0', version: '>= 3.22.0')
-dep_glib = dependency('glib-2.0', version: '>= 2.46.0')
+dep_glib = dependency('glib-2.0', version: '>= 2.64.0')
+dep_gio = dependency('gio-2.0', version: '>= 2.64.0')
 
 intltool = find_program('intltool-merge')
 
+#
 # Global stuff
+#
+
 prefix = get_option('prefix')
 libdir = join_paths(prefix, get_option('libdir'))
 datadir = join_paths(prefix, get_option('datadir'))
