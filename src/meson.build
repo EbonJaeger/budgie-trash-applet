@@ -25,8 +25,11 @@ applet_trash_sources = [
     # 'trash_handler.c',
     'trash_store.c',
     'trash_item.c',
+    'ui/trash_icon_button.c',
     'ui/trash_item_ui.c',
     'utils.c',
+    'applet.c',
+    'plugin.c',
     res
 ]
 

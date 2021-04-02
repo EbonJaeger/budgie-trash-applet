@@ -23,6 +23,8 @@ c_args = [
     '-W'
 ]
 
+c_std = 'c11'
+
 includeDir = include_directories('/usr/include')
 
 #
