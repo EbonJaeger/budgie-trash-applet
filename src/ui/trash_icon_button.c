@@ -3,7 +3,6 @@
 struct _TrashIconButton
 {
     GtkButton parent_instance;
-    gboolean constructed;
 
     GtkWidget *icon_empty;
     GtkWidget *icon_full;
@@ -33,11 +32,9 @@ static void trash_icon_button_init(TrashIconButton *self)
     gtk_widget_set_tooltip_text(GTK_WIDGET(self), "Trash");
 
     gtk_widget_show_all(GTK_WIDGET(self));
-
-    self->constructed = TRUE;
 }
 
-TrashIconButton *trash_icon_button_new()
+TrashIconButton *trash_icon_button_new(void)
 {
     return g_object_new(TRASH_TYPE_ICON_BUTTON, NULL);
 }

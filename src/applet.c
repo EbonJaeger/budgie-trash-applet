@@ -2,6 +2,7 @@
 
 #include "applet.h"
 #include "ui/trash_icon_button.h"
+#include "ui/trash_store.h"
 
 struct _TrashAppletPrivate
 {
@@ -120,6 +121,10 @@ void trash_create_widgets(TrashApplet *self, GtkWidget *popover)
     GtkStyleContext *drive_box_style = gtk_widget_get_style_context(drive_box);
     gtk_style_context_add_class(drive_box_style, "trash-applet-list");
     gtk_container_add(GTK_CONTAINER(scroller), drive_box);
+
+    // Create a dummy store for now to display
+    TrashStore *default_store = trash_store_new("This PC", "drive-harddisk-symbolic");
+    gtk_list_box_insert(GTK_LIST_BOX(drive_box), GTK_WIDGET(default_store), -1);
 
     gtk_box_pack_start(GTK_BOX(view), header, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(view), scroller, TRUE, TRUE, 0);
