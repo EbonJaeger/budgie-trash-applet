@@ -74,7 +74,8 @@ static void trash_applet_init(TrashApplet *self)
 
     // Create our popover widget
     GtkWidget *popover = budgie_popover_new(GTK_WIDGET(icon_button));
-    gtk_widget_set_size_request(popover, 300, 400);
+    g_object_set(popover, "width-request", 300, NULL);
+    trash_create_widgets(self, popover);
     self->priv->popover = popover;
 
     gtk_container_add(GTK_CONTAINER(self), GTK_WIDGET(icon_button));
@@ -91,6 +92,40 @@ void trash_applet_init_gtype(GTypeModule *module)
 BudgieApplet *trash_applet_new(void)
 {
     return g_object_new(TRASH_TYPE_APPLET, NULL);
+}
+
+void trash_create_widgets(TrashApplet *self, GtkWidget *popover)
+{
+    GtkWidget *view = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+
+    // Create our popover header
+    GtkWidget *header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    g_object_set(header, "height-request", 32, NULL);
+    GtkStyleContext *header_style = gtk_widget_get_style_context(header);
+    gtk_style_context_add_class(header_style, "trash-applet-header");
+    GtkWidget *header_label = gtk_label_new("Trash");
+    gtk_box_pack_start(GTK_BOX(header), header_label, TRUE, TRUE, 0);
+
+    // Create our scroller
+    GtkWidget *scroller = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scroller), 300);
+    gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroller), 300);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+
+    // Create the listbox that the mounted drives will go into
+    GtkWidget *drive_box = gtk_list_box_new();
+    g_object_set(drive_box, "height-request", 300, NULL);
+    gtk_list_box_set_activate_on_single_click(GTK_LIST_BOX(drive_box), TRUE);
+    gtk_list_box_set_selection_mode(GTK_LIST_BOX(drive_box), GTK_SELECTION_NONE);
+    GtkStyleContext *drive_box_style = gtk_widget_get_style_context(drive_box);
+    gtk_style_context_add_class(drive_box_style, "trash-applet-list");
+    gtk_container_add(GTK_CONTAINER(scroller), drive_box);
+
+    gtk_box_pack_start(GTK_BOX(view), header, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(view), scroller, TRUE, TRUE, 0);
+    gtk_container_add(GTK_CONTAINER(popover), view);
+
+    gtk_widget_show_all(view);
 }
 
 void trash_toggle_popover(GtkButton *sender, TrashApplet *self)
