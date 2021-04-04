@@ -7,6 +7,7 @@
 
 G_BEGIN_DECLS
 
+typedef struct _TrashAppletPrivate TrashAppletPrivate;
 typedef struct _TrashApplet TrashApplet;
 typedef struct _TrashAppletClass TrashAppletClass;
 
@@ -25,6 +26,7 @@ struct _TrashAppletClass
 struct _TrashApplet
 {
     BudgieApplet parent;
+    TrashAppletPrivate *priv;
 };
 
 GType trash_applet_get_type(void);
@@ -38,5 +40,11 @@ void trash_applet_init_gtype(GTypeModule *module);
  * Constructs a new  Trash Applet instance.
  */
 BudgieApplet *trash_applet_new(void);
+
+/**
+ * Shows our popover widget if it isn't currently visible, or hide
+ * it if it is.
+ */
+void trash_toggle_popover(GtkButton *sender, TrashApplet *self);
 
 G_END_DECLS
