@@ -28,10 +28,7 @@ struct _TrashStore
 
     GtkWidget *file_box;
 
-    GtkWidget *revealer;
-    GtkWidget *revealer_label;
-    GtkWidget *revealer_btn_confirm;
-    GtkWidget *revealer_btn_cancel;
+    TrashRevealer *revealer;
 };
 
 struct _TrashStoreClass
@@ -117,7 +114,7 @@ static void trash_store_init(TrashStore *self)
     self->header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     GtkStyleContext *header_style = gtk_widget_get_style_context(self->header);
     gtk_style_context_add_class(header_style, "trash-store-widget");
-    g_object_set(G_OBJECT(self->header), "height-request", 32, NULL);
+    g_object_set(G_OBJECT(self->header), "height-request", 48, NULL);
 
     self->delete_btn = gtk_button_new_from_icon_name("list-remove-all-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
     gtk_widget_set_tooltip_text(self->delete_btn, "Delete all items");
@@ -129,27 +126,12 @@ static void trash_store_init(TrashStore *self)
     gtk_box_pack_end(GTK_BOX(self->header), self->restore_btn, FALSE, FALSE, 0);
 
     // Create our revealer object
-    self->revealer = gtk_revealer_new();
+    self->revealer = trash_revealer_new();
     gtk_revealer_set_transition_type(GTK_REVEALER(self->revealer), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
 
-    GtkWidget *revealer_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    self->revealer_label = gtk_label_new("");
-    g_object_set(G_OBJECT(self->revealer_label), "height-request", 20, NULL);
-    gtk_box_pack_start(GTK_BOX(revealer_box), self->revealer_label, TRUE, TRUE, 0);
-
-    GtkWidget *revealer_btns = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    self->revealer_btn_cancel = gtk_button_new_with_label("No");
-    g_signal_connect_object(GTK_BUTTON(self->revealer_btn_cancel), "clicked", G_CALLBACK(trash_store_handle_revealer_btn_clicked), self, 0);
-    self->revealer_btn_confirm = gtk_button_new_with_label("Yes");
-    g_signal_connect_object(GTK_BUTTON(self->revealer_btn_confirm), "clicked", G_CALLBACK(trash_store_handle_revealer_btn_clicked), self, 0);
-
-    gtk_box_pack_start(GTK_BOX(revealer_btns), self->revealer_btn_cancel, TRUE, TRUE, 0);
-    gtk_box_pack_end(GTK_BOX(revealer_btns), self->revealer_btn_confirm, TRUE, TRUE, 0);
-    gtk_box_pack_end(GTK_BOX(revealer_box), revealer_btns, TRUE, TRUE, 0);
-
-    // Pack the revealer
-    gtk_container_add(GTK_CONTAINER(self->revealer), revealer_box);
+    g_signal_connect_object(GTK_REVEALER(self->revealer), "cancel-clicked", G_CALLBACK(trash_store_handle_cancel_clicked), self, 0);
+    g_signal_connect_object(GTK_REVEALER(self->revealer), "confirm-clicked", G_CALLBACK(trash_store_handle_confirm_clicked), self, 0);
 
     // Create our file list
     GtkWidget *file_box = gtk_list_box_new();
@@ -163,7 +145,7 @@ static void trash_store_init(TrashStore *self)
     // Pack ourselves up
     trash_store_apply_button_styles(self);
     gtk_box_pack_start(GTK_BOX(self), self->header, TRUE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(self), self->revealer, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(self), GTK_WIDGET(self->revealer), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(self), file_box, TRUE, TRUE, 0);
 }
 
@@ -184,18 +166,13 @@ void trash_store_apply_button_styles(TrashStore *self)
     GtkStyleContext *restore_style = gtk_widget_get_style_context(self->restore_btn);
     gtk_style_context_add_class(restore_style, "flat");
     gtk_style_context_remove_class(restore_style, "button");
-    GtkStyleContext *cancel_style = gtk_widget_get_style_context(self->revealer_btn_cancel);
-    gtk_style_context_add_class(cancel_style, "flat");
-    gtk_style_context_remove_class(cancel_style, "button");
-    GtkStyleContext *confirm_style = gtk_widget_get_style_context(self->revealer_btn_confirm);
-    gtk_style_context_add_class(confirm_style, "flat");
-    gtk_style_context_add_class(confirm_style, "destructive-action");
-    gtk_style_context_remove_class(confirm_style, "button");
 }
 
 void trash_store_set_drive_name(TrashStore *self, gchar *drive_name)
 {
-    if (drive_name == NULL || strcmp(drive_name, "") == 0)
+    gchar *name_clone = g_strdup(drive_name);
+
+    if (name_clone == NULL || strcmp(name_clone, "") == 0)
     {
         return;
     }
@@ -206,12 +183,12 @@ void trash_store_set_drive_name(TrashStore *self, gchar *drive_name)
     }
 
     // Free existing text if it is different
-    if ((self->drive_name != NULL) && strcmp(self->drive_name, drive_name) != 0)
+    if ((self->drive_name != NULL) && strcmp(self->drive_name, name_clone) != 0)
     {
         g_free(self->drive_name);
     }
 
-    self->drive_name = drive_name;
+    self->drive_name = name_clone;
 
     // If we already have a label, just set new text. Otherwise,
     // Create a new label.
@@ -236,7 +213,9 @@ void trash_store_set_drive_name(TrashStore *self, gchar *drive_name)
 
 void trash_store_set_icon_name(TrashStore *self, gchar *icon_name)
 {
-    if (icon_name == NULL || strcmp(icon_name, "") == 0)
+    gchar *name_clone = g_strdup(icon_name);
+
+    if (name_clone == NULL || strcmp(name_clone, "") == 0)
     {
         return;
     }
@@ -247,12 +226,12 @@ void trash_store_set_icon_name(TrashStore *self, gchar *icon_name)
     }
 
     // Free existing text if it is different
-    if ((self->icon_name != NULL) && strcmp(self->icon_name, icon_name) != 0)
+    if ((self->icon_name != NULL) && strcmp(self->icon_name, name_clone) != 0)
     {
         g_free(self->icon_name);
     }
 
-    self->icon_name = icon_name;
+    self->icon_name = name_clone;
 
     // If we already have an icon set, change it. Else, make a new one and prepend it
     // to our header.
@@ -280,30 +259,33 @@ void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self)
     if (sender == GTK_BUTTON(self->delete_btn))
     {
         self->restoring = FALSE;
-        gtk_label_set_markup(GTK_LABEL(self->revealer_label), "<b>Really delete all items?</b>");
+        trash_revealer_set_text(self->revealer, "<b>Really delete all items?</b>");
     }
     else
     {
         self->restoring = TRUE;
-        gtk_label_set_markup(GTK_LABEL(self->revealer_label), "<b>Really restore all items?</b>");
+        trash_revealer_set_text(self->revealer, "<b>Really restore all items?</b>");
     }
 
     trash_store_set_btns_sensitive(self, FALSE);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), TRUE);
 }
 
-void trash_store_handle_revealer_btn_clicked(GtkButton *sender, TrashStore *self)
+void trash_store_handle_cancel_clicked(TrashRevealer *sender, TrashStore *self)
 {
-    if (sender == GTK_BUTTON(self->revealer_btn_confirm))
+    trash_store_set_btns_sensitive(self, TRUE);
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
+}
+
+void trash_store_handle_confirm_clicked(TrashRevealer *sender, TrashStore *self)
+{
+    if (self->restoring)
     {
-        if (self->restoring)
-        {
-            // TODO: Restore all items
-        }
-        else
-        {
-            // TODO: Delete all items
-        }
+        // TODO: Restore all items
+    }
+    else
+    {
+        // TODO: Delete all items
     }
 
     trash_store_set_btns_sensitive(self, TRUE);
