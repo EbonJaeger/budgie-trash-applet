@@ -35,6 +35,9 @@ struct _TrashRevealer
 struct _TrashRevealerClass
 {
     GtkRevealerClass parent_class;
+
+    void (*cancel_clicked)(TrashRevealer *revealer);
+    void (*confirm_clicked)(TrashRevealer *revealer);
 };
 
 G_DEFINE_TYPE(TrashRevealer, trash_revealer, GTK_TYPE_REVEALER);
@@ -50,7 +53,7 @@ static void trash_revealer_class_init(TrashRevealerClass *klazz)
         "cancel-clicked",
         G_TYPE_FROM_CLASS(class),
         G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
-        NULL,
+        G_STRUCT_OFFSET(TrashRevealerClass, cancel_clicked),
         NULL,
         NULL,
         NULL,
@@ -62,7 +65,7 @@ static void trash_revealer_class_init(TrashRevealerClass *klazz)
         "confirm-clicked",
         G_TYPE_FROM_CLASS(class),
         G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
-        NULL,
+        G_STRUCT_OFFSET(TrashRevealerClass, confirm_clicked),
         NULL,
         NULL,
         NULL,

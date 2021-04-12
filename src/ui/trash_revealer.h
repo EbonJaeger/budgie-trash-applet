@@ -5,8 +5,11 @@
 G_BEGIN_DECLS
 
 #define TRASH_TYPE_REVEALER (trash_revealer_get_type())
+#define TRASH_REVEALER(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), TRASH_TYPE_REVEALER, TrashRevealer))
+#define TRASH_IS_REVEALER(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), TRASH_TYPE_REVEALER))
 
-G_DECLARE_FINAL_TYPE(TrashRevealer, trash_revealer, TRASH, REVEALER, GtkRevealer)
+typedef struct _TrashRevealer TrashRevealer;
+typedef struct _TrashRevealerClass TrashRevealerClass;
 
 TrashRevealer *trash_revealer_new(void);
 void trash_revealer_handle_clicked(GtkButton *sender, TrashRevealer *self);
