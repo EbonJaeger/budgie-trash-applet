@@ -1,10 +1,10 @@
 #ifndef _BTA_TRASH_STORE_H
 #define _BTA_TRASH_STORE_H
 
-#include <glib.h>
-#include <gio/gio.h>
 #include "trash_item.h"
 #include "utils.h"
+#include <gio/gio.h>
+#include <glib.h>
 
 /**
  * The offset to the beginning of the line containing the
@@ -28,8 +28,7 @@
  * Struct representing a trash storage location.
  */
 struct TrashStore;
-typedef struct TrashStore
-{
+typedef struct TrashStore {
     char *drive_name;
     const char *trashed_file_path;
     const char *trashed_info_path;

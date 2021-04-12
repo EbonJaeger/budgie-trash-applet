@@ -1,7 +1,6 @@
 #include "trash_store.h"
 
-enum
-{
+enum {
     PROP_EXP_0,
     PROP_DRIVE_NAME,
     PROP_ICON_NAME,
@@ -12,8 +11,7 @@ static GParamSpec *store_props[N_EXP_PROPERTIES] = {
     NULL,
 };
 
-struct _TrashStore
-{
+struct _TrashStore {
     GtkBox parent_instance;
 
     gchar *drive_name;
@@ -31,8 +29,7 @@ struct _TrashStore
     TrashRevealer *revealer;
 };
 
-struct _TrashStoreClass
-{
+struct _TrashStoreClass {
     GtkBoxClass parent_class;
 };
 
@@ -41,8 +38,7 @@ G_DEFINE_TYPE(TrashStore, trash_store, GTK_TYPE_BOX);
 static void trash_store_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec);
 static void trash_store_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec);
 
-static void trash_store_class_init(TrashStoreClass *klazz)
-{
+static void trash_store_class_init(TrashStoreClass *klazz) {
     GObjectClass *class = G_OBJECT_CLASS(klazz);
     class->get_property = trash_store_get_property;
     class->set_property = trash_store_set_property;
@@ -64,46 +60,41 @@ static void trash_store_class_init(TrashStoreClass *klazz)
     g_object_class_install_properties(class, N_EXP_PROPERTIES, store_props);
 }
 
-static void trash_store_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec)
-{
+static void trash_store_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec) {
     TrashStore *self = TRASH_STORE(obj);
 
-    switch (prop_id)
-    {
-    case PROP_DRIVE_NAME:
-        g_value_set_string(val, self->drive_name);
-        break;
-    case PROP_ICON_NAME:
-        g_value_set_string(val, self->icon_name);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
-        break;
+    switch (prop_id) {
+        case PROP_DRIVE_NAME:
+            g_value_set_string(val, self->drive_name);
+            break;
+        case PROP_ICON_NAME:
+            g_value_set_string(val, self->icon_name);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
+            break;
     }
 }
 
-static void trash_store_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec)
-{
+static void trash_store_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec) {
     TrashStore *self = TRASH_STORE(obj);
 
-    switch (prop_id)
-    {
-    case PROP_DRIVE_NAME:
-        g_return_if_fail(GTK_IS_WIDGET(self->header));
-        trash_store_set_drive_name(self, g_strdup(g_value_get_string(val)));
-        break;
-    case PROP_ICON_NAME:
-        g_return_if_fail(GTK_IS_WIDGET(self->header));
-        trash_store_set_icon_name(self, g_strdup(g_value_get_string(val)));
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
-        break;
+    switch (prop_id) {
+        case PROP_DRIVE_NAME:
+            g_return_if_fail(GTK_IS_WIDGET(self->header));
+            trash_store_set_drive_name(self, g_strdup(g_value_get_string(val)));
+            break;
+        case PROP_ICON_NAME:
+            g_return_if_fail(GTK_IS_WIDGET(self->header));
+            trash_store_set_icon_name(self, g_strdup(g_value_get_string(val)));
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
+            break;
     }
 }
 
-static void trash_store_init(TrashStore *self)
-{
+static void trash_store_init(TrashStore *self) {
     self->restoring = FALSE;
 
     GtkStyleContext *style = gtk_widget_get_style_context(GTK_WIDGET(self));
@@ -148,8 +139,7 @@ static void trash_store_init(TrashStore *self)
     gtk_box_pack_start(GTK_BOX(self), self->file_box, TRUE, TRUE, 0);
 }
 
-TrashStore *trash_store_new(gchar *drive_name, gchar *icon_name)
-{
+TrashStore *trash_store_new(gchar *drive_name, gchar *icon_name) {
     return g_object_new(TRASH_TYPE_STORE,
                         "orientation", GTK_ORIENTATION_VERTICAL,
                         "drive-name", drive_name,
@@ -157,8 +147,7 @@ TrashStore *trash_store_new(gchar *drive_name, gchar *icon_name)
                         NULL);
 }
 
-void trash_store_apply_button_styles(TrashStore *self)
-{
+void trash_store_apply_button_styles(TrashStore *self) {
     GtkStyleContext *delete_style = gtk_widget_get_style_context(self->delete_btn);
     gtk_style_context_add_class(delete_style, "flat");
     gtk_style_context_remove_class(delete_style, "button");
@@ -167,23 +156,19 @@ void trash_store_apply_button_styles(TrashStore *self)
     gtk_style_context_remove_class(restore_style, "button");
 }
 
-void trash_store_set_drive_name(TrashStore *self, gchar *drive_name)
-{
+void trash_store_set_drive_name(TrashStore *self, gchar *drive_name) {
     gchar *name_clone = g_strdup(drive_name);
 
-    if (name_clone == NULL || strcmp(name_clone, "") == 0)
-    {
+    if (name_clone == NULL || strcmp(name_clone, "") == 0) {
         return;
     }
 
-    if (!GTK_IS_WIDGET(self->header))
-    {
+    if (!GTK_IS_WIDGET(self->header)) {
         return;
     }
 
     // Free existing text if it is different
-    if ((self->drive_name != NULL) && strcmp(self->drive_name, name_clone) != 0)
-    {
+    if ((self->drive_name != NULL) && strcmp(self->drive_name, name_clone) != 0) {
         g_free(self->drive_name);
     }
 
@@ -191,12 +176,9 @@ void trash_store_set_drive_name(TrashStore *self, gchar *drive_name)
 
     // If we already have a label, just set new text. Otherwise,
     // Create a new label.
-    if (GTK_IS_LABEL(self->header_label))
-    {
+    if (GTK_IS_LABEL(self->header_label)) {
         gtk_label_set_text(GTK_LABEL(self->header_label), self->drive_name);
-    }
-    else
-    {
+    } else {
         self->header_label = gtk_label_new(self->drive_name);
         gtk_label_set_max_width_chars(GTK_LABEL(self->header_label), 30);
         gtk_label_set_ellipsize(GTK_LABEL(self->header_label), PANGO_ELLIPSIZE_END);
@@ -210,23 +192,19 @@ void trash_store_set_drive_name(TrashStore *self, gchar *drive_name)
     g_object_notify_by_pspec(G_OBJECT(self), store_props[PROP_DRIVE_NAME]);
 }
 
-void trash_store_set_icon_name(TrashStore *self, gchar *icon_name)
-{
+void trash_store_set_icon_name(TrashStore *self, gchar *icon_name) {
     gchar *name_clone = g_strdup(icon_name);
 
-    if (name_clone == NULL || strcmp(name_clone, "") == 0)
-    {
+    if (name_clone == NULL || strcmp(name_clone, "") == 0) {
         return;
     }
 
-    if (!GTK_IS_WIDGET(self->header))
-    {
+    if (!GTK_IS_WIDGET(self->header)) {
         return;
     }
 
     // Free existing text if it is different
-    if ((self->icon_name != NULL) && strcmp(self->icon_name, name_clone) != 0)
-    {
+    if ((self->icon_name != NULL) && strcmp(self->icon_name, name_clone) != 0) {
         g_free(self->icon_name);
     }
 
@@ -234,12 +212,9 @@ void trash_store_set_icon_name(TrashStore *self, gchar *icon_name)
 
     // If we already have an icon set, change it. Else, make a new one and prepend it
     // to our header.
-    if (GTK_IS_IMAGE(self->header_icon))
-    {
+    if (GTK_IS_IMAGE(self->header_icon)) {
         gtk_image_set_from_icon_name(GTK_IMAGE(self->header_icon), self->icon_name, GTK_ICON_SIZE_SMALL_TOOLBAR);
-    }
-    else
-    {
+    } else {
         self->header_icon = gtk_image_new_from_icon_name(self->icon_name, GTK_ICON_SIZE_SMALL_TOOLBAR);
         gtk_box_pack_start(GTK_BOX(self->header), self->header_icon, FALSE, FALSE, 10);
     }
@@ -247,21 +222,16 @@ void trash_store_set_icon_name(TrashStore *self, gchar *icon_name)
     g_object_notify_by_pspec(G_OBJECT(self), store_props[PROP_ICON_NAME]);
 }
 
-void trash_store_set_btns_sensitive(TrashStore *self, gboolean sensitive)
-{
+void trash_store_set_btns_sensitive(TrashStore *self, gboolean sensitive) {
     gtk_widget_set_sensitive(self->delete_btn, sensitive);
     gtk_widget_set_sensitive(self->restore_btn, sensitive);
 }
 
-void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self)
-{
-    if (sender == GTK_BUTTON(self->delete_btn))
-    {
+void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self) {
+    if (sender == GTK_BUTTON(self->delete_btn)) {
         self->restoring = FALSE;
         trash_revealer_set_text(self->revealer, "<b>Really delete all items?</b>");
-    }
-    else
-    {
+    } else {
         self->restoring = TRUE;
         trash_revealer_set_text(self->revealer, "<b>Really restore all items?</b>");
     }
@@ -270,20 +240,15 @@ void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self)
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), TRUE);
 }
 
-void trash_store_handle_cancel_clicked(TrashRevealer *sender, TrashStore *self)
-{
+void trash_store_handle_cancel_clicked(TrashRevealer *sender, TrashStore *self) {
     trash_store_set_btns_sensitive(self, TRUE);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
 }
 
-void trash_store_handle_confirm_clicked(TrashRevealer *sender, TrashStore *self)
-{
-    if (self->restoring)
-    {
+void trash_store_handle_confirm_clicked(TrashRevealer *sender, TrashStore *self) {
+    if (self->restoring) {
         // TODO: Restore all items
-    }
-    else
-    {
+    } else {
         // TODO: Delete all items
     }
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <gtk/gtk.h>
 #include "trash_revealer.h"
+#include <gtk/gtk.h>
 
 G_BEGIN_DECLS
 

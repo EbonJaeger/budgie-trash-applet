@@ -1,7 +1,6 @@
 #include "trash_revealer.h"
 
-enum
-{
+enum {
     SIGNAL_CANCEL_CLICKED,
     SIGNAL_CONFIRM_CLICKED,
     N_SIGNALS
@@ -9,8 +8,7 @@ enum
 
 static guint confirmation_revealer_signals[N_SIGNALS] = {0};
 
-enum
-{
+enum {
     PROP_EXP_0,
     PROP_TEXT,
     N_EXP_PROPERTIES
@@ -20,8 +18,7 @@ static GParamSpec *revealer_props[N_EXP_PROPERTIES] = {
     NULL,
 };
 
-struct _TrashRevealer
-{
+struct _TrashRevealer {
     GtkRevealer parent_instance;
     GtkWidget *container;
 
@@ -32,8 +29,7 @@ struct _TrashRevealer
     GtkWidget *confirm_button;
 };
 
-struct _TrashRevealerClass
-{
+struct _TrashRevealerClass {
     GtkRevealerClass parent_class;
 
     void (*cancel_clicked)(TrashRevealer *revealer);
@@ -45,8 +41,7 @@ G_DEFINE_TYPE(TrashRevealer, trash_revealer, GTK_TYPE_REVEALER);
 static void trash_revealer_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec);
 static void trash_revealer_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec);
 
-static void trash_revealer_class_init(TrashRevealerClass *klazz)
-{
+static void trash_revealer_class_init(TrashRevealerClass *klazz) {
     GObjectClass *class = G_OBJECT_CLASS(klazz);
 
     confirmation_revealer_signals[SIGNAL_CANCEL_CLICKED] = g_signal_new(
@@ -86,45 +81,39 @@ static void trash_revealer_class_init(TrashRevealerClass *klazz)
     g_object_class_install_properties(class, N_EXP_PROPERTIES, revealer_props);
 }
 
-static void trash_revealer_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec)
-{
+static void trash_revealer_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec) {
     TrashRevealer *self = TRASH_REVEALER(obj);
 
-    switch (prop_id)
-    {
-    case PROP_TEXT:
-        g_value_set_string(val, self->text);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
-        break;
+    switch (prop_id) {
+        case PROP_TEXT:
+            g_value_set_string(val, self->text);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
+            break;
     }
 }
 
-static void trash_revealer_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec)
-{
+static void trash_revealer_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec) {
     TrashRevealer *self = TRASH_REVEALER(obj);
 
-    if (!GTK_IS_LABEL(self->label))
-    {
+    if (!GTK_IS_LABEL(self->label)) {
         self->label = gtk_label_new("");
         g_object_set(G_OBJECT(self->label), "height-request", 20, NULL);
         gtk_box_pack_start(GTK_BOX(self->container), self->label, TRUE, TRUE, 0);
     }
 
-    switch (prop_id)
-    {
-    case PROP_TEXT:
-        trash_revealer_set_text(self, g_strdup(g_value_get_string(val)));
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
-        break;
+    switch (prop_id) {
+        case PROP_TEXT:
+            trash_revealer_set_text(self, g_strdup(g_value_get_string(val)));
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
+            break;
     }
 }
 
-static void trash_revealer_init(TrashRevealer *self)
-{
+static void trash_revealer_init(TrashRevealer *self) {
     gtk_revealer_set_transition_type(GTK_REVEALER(self), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self), FALSE);
 
@@ -156,35 +145,27 @@ static void trash_revealer_init(TrashRevealer *self)
     gtk_container_add(GTK_CONTAINER(self), self->container);
 }
 
-TrashRevealer *trash_revealer_new()
-{
+TrashRevealer *trash_revealer_new() {
     return g_object_new(TRASH_TYPE_REVEALER, NULL);
 }
 
-void trash_revealer_handle_clicked(GtkButton *sender, TrashRevealer *self)
-{
-    if (sender == GTK_BUTTON(self->cancel_button))
-    {
+void trash_revealer_handle_clicked(GtkButton *sender, TrashRevealer *self) {
+    if (sender == GTK_BUTTON(self->cancel_button)) {
         g_signal_emit(self, confirmation_revealer_signals[SIGNAL_CANCEL_CLICKED], 0, NULL);
-    }
-    else
-    {
+    } else {
         g_signal_emit(self, confirmation_revealer_signals[SIGNAL_CONFIRM_CLICKED], 0, NULL);
     }
 }
 
-void trash_revealer_set_text(TrashRevealer *self, gchar *text)
-{
+void trash_revealer_set_text(TrashRevealer *self, gchar *text) {
     gchar *text_clone = g_strdup(text);
 
-    if (text_clone == NULL || strcmp(text_clone, "") == 0)
-    {
+    if (text_clone == NULL || strcmp(text_clone, "") == 0) {
         return;
     }
 
     // Free existing text if it is different
-    if ((self->text) && strcmp(self->text, text_clone) != 0)
-    {
+    if ((self->text) && strcmp(self->text, text_clone) != 0) {
         g_free(self->text);
     }
 

@@ -18,13 +18,11 @@ typedef struct _TrashAppletClass TrashAppletClass;
 #define TRASH_IS_APPLET_CLASS(o) (G_TYPE_CHECK_CLASS_TYPE((o), TRASH_TYPE_APPLET))
 #define TRASH_APPLET_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS((o), TRASH_TYPE_APPLET, TrashAppletClass))
 
-struct _TrashAppletClass
-{
+struct _TrashAppletClass {
     BudgieAppletClass parent_class;
 };
 
-struct _TrashApplet
-{
+struct _TrashApplet {
     BudgieApplet parent;
     TrashAppletPrivate *priv;
 };

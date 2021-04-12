@@ -14,13 +14,11 @@ typedef struct _TrashPluginClass TrashPluginClass;
 #define TRASH_IS_PLUGIN_CLASS(o) (G_TYPE_CHECK_CLASS_TYPE((o), TRASH_TYPE_PLUGIN))
 #define TRASH_PLUGIN_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS((o), TRASH_TYPE_PLUGIN, TrashPluginClass))
 
-struct _TrashPluginClass
-{
+struct _TrashPluginClass {
     GObjectClass parent_class;
 };
 
-struct _TrashPlugin
-{
+struct _TrashPlugin {
     GObject parent;
 };
 

@@ -8,8 +8,7 @@
  * trashed file.
  */
 struct TrashInfo;
-typedef struct TrashInfo
-{
+typedef struct TrashInfo {
     char *restore_path;
     GDateTime *deletion_date;
 } TrashInfo;
@@ -18,8 +17,7 @@ typedef struct TrashInfo
  * Represents an item in the trash bin.
  */
 struct TrashItem;
-typedef struct TrashItem
-{
+typedef struct TrashItem {
     const char *name;
     const char *path;
     TrashInfo *trash_info;
