@@ -70,18 +70,16 @@ static void trash_applet_init(TrashApplet *self)
                                               GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
     // Create our panel widget
-    TrashIconButton *icon_button = trash_icon_button_new();
-    self->priv->icon_button = icon_button;
+    self->priv->icon_button = trash_icon_button_new();
 
     // Create our popover widget
-    GtkWidget *popover = budgie_popover_new(GTK_WIDGET(icon_button));
-    g_object_set(popover, "width-request", 300, NULL);
-    trash_create_widgets(self, popover);
-    self->priv->popover = popover;
+    self->priv->popover = budgie_popover_new(GTK_WIDGET(self->priv->icon_button));
+    g_object_set(self->priv->popover, "width-request", 300, NULL);
+    trash_create_widgets(self, self->priv->popover);
 
-    gtk_container_add(GTK_CONTAINER(self), GTK_WIDGET(icon_button));
+    gtk_container_add(GTK_CONTAINER(self), GTK_WIDGET(self->priv->icon_button));
 
-    g_signal_connect_object(GTK_BUTTON(icon_button), "clicked", G_CALLBACK(trash_toggle_popover), self, 0);
+    g_signal_connect_object(GTK_BUTTON(self->priv->icon_button), "clicked", G_CALLBACK(trash_toggle_popover), self, 0);
     gtk_widget_show_all(GTK_WIDGET(self));
 }
 

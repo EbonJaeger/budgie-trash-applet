@@ -134,19 +134,18 @@ static void trash_store_init(TrashStore *self)
     g_signal_connect_object(GTK_REVEALER(self->revealer), "confirm-clicked", G_CALLBACK(trash_store_handle_confirm_clicked), self, 0);
 
     // Create our file list
-    GtkWidget *file_box = gtk_list_box_new();
-    GtkStyleContext *file_box_style = gtk_widget_get_style_context(file_box);
+    self->file_box = gtk_list_box_new();
+    GtkStyleContext *file_box_style = gtk_widget_get_style_context(self->file_box);
     gtk_style_context_add_class(file_box_style, "trash-file-box");
     gtk_style_context_add_class(file_box_style, "empty");
-    gtk_list_box_set_activate_on_single_click(GTK_LIST_BOX(file_box), TRUE);
-    gtk_list_box_set_selection_mode(GTK_LIST_BOX(file_box), GTK_SELECTION_NONE);
-    self->file_box = file_box;
+    gtk_list_box_set_activate_on_single_click(GTK_LIST_BOX(self->file_box), TRUE);
+    gtk_list_box_set_selection_mode(GTK_LIST_BOX(self->file_box), GTK_SELECTION_NONE);
 
     // Pack ourselves up
     trash_store_apply_button_styles(self);
     gtk_box_pack_start(GTK_BOX(self), self->header, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(self), GTK_WIDGET(self->revealer), FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(self), file_box, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(self), self->file_box, TRUE, TRUE, 0);
 }
 
 TrashStore *trash_store_new(gchar *drive_name, gchar *icon_name)
