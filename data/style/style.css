@@ -47,6 +47,7 @@
 
 .trash-file-box.empty {
     border-bottom: none;
+    border-top: none;
     padding-top: 0;
     padding-bottom: 0;
 }
