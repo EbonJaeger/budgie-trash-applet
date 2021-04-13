@@ -23,6 +23,7 @@ applet_trash_deps = [
 
 applet_trash_sources = [
     'ui/trash_icon_button.c',
+    'ui/trash_item.c',
     'ui/trash_revealer.c',
     'ui/trash_store.c',
     'utils.c',

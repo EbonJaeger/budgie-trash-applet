@@ -1,13 +1,25 @@
-#ifndef __BTA_UTILS_H
-#define __BTA_UTILS_H
+#pragma once
 
 #include <gio/gio.h>
 #include <string.h>
 
 #define FILE_ATTRIBUTES_STANDARD_NAME_AND_TYPE "standard::name,standard::type"
 
-gboolean delete_trashed_file(const char *file_path, int is_directory, GError *err);
+/**
+ * The offset from the beginning of a line to the start of
+ * the restore path in a trash info file.
+ */
+#define TRASH_INFO_PATH_PREFIX_OFFSET 5
 
-char *substring(char *source, char *dest, int offset, int length);
+/**
+ * The offset to the beginning of the date from the start
+ * of a line.
+ */
+#define TRASH_INFO_DELETION_DATE_PREFIX_OFFSET 14
 
-#endif
+gboolean delete_trashed_file(const gchar *file_path, gint is_directory, GError *err);
+
+gchar *substring(gchar *source, gchar *dest, gint offset, gint length);
+
+GDateTime *trash_get_deletion_date(gchar *data);
+gchar *trash_get_restore_path(gchar *data);

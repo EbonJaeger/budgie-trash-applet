@@ -113,6 +113,13 @@ void trash_create_widgets(TrashApplet *self, GtkWidget *popover) {
 
     // Create a dummy store for now to display
     TrashStore *default_store = trash_store_new("This PC", "drive-harddisk-symbolic");
+    GError *err = NULL;
+    trash_store_load_items(default_store, err);
+    if (err) {
+        g_critical("Error loading trash items for the default trash store: %s\n", err->message);
+    }
+
+
     gtk_list_box_insert(GTK_LIST_BOX(drive_box), GTK_WIDGET(default_store), -1);
 
     gtk_box_pack_start(GTK_BOX(view), header, FALSE, FALSE, 0);

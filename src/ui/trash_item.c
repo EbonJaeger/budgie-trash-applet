@@ -1,0 +1,361 @@
+#include "trash_item.h"
+
+enum {
+    PROP_EXP_0,
+    PROP_FILE_NAME,
+    PROP_PATH,
+    PROP_RESTORE_PATH,
+    PROP_FILE_ICON,
+    PROP_IS_DIRECTORY,
+    PROP_TIMESTAMP,
+    N_EXP_PROPERTIES
+};
+
+static GParamSpec *item_props[N_EXP_PROPERTIES] = {
+    NULL,
+};
+
+struct _TrashItem {
+    GtkBox parent_instance;
+
+    gboolean restoring;
+
+    gchar *name;
+    gchar *path;
+    gchar *restore_path;
+    GIcon *icon;
+    gboolean is_directory;
+    gchar *timestamp;
+
+    GtkWidget *header;
+    GtkWidget *file_icon;
+    GtkWidget *file_name_label;
+    GtkWidget *delete_btn;
+    GtkWidget *restore_btn;
+    TrashRevealer *revealer;
+};
+
+struct _TrashItemClass {
+    GtkBoxClass parent_class;
+};
+
+G_DEFINE_TYPE(TrashItem, trash_item, GTK_TYPE_BOX);
+
+static void trash_item_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec);
+static void trash_item_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec);
+
+static void trash_item_class_init(TrashItemClass *klazz) {
+    GObjectClass *class = G_OBJECT_CLASS(klazz);
+    class->get_property = trash_item_get_property;
+    class->set_property = trash_item_set_property;
+
+    item_props[PROP_FILE_NAME] = g_param_spec_string(
+        "file-name",
+        "File name",
+        "Name of the item in the trash bin",
+        "",
+        G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    item_props[PROP_PATH] = g_param_spec_string(
+        "path",
+        "Path",
+        "Path to the item in the trash bin",
+        "",
+        G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    item_props[PROP_RESTORE_PATH] = g_param_spec_string(
+        "restore-path",
+        "Restore Path",
+        "Path to where the trashed item used to be",
+        "",
+        G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    item_props[PROP_FILE_ICON] = g_param_spec_gtype(
+        "file-icon",
+        "File icon",
+        "GIcon to use for this item",
+        G_TYPE_NONE,
+        G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    item_props[PROP_IS_DIRECTORY] = g_param_spec_boolean(
+        "is-directory",
+        "Directory",
+        "If this item is a directory or not",
+        FALSE,
+        G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    item_props[PROP_TIMESTAMP] = g_param_spec_string(
+        "timestamp",
+        "Timestamp",
+        "The time when the item was deleted",
+        "",
+        G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    g_object_class_install_properties(class, N_EXP_PROPERTIES, item_props);
+}
+
+static void trash_item_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec) {
+    TrashItem *self = TRASH_ITEM(obj);
+
+    switch (prop_id) {
+        case PROP_FILE_NAME:
+            g_value_set_string(val, self->path);
+            break;
+        case PROP_PATH:
+            g_value_set_string(val, self->path);
+            break;
+        case PROP_RESTORE_PATH:
+            g_value_set_string(val, self->restore_path);
+            break;
+        case PROP_FILE_ICON:
+            g_value_set_gtype(val, self->icon);
+            break;
+        case PROP_IS_DIRECTORY:
+            g_value_set_boolean(val, self->is_directory);
+            break;
+        case PROP_TIMESTAMP:
+            g_value_set_string(val, self->timestamp);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
+            break;
+    }
+}
+
+static void trash_item_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec) {
+    TrashItem *self = TRASH_ITEM(obj);
+
+    switch (prop_id) {
+        case PROP_FILE_NAME:
+            g_return_if_fail(GTK_IS_WIDGET(self->header));
+            trash_item_set_file_name(self, g_strdup(g_value_get_string(val)));
+            break;
+        case PROP_PATH:
+            trash_item_set_path(self, g_strdup(g_value_get_string(val)));
+            break;
+        case PROP_RESTORE_PATH:
+            g_return_if_fail(GTK_IS_WIDGET(self->header));
+            trash_item_set_restore_path(self, g_strdup(g_value_get_string(val)));
+            break;
+        case PROP_FILE_ICON:
+            g_return_if_fail(GTK_IS_WIDGET(self->header));
+            trash_item_set_icon(self, G_ICON(g_value_get_gtype(val)));
+            break;
+        case PROP_IS_DIRECTORY:
+            trash_item_set_directory(self, g_value_get_boolean(val));
+            break;
+        case PROP_TIMESTAMP:
+            trash_item_set_timestamp(self, g_strdup(g_value_get_string(val)));
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
+            break;
+    }
+}
+
+static void trash_item_init(TrashItem *self) {
+    self->restoring = FALSE;
+
+    GtkStyleContext *style = gtk_widget_get_style_context(GTK_WIDGET(self));
+    gtk_style_context_add_class(style, "trash-item");
+
+    // Create the main part of the widget
+    self->header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    g_object_set(G_OBJECT(self->header), "height-request", 32, NULL);
+
+    // Create the item's delete and restore button
+    self->delete_btn = gtk_button_new_from_icon_name("user-trash-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
+    gtk_widget_set_tooltip_text(self->delete_btn, "Delete item");
+    g_signal_connect_object(GTK_BUTTON(self->delete_btn), "clicked", G_CALLBACK(trash_item_handle_btn_clicked), self, 0);
+
+    self->restore_btn = gtk_button_new_from_icon_name("edit-undo-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
+    gtk_widget_set_tooltip_text(self->restore_btn, "Restore item");
+    g_signal_connect_object(GTK_BUTTON(self->restore_btn), "clicked", G_CALLBACK(trash_item_handle_btn_clicked), self, 0);
+
+    self->revealer = trash_revealer_new();
+    g_signal_connect_object(GTK_REVEALER(self->revealer), "cancel-clicked", G_CALLBACK(trash_item_handle_cancel_clicked), self, 0);
+    g_signal_connect_object(GTK_REVEALER(self->revealer), "confirm-clicked", G_CALLBACK(trash_item_handle_confirm_clicked), self, 0);
+
+    gtk_box_pack_end(GTK_BOX(self->header), self->delete_btn, FALSE, FALSE, 0);
+    gtk_box_pack_end(GTK_BOX(self->header), self->restore_btn, FALSE, FALSE, 0);
+
+    trash_item_apply_button_styles(self);
+
+    gtk_box_pack_start(GTK_BOX(self), self->header, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(self), GTK_WIDGET(self->revealer), FALSE, FALSE, 0);
+    gtk_widget_show_all(GTK_WIDGET(self));
+}
+
+TrashItem *trash_item_new(gchar *name,
+                          gchar *path,
+                          gchar *restore_path,
+                          GIcon *icon,
+                          gboolean is_directory,
+                          gchar *timestamp) {
+    return g_object_new(TRASH_TYPE_ITEM,
+                        "orientation", GTK_ORIENTATION_VERTICAL,
+                        "file-icon", icon,
+                        "file-name", name,
+                        "path", path,
+                        "restore-path", restore_path,
+                        "is-directory", is_directory,
+                        "timestamp", timestamp,
+                        NULL);
+}
+
+void trash_item_apply_button_styles(TrashItem *self) {
+    GtkStyleContext *delete_style = gtk_widget_get_style_context(self->delete_btn);
+    gtk_style_context_add_class(delete_style, "flat");
+    gtk_style_context_remove_class(delete_style, "button");
+    GtkStyleContext *restore_style = gtk_widget_get_style_context(self->restore_btn);
+    gtk_style_context_add_class(restore_style, "flat");
+    gtk_style_context_remove_class(restore_style, "button");
+}
+
+void trash_item_set_btns_sensitive(TrashItem *self, gboolean sensitive) {
+    gtk_widget_set_sensitive(self->delete_btn, sensitive);
+    gtk_widget_set_sensitive(self->restore_btn, sensitive);
+}
+
+void trash_item_set_icon(TrashItem *self, GIcon *icon) {
+    if (!GTK_IS_WIDGET(self->header)) {
+        return;
+    }
+
+    // If we already have an icon set, change it. Else, make a new one and prepend it
+    // to our header.
+    if (GTK_IS_IMAGE(self->file_icon)) {
+        gtk_image_set_from_gicon(GTK_IMAGE(self->file_icon), icon, GTK_ICON_SIZE_SMALL_TOOLBAR);
+    } else {
+        self->file_icon = gtk_image_new_from_gicon(icon, GTK_ICON_SIZE_SMALL_TOOLBAR);
+        gtk_box_pack_start(GTK_BOX(self->header), self->file_icon, FALSE, FALSE, 5);
+    }
+
+    g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_FILE_ICON]);
+}
+
+void trash_item_set_file_name(TrashItem *self, gchar *file_name) {
+    gchar *name_clone = g_strdup(file_name);
+
+    if (name_clone == NULL || strcmp(name_clone, "") == 0) {
+        return;
+    }
+
+    if (!GTK_IS_WIDGET(self->header)) {
+        return;
+    }
+
+    // Free existing text if it is different
+    if ((self->name != NULL) && strcmp(self->name, name_clone) != 0) {
+        g_free(self->name);
+    }
+
+    self->name = name_clone;
+
+    // If we already have a label, just set new text. Otherwise,
+    // create a new label.
+    if (GTK_IS_LABEL(self->file_name_label)) {
+        gtk_label_set_text(GTK_LABEL(self->file_name_label), self->name);
+    } else {
+        self->file_name_label = gtk_label_new(self->name);
+        gtk_label_set_max_width_chars(GTK_LABEL(self->file_name_label), 30);
+        gtk_label_set_ellipsize(GTK_LABEL(self->file_name_label), PANGO_ELLIPSIZE_END);
+        gtk_widget_set_halign(self->file_name_label, GTK_ALIGN_START);
+        gtk_label_set_justify(GTK_LABEL(self->file_name_label), GTK_JUSTIFY_LEFT);
+        gtk_box_pack_end(GTK_BOX(self->header), self->file_name_label, TRUE, TRUE, 0);
+    }
+
+    g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_FILE_NAME]);
+}
+
+void trash_item_set_path(TrashItem *self, gchar *path) {
+    gchar *path_clone = g_strdup(path);
+
+    if (path_clone == NULL || strcmp(path_clone, "") == 0) {
+        return;
+    }
+
+    // Free existing text if it is different
+    if ((self->path != NULL) && strcmp(self->path, path_clone) != 0) {
+        g_free(self->path);
+    }
+
+    self->path = path_clone;
+
+    g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_PATH]);
+}
+
+void trash_item_set_restore_path(TrashItem *self, gchar *path) {
+    gchar *path_clone = g_strdup(path);
+
+    if (path_clone == NULL || strcmp(path_clone, "") == 0) {
+        return;
+    }
+
+    if (!GTK_IS_WIDGET(self->header)) {
+        return;
+    }
+
+    // Free existing text if it is different
+    if ((self->restore_path != NULL) && strcmp(self->restore_path, path_clone) != 0) {
+        g_free(self->path);
+    }
+
+    self->restore_path = path_clone;
+
+    // Set the tooltip text
+    gtk_widget_set_tooltip_text(self->header, self->restore_path);
+
+    g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_RESTORE_PATH]);
+}
+
+void trash_item_set_directory(TrashItem *self, gboolean is_directory) {
+    self->is_directory = is_directory;
+    g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_IS_DIRECTORY]);
+}
+
+void trash_item_set_timestamp(TrashItem *self, gchar *timestamp) {
+    gchar *timestamp_clone = g_strdup(timestamp);
+
+    if (timestamp_clone == NULL || strcmp(timestamp_clone, "") == 0) {
+        return;
+    }
+
+    // Free existing text if it is different
+    if ((self->timestamp != NULL) && strcmp(self->timestamp, timestamp_clone) != 0) {
+        g_free(self->timestamp);
+    }
+
+    self->timestamp = timestamp_clone;
+
+    g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_TIMESTAMP]);
+}
+
+void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self) {
+    if (sender == GTK_BUTTON(self->delete_btn)) {
+        self->restoring = FALSE;
+        trash_revealer_set_text(self->revealer, "<b>Really delete this item?</b>");
+    } else {
+        self->restoring = TRUE;
+        trash_revealer_set_text(self->revealer, "<b>Really restore this item?</b>");
+    }
+
+    trash_item_set_btns_sensitive(self, FALSE);
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), TRUE);
+}
+
+void trash_item_handle_cancel_clicked(TrashRevealer *sender, TrashItem *self) {
+    trash_item_set_btns_sensitive(self, TRUE);
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
+}
+
+void trash_item_handle_confirm_clicked(TrashRevealer *sender, TrashItem *self) {
+    if (self->restoring) {
+        // TODO: Restore all items
+    } else {
+        // TODO: Delete all items
+    }
+
+    trash_item_set_btns_sensitive(self, TRUE);
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
+}
