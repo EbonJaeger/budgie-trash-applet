@@ -167,6 +167,8 @@ static void trash_store_init(TrashStore *self) {
     gtk_list_box_set_selection_mode(GTK_LIST_BOX(self->file_box), GTK_SELECTION_NONE);
     gtk_list_box_set_sort_func(GTK_LIST_BOX(self->file_box), trash_store_sort_by_type, self, NULL);
 
+    g_signal_connect_object(self->file_box, "row-activated", G_CALLBACK(trash_store_handle_row_activated), self, 0);
+
     // Pack ourselves up
     trash_store_apply_button_styles(self);
     gtk_box_pack_start(GTK_BOX(self), self->header, TRUE, TRUE, 0);
@@ -311,10 +313,13 @@ void trash_store_check_empty(TrashStore *self) {
 
     if (self->file_count > 0) {
         gtk_style_context_remove_class(file_box_style, "empty");
+        trash_store_set_btns_sensitive(self, TRUE);
     } else {
         if (!gtk_style_context_has_class(file_box_style, "empty")) {
             gtk_style_context_add_class(file_box_style, "empty");
         }
+
+        trash_store_set_btns_sensitive(self, FALSE);
     }
 }
 
@@ -345,6 +350,11 @@ void trash_store_handle_confirm_clicked(TrashRevealer *sender, TrashStore *self)
 
     trash_store_set_btns_sensitive(self, TRUE);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
+}
+
+void trash_store_handle_row_activated(GtkListBox *sender, GtkListBoxRow *row, TrashStore *self) {
+    GtkWidget *child = gtk_bin_get_child(GTK_BIN(row));
+    trash_item_toggle_info_revealer(TRASH_ITEM(child));
 }
 
 void trash_store_load_items(TrashStore *self, GError *err) {
@@ -386,7 +396,7 @@ void trash_store_load_items(TrashStore *self, GError *err) {
                                                strdup(restore_path),
                                                g_file_info_get_icon(current_file),
                                                (g_file_info_get_file_type(current_file) == G_FILE_TYPE_DIRECTORY),
-                                               g_date_time_format_iso8601(deletion_date));
+                                               g_date_time_format(deletion_date, "%Y-%m-%d %H:%M %Z"));
 
         g_object_unref(current_file);
         g_free(trash_info_contents);

@@ -31,6 +31,7 @@ void trash_store_check_empty(TrashStore *self);
 void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self);
 void trash_store_handle_cancel_clicked(TrashRevealer *sender, TrashStore *self);
 void trash_store_handle_confirm_clicked(TrashRevealer *sender, TrashStore *self);
+void trash_store_handle_row_activated(GtkListBox *sender, GtkListBoxRow *row, TrashStore *self);
 
 /**
  * Load all of the trashed items for this particular trashbin.

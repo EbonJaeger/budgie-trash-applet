@@ -32,7 +32,13 @@ struct _TrashItem {
     GtkWidget *file_name_label;
     GtkWidget *delete_btn;
     GtkWidget *restore_btn;
-    TrashRevealer *revealer;
+
+    GtkWidget *info_revealer;
+    GtkWidget *info_container;
+    GtkWidget *path_label;
+    GtkWidget *timestamp_label;
+
+    TrashRevealer *confirm_revealer;
 };
 
 struct _TrashItemClass {
@@ -135,6 +141,7 @@ static void trash_item_set_property(GObject *obj, guint prop_id, const GValue *v
             break;
         case PROP_RESTORE_PATH:
             g_return_if_fail(GTK_IS_WIDGET(self->header));
+            g_return_if_fail(GTK_IS_WIDGET(self->info_revealer));
             trash_item_set_restore_path(self, g_strdup(g_value_get_string(val)));
             break;
         case PROP_FILE_ICON:
@@ -145,6 +152,7 @@ static void trash_item_set_property(GObject *obj, guint prop_id, const GValue *v
             trash_item_set_directory(self, g_value_get_boolean(val));
             break;
         case PROP_TIMESTAMP:
+            g_return_if_fail(GTK_IS_WIDGET(self->info_revealer));
             trash_item_set_timestamp(self, g_strdup(g_value_get_string(val)));
             break;
         default:
@@ -172,9 +180,18 @@ static void trash_item_init(TrashItem *self) {
     gtk_widget_set_tooltip_text(self->restore_btn, "Restore item");
     g_signal_connect_object(GTK_BUTTON(self->restore_btn), "clicked", G_CALLBACK(trash_item_handle_btn_clicked), self, 0);
 
-    self->revealer = trash_revealer_new();
-    g_signal_connect_object(GTK_REVEALER(self->revealer), "cancel-clicked", G_CALLBACK(trash_item_handle_cancel_clicked), self, 0);
-    g_signal_connect_object(GTK_REVEALER(self->revealer), "confirm-clicked", G_CALLBACK(trash_item_handle_confirm_clicked), self, 0);
+    self->info_revealer = gtk_revealer_new();
+    gtk_revealer_set_transition_type(GTK_REVEALER(self->info_revealer), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->info_revealer), FALSE);
+    GtkStyleContext *revealer_style = gtk_widget_get_style_context(self->info_revealer);
+    gtk_style_context_add_class(revealer_style, "trash-info-revealer");
+
+    self->info_container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    gtk_container_add(GTK_CONTAINER(self->info_revealer), self->info_container);
+
+    self->confirm_revealer = trash_revealer_new();
+    g_signal_connect_object(GTK_REVEALER(self->confirm_revealer), "cancel-clicked", G_CALLBACK(trash_item_handle_cancel_clicked), self, 0);
+    g_signal_connect_object(GTK_REVEALER(self->confirm_revealer), "confirm-clicked", G_CALLBACK(trash_item_handle_confirm_clicked), self, 0);
 
     gtk_box_pack_end(GTK_BOX(self->header), self->delete_btn, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(self->header), self->restore_btn, FALSE, FALSE, 0);
@@ -182,7 +199,8 @@ static void trash_item_init(TrashItem *self) {
     trash_item_apply_button_styles(self);
 
     gtk_box_pack_start(GTK_BOX(self), self->header, TRUE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(self), GTK_WIDGET(self->revealer), FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(self), self->info_revealer, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(self), GTK_WIDGET(self->confirm_revealer), FALSE, FALSE, 0);
     gtk_widget_show_all(GTK_WIDGET(self));
 }
 
@@ -303,6 +321,16 @@ void trash_item_set_restore_path(TrashItem *self, gchar *path) {
 
     self->restore_path = path_clone;
 
+    if (GTK_IS_LABEL(self->path_label)) {
+        gtk_label_set_text(GTK_LABEL(self->path_label), g_strconcat("Path: ", self->restore_path, NULL));
+    } else {
+        self->path_label = gtk_label_new(g_strconcat("Path: ", self->restore_path, NULL));
+        gtk_label_set_ellipsize(GTK_LABEL(self->path_label), PANGO_ELLIPSIZE_END);
+        gtk_widget_set_halign(self->path_label, GTK_ALIGN_START);
+        gtk_label_set_justify(GTK_LABEL(self->path_label), GTK_JUSTIFY_LEFT);
+        gtk_box_pack_start(GTK_BOX(self->info_container), self->path_label, TRUE, TRUE, 0);
+    }
+
     // Set the tooltip text
     gtk_widget_set_tooltip_text(self->header, self->restore_path);
 
@@ -328,25 +356,34 @@ void trash_item_set_timestamp(TrashItem *self, gchar *timestamp) {
 
     self->timestamp = timestamp_clone;
 
+    if (GTK_IS_LABEL(self->timestamp_label)) {
+        gtk_label_set_text(GTK_LABEL(self->timestamp_label), g_strconcat("Deleted at: ", self->timestamp, NULL));
+    } else {
+        self->timestamp_label = gtk_label_new(g_strconcat("Deleted at: ", self->timestamp, NULL));
+        gtk_widget_set_halign(self->timestamp_label, GTK_ALIGN_START);
+        gtk_label_set_justify(GTK_LABEL(self->timestamp_label), GTK_JUSTIFY_LEFT);
+        gtk_box_pack_end(GTK_BOX(self->info_container), self->timestamp_label, TRUE, TRUE, 0);
+    }
+
     g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_TIMESTAMP]);
 }
 
 void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self) {
     if (sender == GTK_BUTTON(self->delete_btn)) {
         self->restoring = FALSE;
-        trash_revealer_set_text(self->revealer, "<b>Really delete this item?</b>");
+        trash_revealer_set_text(self->confirm_revealer, "<b>Really delete this item?</b>");
     } else {
         self->restoring = TRUE;
-        trash_revealer_set_text(self->revealer, "<b>Really restore this item?</b>");
+        trash_revealer_set_text(self->confirm_revealer, "<b>Really restore this item?</b>");
     }
 
     trash_item_set_btns_sensitive(self, FALSE);
-    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), TRUE);
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->confirm_revealer), TRUE);
 }
 
 void trash_item_handle_cancel_clicked(TrashRevealer *sender, TrashItem *self) {
     trash_item_set_btns_sensitive(self, TRUE);
-    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->confirm_revealer), FALSE);
 }
 
 void trash_item_handle_confirm_clicked(TrashRevealer *sender, TrashItem *self) {
@@ -357,5 +394,13 @@ void trash_item_handle_confirm_clicked(TrashRevealer *sender, TrashItem *self) {
     }
 
     trash_item_set_btns_sensitive(self, TRUE);
-    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->confirm_revealer), FALSE);
+}
+
+void trash_item_toggle_info_revealer(TrashItem *self) {
+    if (gtk_revealer_get_child_revealed(GTK_REVEALER(self->info_revealer))) {
+        gtk_revealer_set_reveal_child(GTK_REVEALER(self->info_revealer), FALSE);
+    } else {
+        gtk_revealer_set_reveal_child(GTK_REVEALER(self->info_revealer), TRUE);
+    }
 }

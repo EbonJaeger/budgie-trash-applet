@@ -29,4 +29,6 @@ void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self);
 void trash_item_handle_cancel_clicked(TrashRevealer *sender, TrashItem *self);
 void trash_item_handle_confirm_clicked(TrashRevealer *sender, TrashItem *self);
 
+void trash_item_toggle_info_revealer(TrashItem *self);
+
 G_END_DECLS
