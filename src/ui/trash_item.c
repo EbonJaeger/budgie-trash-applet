@@ -422,18 +422,10 @@ void trash_item_handle_cancel_clicked(TrashRevealer *sender, TrashItem *self) {
 }
 
 void trash_item_handle_confirm_clicked(TrashRevealer *sender, TrashItem *self) {
-    if (self->restoring) {
-        GError *err = NULL;
-        gboolean success = trash_item_restore(self, &err);
-        if (!success) {
-            g_warning("Error restoring file from trash '%s': %s\n", self->name, err->message);
-        }
-    } else {
-        GError *err = NULL;
-        gboolean success = trash_item_delete(self, &err);
-        if (!success) {
-            g_warning("Error deleting trash file '%s': %s\n", self->name, err->message);
-        }
+    GError *err = NULL;
+    gboolean success = self->restoring ? trash_item_restore(self, &err) : trash_item_delete(self, &err);
+    if (!success) {
+        g_warning("Error restoring file from trash '%s': %s\n", self->name, err->message);
     }
 
     trash_item_set_btns_sensitive(self, TRUE);
@@ -466,13 +458,7 @@ gboolean trash_item_restore(TrashItem *self, GError **err) {
     GFile *trashed_file = g_file_new_for_path(self->path);
     GFile *restored_file = g_file_new_for_path(self->restore_path);
 
-    gboolean success = g_file_move(trashed_file,
-                                   restored_file,
-                                   G_FILE_COPY_ALL_METADATA,
-                                   NULL,
-                                   NULL,
-                                   NULL,
-                                   err);
+    gboolean success = g_file_move(trashed_file, restored_file, G_FILE_COPY_ALL_METADATA, NULL, NULL, NULL, err);
 
     if (!success) {
         g_object_unref(trashed_file);
