@@ -16,6 +16,8 @@ static GParamSpec *store_props[N_EXP_PROPERTIES] = {
 
 struct _TrashStore {
     GtkBox parent_instance;
+    GFileMonitor *file_monitor;
+    GSList *trashed_files;
 
     gchar *trash_path;
     gchar *trashinfo_path;
@@ -68,14 +70,14 @@ static void trash_store_class_init(TrashStoreClass *klazz) {
         "trash-path",
         "Trash path",
         "Path to the directory where trashed files are",
-        g_build_path("/", g_get_user_data_dir(), "Trash", "files", NULL),
+        g_build_path(G_DIR_SEPARATOR_S, g_get_user_data_dir(), "Trash", "files", NULL),
         G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
     store_props[PROP_TRASHINFO_PATH] = g_param_spec_string(
         "trashinfo-path",
         "Trashinfo path",
         "Path to the directory where the trashinfo files are",
-        g_build_path("/", g_get_user_data_dir(), "Trash", "info", NULL),
+        g_build_path(G_DIR_SEPARATOR_S, g_get_user_data_dir(), "Trash", "info", NULL),
         G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
     g_object_class_install_properties(class, N_EXP_PROPERTIES, store_props);
@@ -130,6 +132,7 @@ static void trash_store_set_property(GObject *obj, guint prop_id, const GValue *
 static void trash_store_init(TrashStore *self) {
     self->restoring = FALSE;
     self->file_count = 0;
+    self->trashed_files = NULL;
 
     GtkStyleContext *style = gtk_widget_get_style_context(GTK_WIDGET(self));
     gtk_style_context_add_class(style, "trash-store-widget");
@@ -278,10 +281,20 @@ void trash_store_set_trash_path(TrashStore *self, gchar *trash_path) {
 
     // Free existing text if it is different
     if ((self->trash_path != NULL) && strcmp(self->trash_path, path_clone) != 0) {
+        if (self->file_monitor) {
+            g_file_monitor_cancel(G_FILE_MONITOR(self->file_monitor));
+            g_object_unref(self->file_monitor);
+        }
         g_free(self->trash_path);
     }
 
     self->trash_path = path_clone;
+
+    // Set up our file monitor
+    GFile *dir = g_file_new_for_path(self->trash_path);
+    GError *err = NULL;
+    self->file_monitor = g_file_monitor_directory(dir, G_FILE_MONITOR_WATCH_MOVES, NULL, &err);
+    g_signal_connect_object(self->file_monitor, "changed", G_CALLBACK(trash_store_handle_monitor_event), self, 0);
 
     g_object_notify_by_pspec(G_OBJECT(self), store_props[PROP_ICON_NAME]);
 }
@@ -357,6 +370,58 @@ void trash_store_handle_row_activated(GtkListBox *sender, GtkListBoxRow *row, Tr
     trash_item_toggle_info_revealer(TRASH_ITEM(child));
 }
 
+void trash_store_handle_monitor_event(GFileMonitor *monitor,
+                                      GFile *file,
+                                      GFile *other_file,
+                                      GFileMonitorEvent event_type,
+                                      TrashStore *self) {
+    switch (event_type) {
+        case G_FILE_MONITOR_EVENT_MOVED_IN: {
+            gchar *attributes = g_strconcat(G_FILE_ATTRIBUTE_STANDARD_NAME, ",",
+                                            G_FILE_ATTRIBUTE_STANDARD_ICON, ",",
+                                            G_FILE_ATTRIBUTE_STANDARD_TYPE,
+                                            NULL);
+            GFileInfo *file_info = g_file_query_info(file, attributes, G_FILE_QUERY_INFO_NONE, NULL, NULL);
+
+            GError *err = NULL;
+            TrashItem *trash_item = trash_store_create_trash_item(self, file_info, &err);
+            if (err) {
+                g_warning("Couldn't create trash item from GFileInfo: %s\n", err->message);
+                g_object_unref(file_info);
+                g_free(attributes);
+                break;
+            }
+            g_return_if_fail(trash_item != NULL);
+
+            gtk_list_box_insert(GTK_LIST_BOX(self->file_box), GTK_WIDGET(trash_item), -1);
+            self->trashed_files = g_slist_append(self->trashed_files, trash_item);
+            self->file_count++;
+            trash_store_check_empty(self);
+
+            g_object_unref(file_info);
+            g_free(attributes);
+            break;
+        }
+        case G_FILE_MONITOR_EVENT_MOVED_OUT:
+        case G_FILE_MONITOR_EVENT_DELETED: {
+            gchar *file_name = g_file_get_basename(file);
+            GSList *elem = g_slist_find_custom(self->trashed_files, file_name, (GCompareFunc) trash_store_compare_items);
+            TrashItem *trash_item = (TrashItem *) g_slist_nth_data(self->trashed_files,
+                                                                   g_slist_position(self->trashed_files, elem));
+            g_return_if_fail(trash_item != NULL);
+
+            GtkWidget *row = gtk_widget_get_parent(GTK_WIDGET(trash_item));
+            gtk_container_remove(GTK_CONTAINER(self->file_box), row);
+            self->file_count--;
+            trash_store_check_empty(self);
+            self->trashed_files = g_slist_remove(self->trashed_files, trash_item);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
 void trash_store_load_items(TrashStore *self, GError *err) {
     // Open our trash directory
     GFile *trash_dir = g_file_new_for_path(self->trash_path);
@@ -379,30 +444,12 @@ void trash_store_load_items(TrashStore *self, GError *err) {
     // Iterate over the directory's children and append each file name to a list
     GFileInfo *current_file;
     while ((current_file = g_file_enumerator_next_file(enumerator, NULL, &err))) {
-        const gchar *file_name = g_file_info_get_name(current_file);
-
-        // Parse the trashinfo file for this item
-        gchar *trash_info_contents = trash_store_read_trash_info(self, file_name, err);
-        if G_UNLIKELY (!trash_info_contents) {
-            g_warning("Unable to get trashinfo for '%s': %s\n", file_name, err->message);
-            break;
-        }
-
-        gchar *restore_path = trash_get_restore_path(trash_info_contents);
-        GDateTime *deletion_date = trash_get_deletion_date(trash_info_contents);
-
-        TrashItem *trash_item = trash_item_new(strdup(file_name),
-                                               g_build_path("/", self->trash_path, file_name, NULL),
-                                               strdup(restore_path),
-                                               g_file_info_get_icon(current_file),
-                                               (g_file_info_get_file_type(current_file) == G_FILE_TYPE_DIRECTORY),
-                                               g_date_time_format(deletion_date, "%Y-%m-%d %H:%M %Z"));
+        TrashItem *trash_item = trash_store_create_trash_item(self, current_file, &err);
 
         g_object_unref(current_file);
-        g_free(trash_info_contents);
-        g_date_time_unref(deletion_date);
 
         gtk_list_box_insert(GTK_LIST_BOX(self->file_box), GTK_WIDGET(trash_item), -1);
+        self->trashed_files = g_slist_append(self->trashed_files, trash_item);
         self->file_count++;
     }
 
@@ -415,13 +462,38 @@ void trash_store_load_items(TrashStore *self, GError *err) {
     g_object_unref(trash_dir);
 }
 
-gchar *trash_store_read_trash_info(TrashStore *self, const gchar *file_name, GError *err) {
+TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info, GError **err) {
+    const gchar *file_name = g_file_info_get_name(file_info);
+
+    // Parse the trashinfo file for this item
+    gchar *trash_info_contents = trash_store_read_trash_info(self, file_name, err);
+    if G_UNLIKELY (!trash_info_contents) {
+        return NULL;
+    }
+
+    GString *restore_path = trash_get_restore_path(trash_info_contents);
+    GDateTime *deletion_date = trash_get_deletion_date(trash_info_contents);
+
+    TrashItem *trash_item = trash_item_new(strdup(file_name),
+                                           g_build_path(G_DIR_SEPARATOR_S, self->trash_path, file_name, NULL),
+                                           strdup(restore_path->str),
+                                           g_file_info_get_icon(file_info),
+                                           (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY),
+                                           g_date_time_format(deletion_date, "%Y-%m-%d %H:%M %Z"));
+
+    g_free(trash_info_contents);
+    g_date_time_unref(deletion_date);
+
+    return trash_item;
+}
+
+gchar *trash_store_read_trash_info(TrashStore *self, const gchar *file_name, GError **err) {
     // Get the path to the trashinfo file
-    gchar *info_file_path = g_build_path("/", self->trashinfo_path, g_strconcat(file_name, ".trashinfo", NULL), NULL);
+    gchar *info_file_path = g_build_path(G_DIR_SEPARATOR_S, self->trashinfo_path, g_strconcat(file_name, ".trashinfo", NULL), NULL);
 
     // Open the file
     GFile *info_file = g_file_new_for_path(info_file_path);
-    GFileInputStream *input_stream = g_file_read(info_file, NULL, &err);
+    GFileInputStream *input_stream = g_file_read(info_file, NULL, err);
     if (!input_stream) {
         g_object_unref(info_file);
         g_free(info_file_path);
@@ -429,12 +501,12 @@ gchar *trash_store_read_trash_info(TrashStore *self, const gchar *file_name, GEr
     }
 
     // Seek to the Path line
-    g_seekable_seek(G_SEEKABLE(input_stream), TRASH_INFO_PATH_OFFSET, G_SEEK_SET, NULL, &err);
+    g_seekable_seek(G_SEEKABLE(input_stream), TRASH_INFO_PATH_OFFSET, G_SEEK_SET, NULL, err);
 
     // Read the file contents and extract the line containing the restore path
     gchar *buffer = (gchar *) malloc(1024 * sizeof(gchar));
     gssize read;
-    while ((read = g_input_stream_read(G_INPUT_STREAM(input_stream), buffer, 1024, NULL, &err))) {
+    while ((read = g_input_stream_read(G_INPUT_STREAM(input_stream), buffer, 1024, NULL, err))) {
         buffer[read] = '\0';
     }
 
@@ -478,4 +550,11 @@ gint trash_store_sort_by_type(GtkListBoxRow *row1, GtkListBoxRow *row2, gpointer
     g_free(item2_name);
 
     return ret;
+}
+
+gint trash_store_compare_items(TrashItem *a, gchar *name) {
+    gchar *a_name = NULL;
+    g_object_get(a, "file-name", &a_name, NULL);
+
+    return g_strcmp0(a_name, name);
 }

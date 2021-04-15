@@ -105,7 +105,7 @@ static void trash_item_get_property(GObject *obj, guint prop_id, GValue *val, GP
 
     switch (prop_id) {
         case PROP_FILE_NAME:
-            g_value_set_string(val, self->path);
+            g_value_set_string(val, self->name);
             break;
         case PROP_PATH:
             g_value_set_string(val, self->path);

@@ -11,7 +11,7 @@ gboolean delete_trashed_file(const gchar *file_path, gint is_directory, GError *
                                                                 NULL);
 
         while ((file_info = g_file_enumerator_next_file(enumerator, NULL, NULL))) {
-            const gchar *child_path = g_build_path("/", file_path, g_file_info_get_name(file_info), NULL);
+            const gchar *child_path = g_build_path(G_DIR_SEPARATOR_S, file_path, g_file_info_get_name(file_info), NULL);
 
             if (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY) {
                 // Directories must be empty to be deleted, so recursively delete all children first
@@ -72,14 +72,18 @@ GDateTime *trash_get_deletion_date(gchar *data) {
     return deletion_date;
 }
 
-gchar *trash_get_restore_path(gchar *data) {
+GString *trash_get_restore_path(gchar *data) {
     gint end_of_line = (gint)(strchr(data, '\n') - data);
     gint length = end_of_line - TRASH_INFO_PATH_PREFIX_OFFSET;
 
-    gchar *restore_path = (gchar *) malloc(length + 1);
+    gchar *tmp = (gchar *) malloc(length + 1);
+    tmp = substring(data, tmp, TRASH_INFO_PATH_PREFIX_OFFSET, length);
+    tmp[length] = '\0';
 
-    restore_path = substring(data, restore_path, TRASH_INFO_PATH_PREFIX_OFFSET, length);
-    restore_path[length] = '\0';
-
+    // TODO: Make this suck less
+    GString *restore_path = g_string_new(tmp);
+    g_string_replace(restore_path, "%20", " ", 0);
+    g_string_replace(restore_path, "%28", "(", 0);
+    g_string_replace(restore_path, "%29", ")", 0);
     return restore_path;
 }

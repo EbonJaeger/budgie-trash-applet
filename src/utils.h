@@ -22,4 +22,4 @@ gboolean delete_trashed_file(const gchar *file_path, gint is_directory, GError *
 gchar *substring(gchar *source, gchar *dest, gint offset, gint length);
 
 GDateTime *trash_get_deletion_date(gchar *data);
-gchar *trash_get_restore_path(gchar *data);
+GString *trash_get_restore_path(gchar *data);
