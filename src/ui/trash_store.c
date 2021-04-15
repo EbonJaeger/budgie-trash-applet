@@ -391,7 +391,6 @@ void trash_store_handle_monitor_event(GFileMonitor *monitor,
                 g_free(attributes);
                 break;
             }
-            g_return_if_fail(trash_item != NULL);
 
             gtk_list_box_insert(GTK_LIST_BOX(self->file_box), GTK_WIDGET(trash_item), -1);
             self->trashed_files = g_slist_append(self->trashed_files, trash_item);
@@ -463,10 +462,11 @@ void trash_store_load_items(TrashStore *self, GError *err) {
 }
 
 TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info, GError **err) {
-    const gchar *file_name = g_file_info_get_name(file_info);
+    gchar *file_name = (gchar *) g_file_info_get_name(file_info);
 
     // Parse the trashinfo file for this item
-    gchar *trash_info_contents = trash_store_read_trash_info(self, file_name, err);
+    gchar *info_file_path = g_build_path(G_DIR_SEPARATOR_S, self->trashinfo_path, g_strconcat(file_name, ".trashinfo", NULL), NULL);
+    gchar *trash_info_contents = trash_store_read_trash_info(self, info_file_path, err);
     if G_UNLIKELY (!trash_info_contents) {
         return NULL;
     }
@@ -474,29 +474,28 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info,
     GString *restore_path = trash_get_restore_path(trash_info_contents);
     GDateTime *deletion_date = trash_get_deletion_date(trash_info_contents);
 
-    TrashItem *trash_item = trash_item_new(strdup(file_name),
+    TrashItem *trash_item = trash_item_new(g_strdup(file_name),
                                            g_build_path(G_DIR_SEPARATOR_S, self->trash_path, file_name, NULL),
-                                           strdup(restore_path->str),
+                                           g_strdup(info_file_path),
+                                           g_strdup(restore_path->str),
                                            g_file_info_get_icon(file_info),
                                            (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY),
                                            g_date_time_format(deletion_date, "%Y-%m-%d %H:%M %Z"));
+    gtk_widget_show_all(GTK_WIDGET(trash_item));
 
     g_free(trash_info_contents);
+    g_free(info_file_path);
     g_date_time_unref(deletion_date);
 
     return trash_item;
 }
 
-gchar *trash_store_read_trash_info(TrashStore *self, const gchar *file_name, GError **err) {
-    // Get the path to the trashinfo file
-    gchar *info_file_path = g_build_path(G_DIR_SEPARATOR_S, self->trashinfo_path, g_strconcat(file_name, ".trashinfo", NULL), NULL);
-
+gchar *trash_store_read_trash_info(TrashStore *self, gchar *trashinfo_path, GError **err) {
     // Open the file
-    GFile *info_file = g_file_new_for_path(info_file_path);
+    GFile *info_file = g_file_new_for_path(trashinfo_path);
     GFileInputStream *input_stream = g_file_read(info_file, NULL, err);
     if (!input_stream) {
         g_object_unref(info_file);
-        g_free(info_file_path);
         return NULL;
     }
 
@@ -514,7 +513,6 @@ gchar *trash_store_read_trash_info(TrashStore *self, const gchar *file_name, GEr
     g_input_stream_close(G_INPUT_STREAM(input_stream), NULL, NULL);
     g_object_unref(input_stream);
     g_object_unref(info_file);
-    g_free(info_file_path);
 
     return buffer;
 }

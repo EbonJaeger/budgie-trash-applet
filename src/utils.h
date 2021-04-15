@@ -17,7 +17,7 @@
  */
 #define TRASH_INFO_DELETION_DATE_PREFIX_OFFSET 14
 
-gboolean delete_trashed_file(const gchar *file_path, gint is_directory, GError *err);
+gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **err);
 
 gchar *substring(gchar *source, gchar *dest, gint offset, gint length);
 

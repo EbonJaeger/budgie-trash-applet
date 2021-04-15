@@ -1,9 +1,11 @@
 #include "trash_item.h"
+#include "utils.h"
 
 enum {
     PROP_EXP_0,
     PROP_FILE_NAME,
     PROP_PATH,
+    PROP_TRASHINFO_PATH,
     PROP_RESTORE_PATH,
     PROP_FILE_ICON,
     PROP_IS_DIRECTORY,
@@ -22,6 +24,7 @@ struct _TrashItem {
 
     gchar *name;
     gchar *path;
+    gchar *trashinfo_path;
     gchar *restore_path;
     GIcon *icon;
     gboolean is_directory;
@@ -69,6 +72,13 @@ static void trash_item_class_init(TrashItemClass *klazz) {
         "",
         G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
+    item_props[PROP_TRASHINFO_PATH] = g_param_spec_string(
+        "trashinfo-path",
+        "Trashinfo path",
+        "Path to the .trashinfo file for this item",
+        "",
+        G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
     item_props[PROP_RESTORE_PATH] = g_param_spec_string(
         "restore-path",
         "Restore Path",
@@ -110,6 +120,9 @@ static void trash_item_get_property(GObject *obj, guint prop_id, GValue *val, GP
         case PROP_PATH:
             g_value_set_string(val, self->path);
             break;
+        case PROP_TRASHINFO_PATH:
+            g_value_set_string(val, self->trashinfo_path);
+            break;
         case PROP_RESTORE_PATH:
             g_value_set_string(val, self->restore_path);
             break;
@@ -138,6 +151,9 @@ static void trash_item_set_property(GObject *obj, guint prop_id, const GValue *v
             break;
         case PROP_PATH:
             trash_item_set_path(self, g_strdup(g_value_get_string(val)));
+            break;
+        case PROP_TRASHINFO_PATH:
+            trash_item_set_trashinfo_path(self, g_strdup(g_value_get_string(val)));
             break;
         case PROP_RESTORE_PATH:
             g_return_if_fail(GTK_IS_WIDGET(self->header));
@@ -206,6 +222,7 @@ static void trash_item_init(TrashItem *self) {
 
 TrashItem *trash_item_new(gchar *name,
                           gchar *path,
+                          gchar *trashinfo_path,
                           gchar *restore_path,
                           GIcon *icon,
                           gboolean is_directory,
@@ -215,6 +232,7 @@ TrashItem *trash_item_new(gchar *name,
                         "file-icon", icon,
                         "file-name", name,
                         "path", path,
+                        "trashinfo-path", trashinfo_path,
                         "restore-path", restore_path,
                         "is-directory", is_directory,
                         "timestamp", timestamp,
@@ -301,6 +319,23 @@ void trash_item_set_path(TrashItem *self, gchar *path) {
     self->path = path_clone;
 
     g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_PATH]);
+}
+
+void trash_item_set_trashinfo_path(TrashItem *self, gchar *path) {
+    gchar *path_clone = g_strdup(path);
+
+    if (path_clone == NULL || strcmp(path_clone, "") == 0) {
+        return;
+    }
+
+    // Free existing text if it is different
+    if ((self->trashinfo_path != NULL) && strcmp(self->trashinfo_path, path_clone) != 0) {
+        g_free(self->trashinfo_path);
+    }
+
+    self->trashinfo_path = path_clone;
+
+    g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_TRASHINFO_PATH]);
 }
 
 void trash_item_set_restore_path(TrashItem *self, gchar *path) {
@@ -390,7 +425,11 @@ void trash_item_handle_confirm_clicked(TrashRevealer *sender, TrashItem *self) {
     if (self->restoring) {
         // TODO: Restore all items
     } else {
-        // TODO: Delete all items
+        GError *err = NULL;
+        gboolean success = trash_item_delete(self, &err);
+        if (!success) {
+            g_warning("Error deleting trash file '%s': %s\n", self->name, err->message);
+        }
     }
 
     trash_item_set_btns_sensitive(self, TRUE);
@@ -403,4 +442,22 @@ void trash_item_toggle_info_revealer(TrashItem *self) {
     } else {
         gtk_revealer_set_reveal_child(GTK_REVEALER(self->info_revealer), TRUE);
     }
+}
+
+gboolean trash_item_delete(TrashItem *self, GError **err) {
+    // Delete the trashed file (if it's a directory, it will delete recursively)
+    gboolean success = trash_delete_file(self->path, self->is_directory, err);
+    g_return_val_if_fail(success == TRUE, success);
+
+    // Delete the .trashinfo file
+    GFile *info_file = g_file_new_for_path(self->trashinfo_path);
+    success = g_file_delete(info_file, NULL, err);
+
+    g_object_unref(info_file);
+
+    return success;
+}
+
+gboolean trash_item_restore(TrashItem *self, GError **err) {
+    return TRUE;
 }
