@@ -1,8 +1,8 @@
 #define _GNU_SOURCE
 
 #include "applet.h"
-#include "ui/trash_icon_button.h"
-#include "ui/trash_store.h"
+#include "trash_icon_button.h"
+#include "trash_store.h"
 
 struct _TrashAppletPrivate {
     BudgiePopoverManager *manager;

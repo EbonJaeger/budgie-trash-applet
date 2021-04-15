@@ -1,10 +1,10 @@
-#ifndef _BTA_TRASH_STORE_H
-#define _BTA_TRASH_STORE_H
+#pragma once
 
 #include "trash_item.h"
-#include "utils.h"
-#include <gio/gio.h>
-#include <glib.h>
+#include "trash_revealer.h"
+#include <gtk/gtk.h>
+
+G_BEGIN_DECLS
 
 /**
  * The offset to the beginning of the line containing the
@@ -12,71 +12,90 @@
  */
 #define TRASH_INFO_PATH_OFFSET 13
 
-/**
- * The offset from the beginning of a line to the start of
- * the restore path in a trash info file.
+#define TRASH_TYPE_STORE (trash_store_get_type())
+
+G_DECLARE_FINAL_TYPE(TrashStore, trash_store, TRASH, STORE, GtkBox)
+
+TrashStore *trash_store_new(gchar *drive_name, gchar *icon_name);
+TrashStore *trash_store_new_with_paths(gchar *drive_name, gchar *icon_name, gchar *trash_path, gchar *trashinfo_path);
+void trash_store_apply_button_styles(TrashStore *self);
+void trash_store_set_btns_sensitive(TrashStore *self, gboolean sensitive);
+void trash_store_check_empty(TrashStore *self);
+
+/*
+ * Property functions
  */
-#define TRASH_INFO_PATH_PREFIX_OFFSET 5
+
+void trash_store_set_drive_name(TrashStore *self, gchar *drive_name);
+void trash_store_set_icon_name(TrashStore *self, gchar *icon_name);
+void trash_store_set_trash_path(TrashStore *self, gchar *trash_path);
+void trash_store_set_trashinfo_path(TrashStore *self, gchar *trashinfo_path);
+
+/*
+ * UI signal handlers
+ */
+
+void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self);
+void trash_store_handle_cancel_clicked(TrashRevealer *sender, TrashStore *self);
+void trash_store_handle_confirm_clicked(TrashRevealer *sender, TrashStore *self);
+void trash_store_handle_row_activated(GtkListBox *sender, GtkListBoxRow *row, TrashStore *self);
+
+/*
+ * Trash handling functions
+ */
 
 /**
- * The offset to the beginning of the date from the start
- * of a line.
- */
-#define TRASH_INFO_DELETION_DATE_PREFIX_OFFSET 14
-
-/**
- * Struct representing a trash storage location.
- */
-struct TrashStore;
-typedef struct TrashStore {
-    char *drive_name;
-    const char *trashed_file_path;
-    const char *trashed_info_path;
-    GSList *trashed_items;
-} TrashStore;
-
-/**
- * Create a new TrashStore with the given file paths.
+ * Handles file events for this store's trash directory.
  * 
- * The TrashStore will be initialized with a NULL GSList
- * to hold trashed items, as per the GLib docs.
+ * We handle G_FILE_MONITOR_EVENT_MOVED_IN, G_FILE_MONITOR_EVENT_MOVED_OUT, and
+ * G_FILE_MONITOR_EVENT_DELETED events, adding and removing TrashItems
+ * as needed.
+ */
+void trash_store_handle_monitor_event(GFileMonitor *monitor,
+                                      GFile *file,
+                                      GFile *other_file,
+                                      GFileMonitorEvent event_type,
+                                      TrashStore *self);
+
+/**
+ * Load all of the trashed items for this particular trashbin.
  * 
- * The return value of this should be freed with `trash_store_free()`.
- */
-TrashStore *trash_store_new(char *drive_name, const char *trashed_file_path, const char *trashed_info_path);
-
-/**
- * Free all resources used by a TrashStore struct.
- */
-void trash_store_free(TrashStore *trash_store);
-
-/**
- * Get a list of all files in the current user's trash bin.
+ * A new [TrashItem] widget is created for each item and added
+ * to our list box.
  * 
- * If there was an error reading the trash directory, `NULL` will
- * be returned, and `err` will be set.
+ * If an error is encountered, `err` is set.
  */
-void trash_load_items(TrashStore *trash_store, GError *err);
+void trash_store_load_items(TrashStore *self, GError *err);
 
 /**
- * Get a trashed item in the given trash bin. If there is no item
- * found with the given file name, NULL will be returned.
- */
-TrashItem *trash_get_item_by_name(TrashStore *trash_store, const char *file_name);
-
-gboolean trash_delete_item(TrashStore *trash_store,
-                           TrashItem *trash_item,
-                           GError *err);
-
-/**
- * Restore an item from the trash bin to its original location.
+ * Create a new [TrashItem] from a GFileInfo.
  * 
- * If an error occurs, FALSE will be returned, and err will be set.
+ * If an error is encountered, `err` is set and `NULL` is returned.
+ * 
+ * TODO: Maybe this should be in TrashItem instead.
  */
-gboolean trash_restore_item(TrashStore *trash_store,
-                            TrashItem *trash_item,
-                            GFileProgressCallback progress_callback,
-                            gpointer progress_data,
-                            GError **err);
+TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info, GError **err);
 
-#endif
+/**
+ * Read the contents of a trashinfo file for a file with the given name
+ * into memory.
+ * 
+ * If an error is encountered, `err` is set and `NULL` is returned.
+ */
+gchar *trash_store_read_trash_info(TrashStore *self, gchar *trashinfo_path, GError **err);
+
+/**
+ * Sorts the trash items in the file box widget by the following rules:
+ * 
+ * 1. Directories should be above regular files
+ * 2. Directories should be sorted alphabetically
+ * 3. Files should be sorted alphabetically
+ */
+gint trash_store_sort_by_type(GtkListBoxRow *row1, GtkListBoxRow *row2, gpointer user_data);
+
+/**
+ * Compare the names of a [TrashItem] to see if it matches.
+ */
+gint trash_store_compare_items(TrashItem *a, gchar *name);
+
+G_END_DECLS

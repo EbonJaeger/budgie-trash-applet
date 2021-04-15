@@ -1,59 +1,39 @@
-#ifndef _BTA_TRASH_ITEM_H
-#define _BTA_TRASH_ITEM_H
+#pragma once
 
-#include <gio/gio.h>
+#include "trash_revealer.h"
+#include <gtk/gtk.h>
 
-/**
- * Holds the deletion date and restore path for a
- * trashed file.
- */
-struct TrashInfo;
-typedef struct TrashInfo {
-    char *restore_path;
-    GDateTime *deletion_date;
-} TrashInfo;
+G_BEGIN_DECLS
 
-/**
- * Represents an item in the trash bin.
- */
-struct TrashItem;
-typedef struct TrashItem {
-    const char *name;
-    const char *path;
-    TrashInfo *trash_info;
-    int is_directory;
-} TrashItem;
+#define TRASH_TYPE_ITEM (trash_item_get_type())
 
-/**
- * Creates and allocates a new TrashItem.
- * 
- * The returned pointer should be freed with `trash_item_free()`.
- */
-TrashItem *trash_item_new(const char *name, const char *path);
+G_DECLARE_FINAL_TYPE(TrashItem, trash_item, TRASH, ITEM, GtkBox)
 
-/**
- * Creates and allocates a new TrashItem with a given TrashInfo
- * struct.
- * 
- * The returned pointer should be freed with `trash_item_free()`.
- */
-TrashItem *trash_item_new_with_info(const char *name, const char *path, TrashInfo *trash_info);
+TrashItem *trash_item_new(gchar *name,
+                          gchar *path,
+                          gchar *trashinfo_path,
+                          gchar *restore_path,
+                          GIcon *icon,
+                          gboolean is_directory,
+                          gchar *timestamp);
+void trash_item_apply_button_styles(TrashItem *self);
+void trash_item_set_btns_sensitive(TrashItem *self, gboolean sensitive);
 
-/**
- * Creates and allocates a new TrashInfo.
- * 
- * The result of this should be freed with `trash_info_free()`.
- */
-TrashInfo *trash_info_new(char *restore_path, GDateTime *deletion_date);
+void trash_item_set_icon(TrashItem *self, GIcon *icon);
+void trash_item_set_file_name(TrashItem *self, gchar *file_name);
+void trash_item_set_path(TrashItem *self, gchar *path);
+void trash_item_set_trashinfo_path(TrashItem *self, gchar *path);
+void trash_item_set_restore_path(TrashItem *self, gchar *path);
+void trash_item_set_directory(TrashItem *self, gboolean is_directory);
+void trash_item_set_timestamp(TrashItem *self, gchar *timestamp);
 
-/**
- * Frees all resources for a TrashInfo struct.
- */
-void trash_item_free(TrashItem *trash_item);
+void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self);
+void trash_item_handle_cancel_clicked(TrashRevealer *sender, TrashItem *self);
+void trash_item_handle_confirm_clicked(TrashRevealer *sender, TrashItem *self);
 
-/**
- * Frees all resources for a TrashItem.
- */
-void trash_item_free(struct TrashItem *item);
+void trash_item_toggle_info_revealer(TrashItem *self);
 
-#endif
+gboolean trash_item_delete(TrashItem *self, GError **err);
+gboolean trash_item_restore(TrashItem *self, GError **err);
+
+G_END_DECLS
