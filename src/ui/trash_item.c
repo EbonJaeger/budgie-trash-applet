@@ -423,7 +423,11 @@ void trash_item_handle_cancel_clicked(TrashRevealer *sender, TrashItem *self) {
 
 void trash_item_handle_confirm_clicked(TrashRevealer *sender, TrashItem *self) {
     if (self->restoring) {
-        // TODO: Restore all items
+        GError *err = NULL;
+        gboolean success = trash_item_restore(self, &err);
+        if (!success) {
+            g_warning("Error restoring file from trash '%s': %s\n", self->name, err->message);
+        }
     } else {
         GError *err = NULL;
         gboolean success = trash_item_delete(self, &err);
@@ -459,5 +463,30 @@ gboolean trash_item_delete(TrashItem *self, GError **err) {
 }
 
 gboolean trash_item_restore(TrashItem *self, GError **err) {
-    return TRUE;
+    GFile *trashed_file = g_file_new_for_path(self->path);
+    GFile *restored_file = g_file_new_for_path(self->restore_path);
+
+    gboolean success = g_file_move(trashed_file,
+                                   restored_file,
+                                   G_FILE_COPY_ALL_METADATA,
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   err);
+
+    if (!success) {
+        g_object_unref(trashed_file);
+        g_object_unref(restored_file);
+        return success;
+    }
+
+    // Delete the .trashinfo file
+    GFile *info_file = g_file_new_for_path(self->trashinfo_path);
+    success = g_file_delete(info_file, NULL, err);
+
+    g_object_unref(trashed_file);
+    g_object_unref(restored_file);
+    g_object_unref(info_file);
+
+    return success;
 }
