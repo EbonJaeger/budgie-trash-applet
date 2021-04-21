@@ -446,33 +446,25 @@ gboolean trash_item_delete(TrashItem *self, GError **err) {
     g_return_val_if_fail(success == TRUE, success);
 
     // Delete the .trashinfo file
-    GFile *info_file = g_file_new_for_path(self->trashinfo_path);
+    g_autoptr(GFile) info_file = g_file_new_for_path(self->trashinfo_path);
     success = g_file_delete(info_file, NULL, err);
-
-    g_object_unref(info_file);
 
     return success;
 }
 
 gboolean trash_item_restore(TrashItem *self, GError **err) {
-    GFile *trashed_file = g_file_new_for_path(self->path);
-    GFile *restored_file = g_file_new_for_path(self->restore_path);
+    g_autoptr(GFile) trashed_file = g_file_new_for_path(self->path);
+    g_autoptr(GFile) restored_file = g_file_new_for_path(self->restore_path);
 
     gboolean success = g_file_move(trashed_file, restored_file, G_FILE_COPY_ALL_METADATA, NULL, NULL, NULL, err);
 
     if (!success) {
-        g_object_unref(trashed_file);
-        g_object_unref(restored_file);
         return success;
     }
 
     // Delete the .trashinfo file
-    GFile *info_file = g_file_new_for_path(self->trashinfo_path);
+    g_autoptr(GFile) info_file = g_file_new_for_path(self->trashinfo_path);
     success = g_file_delete(info_file, NULL, err);
-
-    g_object_unref(trashed_file);
-    g_object_unref(restored_file);
-    g_object_unref(info_file);
 
     return success;
 }

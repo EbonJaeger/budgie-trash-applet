@@ -2,14 +2,14 @@
 
 gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **err) {
     gboolean success = TRUE;
-    GFile *file = g_file_new_for_path(file_path);
+    g_autoptr(GFile) file = g_file_new_for_path(file_path);
     if (is_directory) {
         GFileInfo *file_info;
-        GFileEnumerator *enumerator = g_file_enumerate_children(file,
-                                                                FILE_ATTRIBUTES_STANDARD_NAME_AND_TYPE,
-                                                                G_FILE_QUERY_INFO_NONE,
-                                                                NULL,
-                                                                NULL);
+        g_autoptr(GFileEnumerator) enumerator = g_file_enumerate_children(file,
+                                                                          FILE_ATTRIBUTES_STANDARD_NAME_AND_TYPE,
+                                                                          G_FILE_QUERY_INFO_NONE,
+                                                                          NULL,
+                                                                          NULL);
 
         // Iterate over all of the children and delete them
         while ((file_info = g_file_enumerator_next_file(enumerator, NULL, NULL))) {
@@ -23,9 +23,8 @@ gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **e
                 }
             } else {
                 // Not a directory, just delete the file
-                GFile *child_file = g_file_new_for_path(child_path);
+                g_autoptr(GFile) child_file = g_file_new_for_path(child_path);
                 success = g_file_delete(child_file, NULL, err);
-                g_object_unref(child_file);
                 if (!success) {
                     break;
                 }
@@ -35,18 +34,15 @@ gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **e
         }
 
         g_file_enumerator_close(enumerator, NULL, NULL);
-        g_object_unref(enumerator);
 
         // Return early if there was a problem deleting children in a directory
         if (!success) {
-            g_object_unref(file);
             return success;
         }
     }
 
     // Delete the current file
     success = g_file_delete(file, NULL, err);
-    g_object_unref(file);
     return success;
 }
 

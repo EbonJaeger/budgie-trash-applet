@@ -401,7 +401,7 @@ void trash_store_handle_monitor_event(GFileMonitor *monitor,
         }
         case G_FILE_MONITOR_EVENT_MOVED_OUT:
         case G_FILE_MONITOR_EVENT_DELETED: {
-            gchar *file_name = g_file_get_basename(file);
+            g_autofree gchar *file_name = g_file_get_basename(file);
             GSList *elem = g_slist_find_custom(self->trashed_files, file_name, (GCompareFunc) trash_store_compare_items);
             TrashItem *trash_item = (TrashItem *) g_slist_nth_data(self->trashed_files,
                                                                    g_slist_position(self->trashed_files, elem));
@@ -421,19 +421,18 @@ void trash_store_handle_monitor_event(GFileMonitor *monitor,
 
 void trash_store_load_items(TrashStore *self, GError *err) {
     // Open our trash directory
-    GFile *trash_dir = g_file_new_for_path(self->trash_path);
+    g_autoptr(GFile) trash_dir = g_file_new_for_path(self->trash_path);
     g_autofree gchar *attributes = g_strconcat(G_FILE_ATTRIBUTE_STANDARD_NAME, ",",
                                                G_FILE_ATTRIBUTE_STANDARD_ICON, ",",
                                                G_FILE_ATTRIBUTE_STANDARD_TYPE,
                                                NULL);
-    GFileEnumerator *enumerator = g_file_enumerate_children(trash_dir,
-                                                            attributes,
-                                                            G_FILE_QUERY_INFO_NONE,
-                                                            NULL,
-                                                            &err);
+    g_autoptr(GFileEnumerator) enumerator = g_file_enumerate_children(trash_dir,
+                                                                      attributes,
+                                                                      G_FILE_QUERY_INFO_NONE,
+                                                                      NULL,
+                                                                      &err);
     if G_UNLIKELY (!enumerator) {
         g_warning("Error getting file enumerator for trash files in '%s': %s\n", self->trash_path, err->message);
-        g_object_unref(trash_dir);
         return;
     }
 
@@ -451,10 +450,7 @@ void trash_store_load_items(TrashStore *self, GError *err) {
 
     trash_store_check_empty(self);
 
-    // Free resources
     g_file_enumerator_close(enumerator, NULL, NULL);
-    g_object_unref(enumerator);
-    g_object_unref(trash_dir);
 }
 
 TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info, GError **err) {
@@ -467,7 +463,7 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info,
         return NULL;
     }
 
-    GString *restore_path = trash_get_restore_path(trash_info_contents);
+    g_autoptr(GString) restore_path = trash_get_restore_path(trash_info_contents);
     GDateTime *deletion_date = trash_get_deletion_date(trash_info_contents);
 
     TrashItem *trash_item = trash_item_new(g_strdup(file_name),
@@ -486,10 +482,9 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info,
 
 gchar *trash_store_read_trash_info(TrashStore *self, gchar *trashinfo_path, GError **err) {
     // Open the file
-    GFile *info_file = g_file_new_for_path(trashinfo_path);
-    GFileInputStream *input_stream = g_file_read(info_file, NULL, err);
+    g_autoptr(GFile) info_file = g_file_new_for_path(trashinfo_path);
+    g_autoptr(GFileInputStream) input_stream = g_file_read(info_file, NULL, err);
     if (!input_stream) {
-        g_object_unref(info_file);
         return NULL;
     }
 
@@ -503,10 +498,7 @@ gchar *trash_store_read_trash_info(TrashStore *self, gchar *trashinfo_path, GErr
         buffer[read] = '\0';
     }
 
-    // Free some resources
     g_input_stream_close(G_INPUT_STREAM(input_stream), NULL, NULL);
-    g_object_unref(input_stream);
-    g_object_unref(info_file);
 
     return buffer;
 }
