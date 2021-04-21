@@ -358,7 +358,7 @@ void trash_store_handle_confirm_clicked(TrashRevealer *sender, TrashStore *self)
     g_autoptr(GError) err = NULL;
     g_slist_foreach(self->trashed_files, self->restoring ? (GFunc) trash_item_restore : (GFunc) trash_item_delete, &err);
     if (err) {
-        g_warning("Error restoring files: %s\n", err->message);
+        g_warning("Error clearing files: %s", err->message);
     }
 
     trash_store_set_btns_sensitive(self, TRUE);

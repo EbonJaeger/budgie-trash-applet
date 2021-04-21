@@ -1,7 +1,7 @@
 #include "utils.h"
 
 gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **err) {
-    gboolean success = FALSE;
+    gboolean success = TRUE;
     GFile *file = g_file_new_for_path(file_path);
     if (is_directory) {
         GFileInfo *file_info;
@@ -11,6 +11,7 @@ gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **e
                                                                 NULL,
                                                                 NULL);
 
+        // Iterate over all of the children and delete them
         while ((file_info = g_file_enumerator_next_file(enumerator, NULL, NULL))) {
             g_autofree gchar *child_path = g_build_path(G_DIR_SEPARATOR_S, file_path, g_file_info_get_name(file_info), NULL);
 
@@ -36,6 +37,7 @@ gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **e
         g_file_enumerator_close(enumerator, NULL, NULL);
         g_object_unref(enumerator);
 
+        // Return early if there was a problem deleting children in a directory
         if (!success) {
             g_object_unref(file);
             return success;
