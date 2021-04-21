@@ -113,7 +113,7 @@ void trash_create_widgets(TrashApplet *self, GtkWidget *popover) {
 
     // Create a dummy store for now to display
     TrashStore *default_store = trash_store_new("This PC", "drive-harddisk-symbolic");
-    GError *err = NULL;
+    g_autoptr(GError) err = NULL;
     trash_store_load_items(default_store, err);
     if (err) {
         g_critical("Error loading trash items for the default trash store: %s\n", err->message);

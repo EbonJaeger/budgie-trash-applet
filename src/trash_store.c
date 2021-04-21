@@ -292,7 +292,7 @@ void trash_store_set_trash_path(TrashStore *self, gchar *trash_path) {
 
     // Set up our file monitor
     GFile *dir = g_file_new_for_path(self->trash_path);
-    GError *err = NULL;
+    g_autoptr(GError) err = NULL;
     self->file_monitor = g_file_monitor_directory(dir, G_FILE_MONITOR_WATCH_MOVES, NULL, &err);
     g_signal_connect_object(self->file_monitor, "changed", G_CALLBACK(trash_store_handle_monitor_event), self, 0);
 
@@ -355,7 +355,7 @@ void trash_store_handle_cancel_clicked(TrashRevealer *sender, TrashStore *self) 
 }
 
 void trash_store_handle_confirm_clicked(TrashRevealer *sender, TrashStore *self) {
-    GError *err = NULL;
+    g_autoptr(GError) err = NULL;
     g_slist_foreach(self->trashed_files, self->restoring ? (GFunc) trash_item_restore : (GFunc) trash_item_delete, &err);
     if (err) {
         g_warning("Error restoring files: %s\n", err->message);
@@ -377,18 +377,17 @@ void trash_store_handle_monitor_event(GFileMonitor *monitor,
                                       TrashStore *self) {
     switch (event_type) {
         case G_FILE_MONITOR_EVENT_MOVED_IN: {
-            gchar *attributes = g_strconcat(G_FILE_ATTRIBUTE_STANDARD_NAME, ",",
-                                            G_FILE_ATTRIBUTE_STANDARD_ICON, ",",
-                                            G_FILE_ATTRIBUTE_STANDARD_TYPE,
-                                            NULL);
+            g_autofree gchar *attributes = g_strconcat(G_FILE_ATTRIBUTE_STANDARD_NAME, ",",
+                                                       G_FILE_ATTRIBUTE_STANDARD_ICON, ",",
+                                                       G_FILE_ATTRIBUTE_STANDARD_TYPE,
+                                                       NULL);
             GFileInfo *file_info = g_file_query_info(file, attributes, G_FILE_QUERY_INFO_NONE, NULL, NULL);
 
-            GError *err = NULL;
+            g_autoptr(GError) err = NULL;
             TrashItem *trash_item = trash_store_create_trash_item(self, file_info, &err);
             if (err) {
                 g_warning("Couldn't create trash item from GFileInfo: %s\n", err->message);
                 g_object_unref(file_info);
-                g_free(attributes);
                 break;
             }
 
@@ -398,7 +397,6 @@ void trash_store_handle_monitor_event(GFileMonitor *monitor,
             trash_store_check_empty(self);
 
             g_object_unref(file_info);
-            g_free(attributes);
             break;
         }
         case G_FILE_MONITOR_EVENT_MOVED_OUT:
@@ -424,10 +422,10 @@ void trash_store_handle_monitor_event(GFileMonitor *monitor,
 void trash_store_load_items(TrashStore *self, GError *err) {
     // Open our trash directory
     GFile *trash_dir = g_file_new_for_path(self->trash_path);
-    gchar *attributes = g_strconcat(G_FILE_ATTRIBUTE_STANDARD_NAME, ",",
-                                    G_FILE_ATTRIBUTE_STANDARD_ICON, ",",
-                                    G_FILE_ATTRIBUTE_STANDARD_TYPE,
-                                    NULL);
+    g_autofree gchar *attributes = g_strconcat(G_FILE_ATTRIBUTE_STANDARD_NAME, ",",
+                                               G_FILE_ATTRIBUTE_STANDARD_ICON, ",",
+                                               G_FILE_ATTRIBUTE_STANDARD_TYPE,
+                                               NULL);
     GFileEnumerator *enumerator = g_file_enumerate_children(trash_dir,
                                                             attributes,
                                                             G_FILE_QUERY_INFO_NONE,
@@ -436,7 +434,6 @@ void trash_store_load_items(TrashStore *self, GError *err) {
     if G_UNLIKELY (!enumerator) {
         g_warning("Error getting file enumerator for trash files in '%s': %s\n", self->trash_path, err->message);
         g_object_unref(trash_dir);
-        g_free(attributes);
         return;
     }
 
@@ -457,7 +454,6 @@ void trash_store_load_items(TrashStore *self, GError *err) {
     // Free resources
     g_file_enumerator_close(enumerator, NULL, NULL);
     g_object_unref(enumerator);
-    g_free(attributes);
     g_object_unref(trash_dir);
 }
 
@@ -465,8 +461,8 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info,
     gchar *file_name = (gchar *) g_file_info_get_name(file_info);
 
     // Parse the trashinfo file for this item
-    gchar *info_file_path = g_build_path(G_DIR_SEPARATOR_S, self->trashinfo_path, g_strconcat(file_name, ".trashinfo", NULL), NULL);
-    gchar *trash_info_contents = trash_store_read_trash_info(self, info_file_path, err);
+    g_autofree gchar *info_file_path = g_build_path(G_DIR_SEPARATOR_S, self->trashinfo_path, g_strconcat(file_name, ".trashinfo", NULL), NULL);
+    g_autofree gchar *trash_info_contents = trash_store_read_trash_info(self, info_file_path, err);
     if G_UNLIKELY (!trash_info_contents) {
         return NULL;
     }
@@ -483,8 +479,6 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info,
                                            g_date_time_format(deletion_date, "%Y-%m-%d %H:%M %Z"));
     gtk_widget_show_all(GTK_WIDGET(trash_item));
 
-    g_free(trash_info_contents);
-    g_free(info_file_path);
     g_date_time_unref(deletion_date);
 
     return trash_item;
@@ -523,8 +517,8 @@ gint trash_store_sort_by_type(GtkListBoxRow *row1, GtkListBoxRow *row2, gpointer
 
     gboolean item1_is_dir = FALSE;
     gboolean item2_is_dir = FALSE;
-    gchar *item1_name = NULL;
-    gchar *item2_name = NULL;
+    g_autofree gchar *item1_name = NULL;
+    g_autofree gchar *item2_name = NULL;
     g_object_get(item1,
                  "is-directory", &item1_is_dir,
                  "file-name", &item1_name, NULL);
@@ -544,14 +538,11 @@ gint trash_store_sort_by_type(GtkListBoxRow *row1, GtkListBoxRow *row2, gpointer
         ret = strcoll(item1_name, item2_name);
     }
 
-    g_free(item1_name);
-    g_free(item2_name);
-
     return ret;
 }
 
 gint trash_store_compare_items(TrashItem *a, gchar *name) {
-    gchar *a_name = NULL;
+    g_autofree gchar *a_name = NULL;
     g_object_get(a, "file-name", &a_name, NULL);
 
     return g_strcmp0(a_name, name);

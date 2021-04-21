@@ -422,7 +422,7 @@ void trash_item_handle_cancel_clicked(TrashRevealer *sender, TrashItem *self) {
 }
 
 void trash_item_handle_confirm_clicked(TrashRevealer *sender, TrashItem *self) {
-    GError *err = NULL;
+    g_autoptr(GError) err = NULL;
     gboolean success = self->restoring ? trash_item_restore(self, &err) : trash_item_delete(self, &err);
     if (!success) {
         g_warning("Error restoring file from trash '%s': %s\n", self->name, err->message);

@@ -12,7 +12,7 @@ gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **e
                                                                 NULL);
 
         while ((file_info = g_file_enumerator_next_file(enumerator, NULL, NULL))) {
-            gchar *child_path = g_build_path(G_DIR_SEPARATOR_S, file_path, g_file_info_get_name(file_info), NULL);
+            g_autofree gchar *child_path = g_build_path(G_DIR_SEPARATOR_S, file_path, g_file_info_get_name(file_info), NULL);
 
             if (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY) {
                 // Directories must be empty to be deleted, so recursively delete all children first
@@ -30,7 +30,6 @@ gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **e
                 }
             }
 
-            g_free(child_path);
             g_object_unref(file_info);
         }
 
@@ -63,7 +62,7 @@ GDateTime *trash_get_deletion_date(gchar *data) {
     gint substr_start = (gint)(strchr(data, '\n') - data + TRASH_INFO_DELETION_DATE_PREFIX_OFFSET);
     gint length = strlen(data) - substr_start - 1;
 
-    gchar *deletion_date_str = (gchar *) malloc(length + 1);
+    g_autofree gchar *deletion_date_str = (gchar *) malloc(length + 1);
 
     deletion_date_str = substring(data, deletion_date_str, substr_start, length);
     deletion_date_str[length] = '\0';
@@ -71,7 +70,6 @@ GDateTime *trash_get_deletion_date(gchar *data) {
     GTimeZone *tz = g_time_zone_new_local();
     GDateTime *deletion_date = g_date_time_new_from_iso8601((const gchar *) deletion_date_str, tz);
     g_time_zone_unref(tz);
-    free(deletion_date_str);
 
     return deletion_date;
 }
