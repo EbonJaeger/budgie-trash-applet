@@ -127,7 +127,7 @@ static void trash_item_get_property(GObject *obj, guint prop_id, GValue *val, GP
             g_value_set_string(val, self->restore_path);
             break;
         case PROP_FILE_ICON:
-            g_value_set_gtype(val, self->icon);
+            g_value_set_gtype(val, (GType) self->icon);
             break;
         case PROP_IS_DIRECTORY:
             g_value_set_boolean(val, self->is_directory);
@@ -189,11 +189,11 @@ static void trash_item_init(TrashItem *self) {
 
     // Create the item's delete and restore button
     self->delete_btn = gtk_button_new_from_icon_name("user-trash-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
-    gtk_widget_set_tooltip_text(self->delete_btn, "Delete item");
+    gtk_widget_set_tooltip_text(self->delete_btn, "Delete Item");
     g_signal_connect_object(GTK_BUTTON(self->delete_btn), "clicked", G_CALLBACK(trash_item_handle_btn_clicked), self, 0);
 
     self->restore_btn = gtk_button_new_from_icon_name("edit-undo-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
-    gtk_widget_set_tooltip_text(self->restore_btn, "Restore item");
+    gtk_widget_set_tooltip_text(self->restore_btn, "Restore Item");
     g_signal_connect_object(GTK_BUTTON(self->restore_btn), "clicked", G_CALLBACK(trash_item_handle_btn_clicked), self, 0);
 
     self->info_revealer = gtk_revealer_new();
@@ -301,6 +301,8 @@ void trash_item_set_file_name(TrashItem *self, gchar *file_name) {
         gtk_box_pack_end(GTK_BOX(self->header), self->file_name_label, TRUE, TRUE, 0);
     }
 
+    gtk_widget_set_tooltip_text(self->header, self->name);
+
     g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_FILE_NAME]);
 }
 
@@ -357,9 +359,10 @@ void trash_item_set_restore_path(TrashItem *self, gchar *path) {
     self->restore_path = path_clone;
 
     if (GTK_IS_LABEL(self->path_label)) {
-        gtk_label_set_text(GTK_LABEL(self->path_label), g_strconcat("Path: ", self->restore_path, NULL));
+        gtk_label_set_markup(GTK_LABEL(self->path_label), g_strconcat("<b>Path:</b> ", self->restore_path, NULL));
     } else {
-        self->path_label = gtk_label_new(g_strconcat("Path: ", self->restore_path, NULL));
+        self->path_label = gtk_label_new(g_strconcat("<b>Path:</b> ", self->restore_path, NULL));
+        gtk_label_set_use_markup(GTK_LABEL(self->path_label), TRUE);
         gtk_label_set_ellipsize(GTK_LABEL(self->path_label), PANGO_ELLIPSIZE_END);
         gtk_widget_set_halign(self->path_label, GTK_ALIGN_START);
         gtk_label_set_justify(GTK_LABEL(self->path_label), GTK_JUSTIFY_LEFT);
@@ -367,7 +370,7 @@ void trash_item_set_restore_path(TrashItem *self, gchar *path) {
     }
 
     // Set the tooltip text
-    gtk_widget_set_tooltip_text(self->header, self->restore_path);
+    gtk_widget_set_tooltip_text(self->path_label, self->restore_path);
 
     g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_RESTORE_PATH]);
 }
@@ -392,9 +395,10 @@ void trash_item_set_timestamp(TrashItem *self, gchar *timestamp) {
     self->timestamp = timestamp_clone;
 
     if (GTK_IS_LABEL(self->timestamp_label)) {
-        gtk_label_set_text(GTK_LABEL(self->timestamp_label), g_strconcat("Deleted at: ", self->timestamp, NULL));
+        gtk_label_set_markup(GTK_LABEL(self->timestamp_label), g_strconcat("<b>Deleted at:</b> ", self->timestamp, NULL));
     } else {
-        self->timestamp_label = gtk_label_new(g_strconcat("Deleted at: ", self->timestamp, NULL));
+        self->timestamp_label = gtk_label_new(g_strconcat("<b>Deleted at:</b> ", self->timestamp, NULL));
+        gtk_label_set_use_markup(GTK_LABEL(self->timestamp_label), TRUE);
         gtk_widget_set_halign(self->timestamp_label, GTK_ALIGN_START);
         gtk_label_set_justify(GTK_LABEL(self->timestamp_label), GTK_JUSTIFY_LEFT);
         gtk_box_pack_end(GTK_BOX(self->info_container), self->timestamp_label, TRUE, TRUE, 0);
@@ -406,10 +410,10 @@ void trash_item_set_timestamp(TrashItem *self, gchar *timestamp) {
 void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self) {
     if (sender == GTK_BUTTON(self->delete_btn)) {
         self->restoring = FALSE;
-        trash_revealer_set_text(self->confirm_revealer, "<b>Really delete this item?</b>");
+        trash_revealer_set_text(self->confirm_revealer, "<b>Permanently delete this item?</b>");
     } else {
         self->restoring = TRUE;
-        trash_revealer_set_text(self->confirm_revealer, "<b>Really restore this item?</b>");
+        trash_revealer_set_text(self->confirm_revealer, "<b>Restore this item?</b>");
     }
 
     trash_item_set_btns_sensitive(self, FALSE);

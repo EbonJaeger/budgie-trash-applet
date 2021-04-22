@@ -119,7 +119,8 @@ static void trash_revealer_init(TrashRevealer *self) {
 
     self->container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     self->label = gtk_label_new("");
-    g_object_set(G_OBJECT(self->label), "height-request", 20, NULL);
+    gtk_widget_set_size_request(self->label, 290, 20);
+    gtk_label_set_line_wrap(GTK_LABEL(self->label), TRUE);
     gtk_box_pack_start(GTK_BOX(self->container), self->label, TRUE, TRUE, 0);
 
     GtkWidget *revealer_btns = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);

@@ -146,10 +146,10 @@ static void trash_store_init(TrashStore *self) {
     g_object_set(G_OBJECT(self->header), "height-request", 48, NULL);
 
     self->delete_btn = gtk_button_new_from_icon_name("list-remove-all-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
-    gtk_widget_set_tooltip_text(self->delete_btn, "Delete all items");
+    gtk_widget_set_tooltip_text(self->delete_btn, "Clear All");
     g_signal_connect_object(GTK_BUTTON(self->delete_btn), "clicked", G_CALLBACK(trash_store_handle_header_btn_clicked), self, 0);
     self->restore_btn = gtk_button_new_from_icon_name("edit-undo-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
-    gtk_widget_set_tooltip_text(self->restore_btn, "Restore all items");
+    gtk_widget_set_tooltip_text(self->restore_btn, "Restore All");
     g_signal_connect_object(GTK_BUTTON(self->restore_btn), "clicked", G_CALLBACK(trash_store_handle_header_btn_clicked), self, 0);
     gtk_box_pack_end(GTK_BOX(self->header), self->delete_btn, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(self->header), self->restore_btn, FALSE, FALSE, 0);
@@ -340,10 +340,10 @@ void trash_store_check_empty(TrashStore *self) {
 void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self) {
     if (sender == GTK_BUTTON(self->delete_btn)) {
         self->restoring = FALSE;
-        trash_revealer_set_text(self->revealer, "<b>Really delete all items?</b>");
+        trash_revealer_set_text(self->revealer, "<b>Permanently delete all items in the trash bin?</b>");
     } else {
         self->restoring = TRUE;
-        trash_revealer_set_text(self->revealer, "<b>Really restore all items?</b>");
+        trash_revealer_set_text(self->revealer, "<b>Restore all items from the trash bin?</b>");
     }
 
     trash_store_set_btns_sensitive(self, FALSE);
