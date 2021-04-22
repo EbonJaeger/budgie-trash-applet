@@ -359,7 +359,7 @@ void trash_store_handle_confirm_clicked(TrashRevealer *sender, TrashStore *self)
     g_autoptr(GError) err = NULL;
     g_slist_foreach(self->trashed_files, self->restoring ? (GFunc) trash_item_restore : (GFunc) trash_item_delete, &err);
     if (err) {
-        trash_notify_try_send_with_icon("Trash Bin Error", err->message, "dialog-error-symbolic");
+        trash_notify_try_send("Trash Bin Error", err->message, "dialog-error-symbolic");
     }
 
     if (self->restoring) {

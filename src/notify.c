@@ -29,7 +29,7 @@ TrashNotifyData *trash_notify_data_new(NotifyNotification *notification) {
 }
 
 void trash_notify_try_send(gchar *summary, gchar *body, gchar *icon_name) {
-    NotifyNotification *notification = _trash_notification_create(summary, body, icon_name ? icon_name : "user-trash-symbolic");
+    NotifyNotification *notification = notify_notification_new(summary, body, icon_name ? icon_name : "user-trash-symbolic");
     notify_notification_set_app_name(notification, "Budgie Trash Applet");
     notify_notification_set_urgency(notification, NOTIFY_URGENCY_NORMAL);
     notify_notification_set_timeout(notification, 5000);
