@@ -35,6 +35,7 @@ dep_budgie = dependency('budgie-1.0', version: '>= 2')
 dep_gtk3 = dependency('gtk+-3.0', version: '>= 3.22.0')
 dep_glib = dependency('glib-2.0', version: '>= 2.64.0')
 dep_gio = dependency('gio-2.0', version: '>= 2.64.0')
+dep_notify = dependency('libnotify', version: '>= 0.7')
 
 intltool = find_program('intltool-merge')
 

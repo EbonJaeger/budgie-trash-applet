@@ -18,7 +18,8 @@ applet_trash_deps = [
     dep_budgie,
     dep_gtk3,
     dep_glib,
-    dep_gio
+    dep_gio,
+    dep_notify
 ]
 
 applet_trash_sources = [
@@ -29,6 +30,7 @@ applet_trash_sources = [
     'utils.c',
     'applet.c',
     'plugin.c',
+    'notify.c',
     res
 ]
 

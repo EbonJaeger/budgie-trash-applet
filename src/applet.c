@@ -3,6 +3,7 @@
 #include "applet.h"
 #include "trash_icon_button.h"
 #include "trash_store.h"
+#include <libnotify/notify.h>
 
 struct _TrashAppletPrivate {
     BudgiePopoverManager *manager;
@@ -46,6 +47,7 @@ static void trash_applet_class_init(TrashAppletClass *klazz) {
  * Apparently for cleanup that we don't have?
  */
 static void trash_applet_class_finalize(__budgie_unused__ TrashAppletClass *klass) {
+    notify_uninit();
 }
 
 /**
@@ -75,6 +77,9 @@ static void trash_applet_init(TrashApplet *self) {
 
     g_signal_connect_object(GTK_BUTTON(self->priv->icon_button), "clicked", G_CALLBACK(trash_toggle_popover), self, 0);
     gtk_widget_show_all(GTK_WIDGET(self));
+
+    // Register notifications
+    notify_init("com.github.EbonJaeger.budgie-trash-applet");
 }
 
 void trash_applet_init_gtype(GTypeModule *module) {

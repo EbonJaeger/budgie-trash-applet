@@ -1,4 +1,5 @@
 #include "trash_store.h"
+#include "notify.h"
 #include "utils.h"
 
 enum {
@@ -358,7 +359,13 @@ void trash_store_handle_confirm_clicked(TrashRevealer *sender, TrashStore *self)
     g_autoptr(GError) err = NULL;
     g_slist_foreach(self->trashed_files, self->restoring ? (GFunc) trash_item_restore : (GFunc) trash_item_delete, &err);
     if (err) {
-        g_warning("Error clearing files: %s", err->message);
+        trash_notify_try_send_with_icon("Trash Bin Error", err->message, "dialog-error-symbolic");
+    }
+
+    if (self->restoring) {
+        trash_notify_try_send("Trash Restored", "All trashed files have been restored", NULL);
+    } else {
+        trash_notify_try_send("Trash Cleared", "All files cleared from the trash", NULL);
     }
 
     trash_store_set_btns_sensitive(self, TRUE);
