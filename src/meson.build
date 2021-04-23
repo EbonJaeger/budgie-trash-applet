@@ -1,4 +1,15 @@
+add_project_arguments('-Db_sanitize=address', language: 'c')
+
+trash_applet_deps = [
+    dependency('budgie-1.0', version: '>= 2'),
+    dependency('gtk+-3.0', version: '>= 3.22.0'),
+    dependency('glib-2.0', version: '>= 2.64.0'),
+    dependency('gio-2.0', version: '>= 2.64.0'),
+    dependency('libnotify', version: '>= 0.7'),
+]
+
 gnome = import('gnome')
+intltool = find_program('intltool-merge')
 
 custom_target(
     'plugin-file-trash',
@@ -9,20 +20,7 @@ custom_target(
     install_dir: APPLET_INSTALL_DIR
 )
 
-data_dir = join_paths(meson.source_root(), 'data')
-
-gresource_file = join_paths(data_dir, 'com.github.EbonJaeger.budgie-trash-applet.gresource.xml')
-res = gnome.compile_resources('bta-resources', gresource_file, source_dir: data_dir)
-
-applet_trash_deps = [
-    dep_budgie,
-    dep_gtk3,
-    dep_glib,
-    dep_gio,
-    dep_notify
-]
-
-applet_trash_sources = [
+trash_applet_sources = [
     'trash_icon_button.c',
     'trash_item.c',
     'trash_revealer.c',
@@ -31,14 +29,18 @@ applet_trash_sources = [
     'applet.c',
     'plugin.c',
     'notify.c',
-    res
 ]
+
+trash_applet_sources += gnome.compile_resources('trash-applet-resources',
+    'trash-applet.gresource.xml',
+    dependencies: [ style ],
+    c_name: 'budgie_trash_applet',
+)
 
 shared_library(
     'trashapplet',
-    applet_trash_sources,
-    dependencies: applet_trash_deps,
-    include_directories: includeDir,
+    trash_applet_sources,
+    dependencies: trash_applet_deps,
     install: true,
     install_dir: APPLET_INSTALL_DIR
 )
