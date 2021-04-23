@@ -46,13 +46,19 @@ gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **e
     return success;
 }
 
-gchar *substring(gchar *source, gchar *dest, gint offset, gint length) {
-    gint input_length = strlen(source);
-    if (offset + length > input_length) {
+gchar *substring(gchar *source, gint offset, size_t length) {
+    if ((offset + length > strlen(source)) && length != strlen(source)) {
         return '\0';
     }
 
+    if (length == strlen(source)) {
+        length = length - offset;
+    }
+
+    gchar *dest = malloc(sizeof(gchar) * length + 1);
+
     strncpy(dest, source + offset, length);
+    dest[length] = '\0';
     return dest;
 }
 
@@ -60,9 +66,7 @@ GDateTime *trash_get_deletion_date(gchar *data) {
     gint substr_start = (gint)(strchr(data, '\n') - data + TRASH_INFO_DELETION_DATE_PREFIX_OFFSET);
     gint length = strlen(data) - substr_start - 1;
 
-    g_autofree gchar *deletion_date_str = (gchar *) malloc(length + 1);
-
-    deletion_date_str = substring(data, deletion_date_str, substr_start, length);
+    gchar *deletion_date_str = substring(data, substr_start, length);
     deletion_date_str[length] = '\0';
 
     GTimeZone *tz = g_time_zone_new_local();
@@ -76,9 +80,7 @@ GString *trash_get_restore_path(gchar *data) {
     gint end_of_line = (gint)(strchr(data, '\n') - data);
     gint length = end_of_line - TRASH_INFO_PATH_PREFIX_OFFSET;
 
-    gchar *tmp = (gchar *) malloc(length + 1);
-    tmp = substring(data, tmp, TRASH_INFO_PATH_PREFIX_OFFSET, length);
-    tmp[length] = '\0';
+    gchar *tmp = substring(data, TRASH_INFO_PATH_PREFIX_OFFSET, length);
 
     // TODO: Make this suck less
     GString *restore_path = g_string_new(tmp);

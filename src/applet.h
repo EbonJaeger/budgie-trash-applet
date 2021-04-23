@@ -50,4 +50,12 @@ void trash_create_widgets(GtkWidget *popover);
  */
 void trash_toggle_popover(GtkButton *sender, TrashApplet *self);
 
+void trash_drag_data_received(TrashApplet *self,
+                              GdkDragContext *context,
+                              gint x,
+                              gint y,
+                              GtkSelectionData *data,
+                              guint info,
+                              guint time);
+
 G_END_DECLS

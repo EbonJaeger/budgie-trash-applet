@@ -19,7 +19,7 @@
 
 gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **err);
 
-gchar *substring(gchar *source, gchar *dest, gint offset, gint length);
+gchar *substring(gchar *source, gint offset, size_t length);
 
 GDateTime *trash_get_deletion_date(gchar *data);
 GString *trash_get_restore_path(gchar *data);

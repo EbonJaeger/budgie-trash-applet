@@ -1,8 +1,10 @@
 #define _GNU_SOURCE
 
 #include "applet.h"
+#include "notify.h"
 #include "trash_icon_button.h"
 #include "trash_store.h"
+#include "utils.h"
 #include <libnotify/notify.h>
 
 struct _TrashAppletPrivate {
@@ -80,6 +82,15 @@ static void trash_applet_init(TrashApplet *self) {
 
     // Register notifications
     notify_init("com.github.EbonJaeger.budgie-trash-applet");
+
+    // Setup drag and drop to trash files
+    gtk_drag_dest_set(GTK_WIDGET(self),
+                      GTK_DEST_DEFAULT_ALL,
+                      gtk_target_entry_new("text/uri-list", 0, 0),
+                      1,
+                      GDK_ACTION_COPY);
+
+    g_signal_connect_object(self, "drag-data-received", G_CALLBACK(trash_drag_data_received), self, 0);
 }
 
 void trash_applet_init_gtype(GTypeModule *module) {
@@ -116,7 +127,7 @@ void trash_create_widgets(GtkWidget *popover) {
     gtk_style_context_add_class(drive_box_style, "trash-applet-list");
     gtk_container_add(GTK_CONTAINER(scroller), drive_box);
 
-    // Create a dummy store for now to display
+    // Create the trash store widgets
     TrashStore *default_store = trash_store_new("This PC", "drive-harddisk-symbolic");
     g_autoptr(GError) err = NULL;
     trash_store_load_items(default_store, err);
@@ -139,4 +150,36 @@ void trash_toggle_popover(__budgie_unused__ GtkButton *sender, TrashApplet *self
     } else {
         budgie_popover_manager_show_popover(self->priv->manager, GTK_WIDGET(self->priv->icon_button));
     }
+}
+
+void trash_drag_data_received(__budgie_unused__ TrashApplet *self,
+                              GdkDragContext *context,
+                              __budgie_unused__ gint x,
+                              __budgie_unused__ gint y,
+                              GtkSelectionData *data,
+                              guint info,
+                              guint time) {
+    if (info != 0) {
+        return;
+    }
+
+    g_autofree gchar *d = g_strdup((gchar *) gtk_selection_data_get_data(data));
+    if (g_str_has_prefix(d, "file://")) {
+        g_autofree gchar *tmp = substring(d, 7, strlen(d));
+        g_strstrip(tmp);
+        g_autoptr(GString) path = g_string_new(tmp);
+        g_string_replace(path, "%20", " ", 0);
+        g_string_replace(path, "%28", "(", 0);
+        g_string_replace(path, "%29", ")", 0);
+
+        g_autoptr(GFile) file = g_file_new_for_path(path->str);
+        g_autoptr(GError) err = NULL;
+        if (!g_file_trash(file, NULL, &err)) {
+            trash_notify_try_send("Error Trashing File", err->message, "dialog-error-symbolic");
+            g_critical("%s:%d: Error moving file to trash: %s", __FILE__, __LINE__, err->message);
+            return;
+        }
+    }
+
+    gtk_drag_finish(context, TRUE, TRUE, time);
 }
