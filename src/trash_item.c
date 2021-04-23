@@ -447,8 +447,9 @@ void trash_item_toggle_info_revealer(TrashItem *self) {
 
 void trash_item_delete(TrashItem *self, GError **err) {
     // Delete the trashed file (if it's a directory, it will delete recursively)
-    trash_delete_file(self->path, self->is_directory, err);
-    g_return_if_fail(err == NULL);
+    if (!trash_delete_file(self->path, self->is_directory, err)) {
+        return;
+    }
 
     // Delete the .trashinfo file
     g_autoptr(GFile) info_file = g_file_new_for_path(self->trashinfo_path);
@@ -459,8 +460,9 @@ void trash_item_restore(TrashItem *self, GError **err) {
     g_autoptr(GFile) trashed_file = g_file_new_for_path(self->path);
     g_autoptr(GFile) restored_file = g_file_new_for_path(self->restore_path);
 
-    g_file_move(trashed_file, restored_file, G_FILE_COPY_ALL_METADATA, NULL, NULL, NULL, err);
-    g_return_if_fail(err == NULL);
+    if (!g_file_move(trashed_file, restored_file, G_FILE_COPY_ALL_METADATA, NULL, NULL, NULL, err)) {
+        return;
+    }
 
     // Delete the .trashinfo file
     g_autoptr(GFile) info_file = g_file_new_for_path(self->trashinfo_path);
