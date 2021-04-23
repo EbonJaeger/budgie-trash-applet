@@ -121,7 +121,7 @@ void trash_create_widgets(GtkWidget *popover) {
     g_autoptr(GError) err = NULL;
     trash_store_load_items(default_store, err);
     if (err) {
-        g_critical("Error loading trash items for the default trash store: %s\n", err->message);
+        g_critical("%s:%d: Error loading trash items for the default trash store: %s", __FILE__, __LINE__, err->message);
     }
 
     gtk_list_box_insert(GTK_LIST_BOX(drive_box), GTK_WIDGET(default_store), -1);

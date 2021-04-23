@@ -394,7 +394,7 @@ void trash_store_handle_monitor_event(__budgie_unused__ GFileMonitor *monitor,
             g_autoptr(GError) err = NULL;
             TrashItem *trash_item = trash_store_create_trash_item(self, file_info, &err);
             if (err) {
-                g_warning("Couldn't create trash item from GFileInfo: %s\n", err->message);
+                g_warning("%s:%d: Couldn't create trash item from GFileInfo: %s", __FILE__, __LINE__, err->message);
                 g_object_unref(file_info);
                 break;
             }
@@ -440,7 +440,7 @@ void trash_store_load_items(TrashStore *self, GError *err) {
                                                                       NULL,
                                                                       &err);
     if G_UNLIKELY (!enumerator) {
-        g_warning("Error getting file enumerator for trash files in '%s': %s\n", self->trash_path, err->message);
+        g_warning("%s:%d: Error getting file enumerator for trash files in '%s': %s", __FILE__, __LINE__, self->trash_path, err->message);
         return;
     }
 
