@@ -71,7 +71,7 @@ static void trash_applet_init(TrashApplet *self) {
     // Create our popover widget
     self->priv->popover = budgie_popover_new(GTK_WIDGET(self->priv->icon_button));
     g_object_set(self->priv->popover, "width-request", 300, NULL);
-    trash_create_widgets(self, self->priv->popover);
+    trash_create_widgets(self->priv->popover);
 
     gtk_container_add(GTK_CONTAINER(self), GTK_WIDGET(self->priv->icon_button));
 
@@ -90,7 +90,7 @@ BudgieApplet *trash_applet_new(void) {
     return g_object_new(TRASH_TYPE_APPLET, NULL);
 }
 
-void trash_create_widgets(TrashApplet *self, GtkWidget *popover) {
+void trash_create_widgets(GtkWidget *popover) {
     GtkWidget *view = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
     // Create our popover header
@@ -133,7 +133,7 @@ void trash_create_widgets(TrashApplet *self, GtkWidget *popover) {
     gtk_widget_show_all(view);
 }
 
-void trash_toggle_popover(GtkButton *sender, TrashApplet *self) {
+void trash_toggle_popover(__budgie_unused__ GtkButton *sender, TrashApplet *self) {
     if (gtk_widget_is_visible(self->priv->popover)) {
         gtk_widget_hide(self->priv->popover);
     } else {

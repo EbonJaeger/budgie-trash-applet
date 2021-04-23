@@ -1,4 +1,5 @@
 #include "trash_item.h"
+#include "applet.h"
 #include "utils.h"
 
 enum {
@@ -420,15 +421,15 @@ void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self) {
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->confirm_revealer), TRUE);
 }
 
-void trash_item_handle_cancel_clicked(TrashRevealer *sender, TrashItem *self) {
+void trash_item_handle_cancel_clicked(__budgie_unused__ TrashRevealer *sender, TrashItem *self) {
     trash_item_set_btns_sensitive(self, TRUE);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->confirm_revealer), FALSE);
 }
 
-void trash_item_handle_confirm_clicked(TrashRevealer *sender, TrashItem *self) {
+void trash_item_handle_confirm_clicked(__budgie_unused__ TrashRevealer *sender, TrashItem *self) {
     g_autoptr(GError) err = NULL;
-    gboolean success = self->restoring ? trash_item_restore(self, &err) : trash_item_delete(self, &err);
-    if (!success) {
+    self->restoring ? trash_item_restore(self, &err) : trash_item_delete(self, &err);
+    if (err) {
         g_warning("Error clearing file from trash '%s': %s", self->name, err->message);
     }
 
@@ -444,31 +445,24 @@ void trash_item_toggle_info_revealer(TrashItem *self) {
     }
 }
 
-gboolean trash_item_delete(TrashItem *self, GError **err) {
+void trash_item_delete(TrashItem *self, GError **err) {
     // Delete the trashed file (if it's a directory, it will delete recursively)
-    gboolean success = trash_delete_file(self->path, self->is_directory, err);
-    g_return_val_if_fail(success == TRUE, success);
+    trash_delete_file(self->path, self->is_directory, err);
+    g_return_if_fail(err == NULL);
 
     // Delete the .trashinfo file
     g_autoptr(GFile) info_file = g_file_new_for_path(self->trashinfo_path);
-    success = g_file_delete(info_file, NULL, err);
-
-    return success;
+    g_file_delete(info_file, NULL, err);
 }
 
-gboolean trash_item_restore(TrashItem *self, GError **err) {
+void trash_item_restore(TrashItem *self, GError **err) {
     g_autoptr(GFile) trashed_file = g_file_new_for_path(self->path);
     g_autoptr(GFile) restored_file = g_file_new_for_path(self->restore_path);
 
-    gboolean success = g_file_move(trashed_file, restored_file, G_FILE_COPY_ALL_METADATA, NULL, NULL, NULL, err);
-
-    if (!success) {
-        return success;
-    }
+    g_file_move(trashed_file, restored_file, G_FILE_COPY_ALL_METADATA, NULL, NULL, NULL, err);
+    g_return_if_fail(err == NULL);
 
     // Delete the .trashinfo file
     g_autoptr(GFile) info_file = g_file_new_for_path(self->trashinfo_path);
-    success = g_file_delete(info_file, NULL, err);
-
-    return success;
+    g_file_delete(info_file, NULL, err);
 }

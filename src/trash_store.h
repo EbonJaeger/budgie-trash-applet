@@ -82,7 +82,7 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info,
  * 
  * If an error is encountered, `err` is set and `NULL` is returned.
  */
-gchar *trash_store_read_trash_info(TrashStore *self, gchar *trashinfo_path, GError **err);
+gchar *trash_store_read_trash_info(gchar *trashinfo_path, GError **err);
 
 /**
  * Sorts the trash items in the file box widget by the following rules:

@@ -27,6 +27,6 @@ void trash_notify_try_send(gchar *summary, gchar *body, gchar *icon_name);
 /**
  * Internal callback function to show the notification.
  */
-void _trash_notify_send(TrashNotifyData *data);
+gpointer _trash_notify_send(TrashNotifyData *data);
 
 G_END_DECLS

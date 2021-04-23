@@ -42,7 +42,7 @@ BudgieApplet *trash_applet_new(void);
 /**
  * Create our widgets to show in our popover.
  */
-void trash_create_widgets(TrashApplet *self, GtkWidget *popover);
+void trash_create_widgets(GtkWidget *popover);
 
 /**
  * Shows our popover widget if it isn't currently visible, or hide

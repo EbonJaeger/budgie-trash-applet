@@ -1,4 +1,5 @@
 #include "trash_store.h"
+#include "applet.h"
 #include "notify.h"
 #include "utils.h"
 
@@ -350,12 +351,12 @@ void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self) 
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), TRUE);
 }
 
-void trash_store_handle_cancel_clicked(TrashRevealer *sender, TrashStore *self) {
+void trash_store_handle_cancel_clicked(__budgie_unused__ TrashRevealer *sender, TrashStore *self) {
     trash_store_set_btns_sensitive(self, TRUE);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
 }
 
-void trash_store_handle_confirm_clicked(TrashRevealer *sender, TrashStore *self) {
+void trash_store_handle_confirm_clicked(__budgie_unused__ TrashRevealer *sender, TrashStore *self) {
     g_autoptr(GError) err = NULL;
     g_slist_foreach(self->trashed_files, self->restoring ? (GFunc) trash_item_restore : (GFunc) trash_item_delete, &err);
     if (err) {
@@ -372,14 +373,14 @@ void trash_store_handle_confirm_clicked(TrashRevealer *sender, TrashStore *self)
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
 }
 
-void trash_store_handle_row_activated(GtkListBox *sender, GtkListBoxRow *row, TrashStore *self) {
+void trash_store_handle_row_activated(__budgie_unused__ GtkListBox *sender, GtkListBoxRow *row, __budgie_unused__ TrashStore *self) {
     GtkWidget *child = gtk_bin_get_child(GTK_BIN(row));
     trash_item_toggle_info_revealer(TRASH_ITEM(child));
 }
 
-void trash_store_handle_monitor_event(GFileMonitor *monitor,
+void trash_store_handle_monitor_event(__budgie_unused__ GFileMonitor *monitor,
                                       GFile *file,
-                                      GFile *other_file,
+                                      __budgie_unused__ GFile *other_file,
                                       GFileMonitorEvent event_type,
                                       TrashStore *self) {
     switch (event_type) {
@@ -465,7 +466,7 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info,
 
     // Parse the trashinfo file for this item
     g_autofree gchar *info_file_path = g_build_path(G_DIR_SEPARATOR_S, self->trashinfo_path, g_strconcat(file_name, ".trashinfo", NULL), NULL);
-    g_autofree gchar *trash_info_contents = trash_store_read_trash_info(self, info_file_path, err);
+    g_autofree gchar *trash_info_contents = trash_store_read_trash_info(info_file_path, err);
     if G_UNLIKELY (!trash_info_contents) {
         return NULL;
     }
@@ -487,7 +488,7 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info,
     return trash_item;
 }
 
-gchar *trash_store_read_trash_info(TrashStore *self, gchar *trashinfo_path, GError **err) {
+gchar *trash_store_read_trash_info(gchar *trashinfo_path, GError **err) {
     // Open the file
     g_autoptr(GFile) info_file = g_file_new_for_path(trashinfo_path);
     g_autoptr(GFileInputStream) input_stream = g_file_read(info_file, NULL, err);
@@ -510,7 +511,7 @@ gchar *trash_store_read_trash_info(TrashStore *self, gchar *trashinfo_path, GErr
     return buffer;
 }
 
-gint trash_store_sort_by_type(GtkListBoxRow *row1, GtkListBoxRow *row2, gpointer user_data) {
+gint trash_store_sort_by_type(GtkListBoxRow *row1, GtkListBoxRow *row2, __budgie_unused__ gpointer user_data) {
     TrashItem *item1 = TRASH_ITEM(gtk_bin_get_child(GTK_BIN(row1)));
     TrashItem *item2 = TRASH_ITEM(gtk_bin_get_child(GTK_BIN(row2)));
 

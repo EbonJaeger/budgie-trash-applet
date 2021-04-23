@@ -47,10 +47,12 @@ void trash_notify_try_send(gchar *summary, gchar *body, gchar *icon_name) {
     trash_notify_data_unref(data);
 }
 
-void _trash_notify_send(TrashNotifyData *data) {
+gpointer _trash_notify_send(TrashNotifyData *data) {
     g_autoptr(GError) err = NULL;
     if (!notify_notification_show(data->notification, &err)) {
         g_warning("notify.c:53: Error sending notification: %s", err->message);
     }
     trash_notify_data_unref(data);
+
+    return NULL;
 }

@@ -33,7 +33,7 @@ void trash_item_handle_confirm_clicked(TrashRevealer *sender, TrashItem *self);
 
 void trash_item_toggle_info_revealer(TrashItem *self);
 
-gboolean trash_item_delete(TrashItem *self, GError **err);
-gboolean trash_item_restore(TrashItem *self, GError **err);
+void trash_item_delete(TrashItem *self, GError **err);
+void trash_item_restore(TrashItem *self, GError **err);
 
 G_END_DECLS
