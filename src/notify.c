@@ -38,7 +38,7 @@ void trash_notify_try_send(gchar *summary, gchar *body, gchar *icon_name) {
     g_autoptr(GError) err = NULL;
     GThread *thread = g_thread_try_new("trash-notify-thread", (GThreadFunc) _trash_notify_send, trash_notify_data_ref(data), &err);
     if (!thread) {
-        g_warning("%s:%d: Failed to spawn thread for sending a notification: %s", __FILE__, __LINE__, err->message);
+        g_critical("%s:%d: Failed to spawn thread for sending a notification: %s", __BASE_FILE__, __LINE__, err->message);
         trash_notify_data_unref(data);
         return;
     }
@@ -50,7 +50,7 @@ void trash_notify_try_send(gchar *summary, gchar *body, gchar *icon_name) {
 gpointer _trash_notify_send(TrashNotifyData *data) {
     g_autoptr(GError) err = NULL;
     if (!notify_notification_show(data->notification, &err)) {
-        g_warning("%s:%d: Error sending notification: %s", __FILE__, __LINE__, err->message);
+        g_critical("%s:%d: Error sending notification: %s", __BASE_FILE__, __LINE__, err->message);
     }
     trash_notify_data_unref(data);
 

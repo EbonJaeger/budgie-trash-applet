@@ -132,7 +132,7 @@ void trash_create_widgets(GtkWidget *popover) {
     g_autoptr(GError) err = NULL;
     trash_store_load_items(default_store, err);
     if (err) {
-        g_critical("%s:%d: Error loading trash items for the default trash store: %s", __FILE__, __LINE__, err->message);
+        g_critical("%s:%d: Error loading trash items for the default trash store: %s", __BASE_FILE__, __LINE__, err->message);
     }
 
     gtk_list_box_insert(GTK_LIST_BOX(drive_box), GTK_WIDGET(default_store), -1);
@@ -176,7 +176,7 @@ void trash_drag_data_received(__budgie_unused__ TrashApplet *self,
         g_autoptr(GError) err = NULL;
         if (!g_file_trash(file, NULL, &err)) {
             trash_notify_try_send("Error Trashing File", err->message, "dialog-error-symbolic");
-            g_critical("%s:%d: Error moving file to trash: %s", __FILE__, __LINE__, err->message);
+            g_critical("%s:%d: Error moving file to trash: %s", __BASE_FILE__, __LINE__, err->message);
             return;
         }
     }

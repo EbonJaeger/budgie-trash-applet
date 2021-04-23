@@ -430,7 +430,7 @@ void trash_item_handle_confirm_clicked(__budgie_unused__ TrashRevealer *sender, 
     g_autoptr(GError) err = NULL;
     self->restoring ? trash_item_restore(self, &err) : trash_item_delete(self, &err);
     if (err) {
-        g_warning("%s:%d: Error clearing file from trash '%s': %s", __FILE__, __LINE__, self->name, err->message);
+        g_critical("%s:%d: Error clearing file from trash '%s': %s", __BASE_FILE__, __LINE__, self->name, err->message);
     }
 
     trash_item_set_btns_sensitive(self, TRUE);
