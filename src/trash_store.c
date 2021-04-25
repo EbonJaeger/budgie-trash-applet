@@ -440,7 +440,7 @@ void trash_store_handle_monitor_event(__budgie_unused__ GFileMonitor *monitor,
         case G_FILE_MONITOR_EVENT_MOVED_OUT:
         case G_FILE_MONITOR_EVENT_DELETED: {
             g_autofree gchar *file_name = g_file_get_basename(file);
-            GSList *elem = g_slist_find_custom(self->trashed_files, file_name, (GCompareFunc) trash_store_compare_items);
+            GSList *elem = g_slist_find_custom(self->trashed_files, file_name, (GCompareFunc) trash_item_compare);
             TrashItem *trash_item = (TrashItem *) g_slist_nth_data(self->trashed_files,
                                                                    g_slist_position(self->trashed_files, elem));
             g_return_if_fail(trash_item != NULL);
@@ -485,7 +485,6 @@ void trash_store_load_items(TrashStore *self, GError *err) {
     }
 
     trash_store_check_empty(self);
-
     g_file_enumerator_close(enumerator, NULL, NULL);
 }
 
@@ -499,7 +498,13 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info,
         return NULL;
     }
 
-    g_autoptr(GString) restore_path = g_str_equal(self->path_prefix, "") ? trash_get_restore_path(trash_info_contents) : g_string_new(g_strconcat(self->path_prefix, G_DIR_SEPARATOR_S, trash_get_restore_path(trash_info_contents)->str, NULL));
+    gboolean has_prefix = (self->path_prefix && !g_str_equal(self->path_prefix, ""));
+    g_autoptr(GString) restore_path = NULL;
+    if (has_prefix) {
+        restore_path = g_string_prepend(trash_get_restore_path(trash_info_contents), g_strconcat(self->path_prefix, G_DIR_SEPARATOR_S, NULL));
+    } else {
+        restore_path = trash_get_restore_path(trash_info_contents);
+    }
     GDateTime *deletion_date = trash_get_deletion_date(trash_info_contents);
 
     TrashItem *trash_item = trash_item_new(g_strdup(file_name),
@@ -567,11 +572,4 @@ gint trash_store_sort_by_type(GtkListBoxRow *row1, GtkListBoxRow *row2, __budgie
     }
 
     return ret;
-}
-
-gint trash_store_compare_items(TrashItem *a, gchar *name) {
-    g_autofree gchar *a_name = NULL;
-    g_object_get(a, "file-name", &a_name, NULL);
-
-    return g_strcmp0(a_name, name);
 }

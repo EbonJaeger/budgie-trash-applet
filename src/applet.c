@@ -231,7 +231,7 @@ void trash_add_mount(GMount *mount, TrashApplet *self) {
     while ((current_file = g_file_enumerator_next_file(enumerator, NULL, &err))) {
         if (g_file_info_get_file_type(current_file) != G_FILE_TYPE_DIRECTORY ||
             strcmp(g_file_info_get_name(current_file), trash_dir_name) != 0) {
-            break;
+            continue;
         }
 
         g_autofree gchar *trash_path = g_build_path(G_DIR_SEPARATOR_S, g_file_get_path(location), g_file_info_get_name(current_file), "files", NULL);
@@ -251,7 +251,6 @@ void trash_add_mount(GMount *mount, TrashApplet *self) {
         break;
     }
 
-    g_object_unref(current_file);
     g_file_enumerator_close(enumerator, NULL, NULL);
 }
 

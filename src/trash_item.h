@@ -18,6 +18,7 @@ TrashItem *trash_item_new(gchar *name,
                           gchar *timestamp);
 void trash_item_apply_button_styles(TrashItem *self);
 void trash_item_set_btns_sensitive(TrashItem *self, gboolean sensitive);
+gint trash_item_compare(TrashItem *self, gchar *name);
 
 void trash_item_set_icon(TrashItem *self, GIcon *icon);
 void trash_item_set_file_name(TrashItem *self, gchar *file_name);

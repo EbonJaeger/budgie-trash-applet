@@ -254,6 +254,10 @@ void trash_item_set_btns_sensitive(TrashItem *self, gboolean sensitive) {
     gtk_widget_set_sensitive(self->restore_btn, sensitive);
 }
 
+gint trash_item_compare(TrashItem *self, gchar *name) {
+    return g_strcmp0(self->name, name);
+}
+
 void trash_item_set_icon(TrashItem *self, GIcon *icon) {
     if (!GTK_IS_WIDGET(self->header)) {
         return;

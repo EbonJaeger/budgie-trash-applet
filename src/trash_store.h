@@ -94,9 +94,4 @@ gchar *trash_store_read_trash_info(gchar *trashinfo_path, GError **err);
  */
 gint trash_store_sort_by_type(GtkListBoxRow *row1, GtkListBoxRow *row2, gpointer user_data);
 
-/**
- * Compare the names of a [TrashItem] to see if it matches.
- */
-gint trash_store_compare_items(TrashItem *a, gchar *name);
-
 G_END_DECLS
