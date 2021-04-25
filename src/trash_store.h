@@ -16,8 +16,8 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE(TrashStore, trash_store, TRASH, STORE, GtkBox)
 
-TrashStore *trash_store_new(gchar *drive_name, gchar *icon_name);
-TrashStore *trash_store_new_with_paths(gchar *drive_name, gchar *icon_name, gchar *trash_path, gchar *trashinfo_path);
+TrashStore *trash_store_new(gchar *drive_name);
+TrashStore *trash_store_new_with_extras(gchar *drive_name, GIcon *icon, gchar *path_prefix, gchar *trash_path, gchar *trashinfo_path);
 void trash_store_apply_button_styles(TrashStore *self);
 void trash_store_set_btns_sensitive(TrashStore *self, gboolean sensitive);
 void trash_store_check_empty(TrashStore *self);
@@ -27,7 +27,8 @@ void trash_store_check_empty(TrashStore *self);
  */
 
 void trash_store_set_drive_name(TrashStore *self, gchar *drive_name);
-void trash_store_set_icon_name(TrashStore *self, gchar *icon_name);
+void trash_store_set_icon(TrashStore *self, GIcon *icon);
+void trash_store_set_path_prefix(TrashStore *self, gchar *path_prefix);
 void trash_store_set_trash_path(TrashStore *self, gchar *trash_path);
 void trash_store_set_trashinfo_path(TrashStore *self, gchar *trashinfo_path);
 

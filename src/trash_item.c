@@ -259,6 +259,16 @@ void trash_item_set_icon(TrashItem *self, GIcon *icon) {
         return;
     }
 
+    if (g_icon_equal(self->icon, icon)) {
+        return;
+    } else {
+        if (self->icon) {
+            g_free(self->icon);
+        }
+    }
+
+    self->icon = icon;
+
     // If we already have an icon set, change it. Else, make a new one and prepend it
     // to our header.
     if (GTK_IS_IMAGE(self->file_icon)) {

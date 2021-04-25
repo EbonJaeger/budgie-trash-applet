@@ -42,7 +42,7 @@ BudgieApplet *trash_applet_new(void);
 /**
  * Create our widgets to show in our popover.
  */
-void trash_create_widgets(GtkWidget *popover);
+void trash_create_widgets(TrashApplet *self, GtkWidget *popover);
 
 /**
  * Shows our popover widget if it isn't currently visible, or hide
@@ -57,5 +57,9 @@ void trash_drag_data_received(TrashApplet *self,
                               GtkSelectionData *data,
                               guint info,
                               guint time);
+
+void trash_add_mount(GMount *mount, TrashApplet *self);
+void trash_handle_mount_added(GVolumeMonitor *monitor, GMount *mount, TrashApplet *self);
+void trash_handle_mount_removed(GVolumeMonitor *monitor, GMount *mount, TrashApplet *self);
 
 G_END_DECLS

@@ -6,7 +6,8 @@
 enum {
     PROP_EXP_0,
     PROP_DRIVE_NAME,
-    PROP_ICON_NAME,
+    PROP_ICON,
+    PROP_PATH_PREFIX,
     PROP_TRASH_PATH,
     PROP_TRASHINFO_PATH,
     N_EXP_PROPERTIES
@@ -21,11 +22,12 @@ struct _TrashStore {
     GFileMonitor *file_monitor;
     GSList *trashed_files;
 
+    gchar *path_prefix;
     gchar *trash_path;
     gchar *trashinfo_path;
 
     gchar *drive_name;
-    gchar *icon_name;
+    GIcon *icon;
     gboolean restoring;
     gint file_count;
 
@@ -61,11 +63,18 @@ static void trash_store_class_init(TrashStoreClass *klazz) {
         "This PC",
         G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
-    store_props[PROP_ICON_NAME] = g_param_spec_string(
-        "icon-name",
-        "Icon Name",
-        "Name of the icon to use for this drive",
-        "drive-harddisk-symbolic",
+    store_props[PROP_ICON] = g_param_spec_gtype(
+        "icon",
+        "Icon",
+        "Icon to use for this drive",
+        G_TYPE_NONE,
+        G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    store_props[PROP_PATH_PREFIX] = g_param_spec_string(
+        "path-prefix",
+        "Path prefix",
+        "Path prefix to prepend to trash item paths in this TrashStore",
+        "",
         G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
     store_props[PROP_TRASH_PATH] = g_param_spec_string(
@@ -92,8 +101,11 @@ static void trash_store_get_property(GObject *obj, guint prop_id, GValue *val, G
         case PROP_DRIVE_NAME:
             g_value_set_string(val, self->drive_name);
             break;
-        case PROP_ICON_NAME:
-            g_value_set_string(val, self->icon_name);
+        case PROP_ICON:
+            g_value_set_gtype(val, (GType) self->icon);
+            break;
+        case PROP_PATH_PREFIX:
+            g_value_set_string(val, self->path_prefix);
             break;
         case PROP_TRASH_PATH:
             g_value_set_string(val, self->trash_path);
@@ -115,9 +127,12 @@ static void trash_store_set_property(GObject *obj, guint prop_id, const GValue *
             g_return_if_fail(GTK_IS_WIDGET(self->header));
             trash_store_set_drive_name(self, g_strdup(g_value_get_string(val)));
             break;
-        case PROP_ICON_NAME:
+        case PROP_ICON:
             g_return_if_fail(GTK_IS_WIDGET(self->header));
-            trash_store_set_icon_name(self, g_strdup(g_value_get_string(val)));
+            trash_store_set_icon(self, G_ICON(g_value_get_gtype(val)));
+            break;
+        case PROP_PATH_PREFIX:
+            trash_store_set_path_prefix(self, g_strdup(g_value_get_string(val)));
             break;
         case PROP_TRASH_PATH:
             trash_store_set_trash_path(self, g_strdup(g_value_get_string(val)));
@@ -181,19 +196,20 @@ static void trash_store_init(TrashStore *self) {
     gtk_box_pack_start(GTK_BOX(self), self->file_box, TRUE, TRUE, 0);
 }
 
-TrashStore *trash_store_new(gchar *drive_name, gchar *icon_name) {
+TrashStore *trash_store_new(gchar *drive_name) {
     return g_object_new(TRASH_TYPE_STORE,
                         "orientation", GTK_ORIENTATION_VERTICAL,
                         "drive-name", drive_name,
-                        "icon-name", icon_name,
+                        "icon", g_icon_new_for_string("drive-harddisk-symbolic", NULL),
                         NULL);
 }
 
-TrashStore *trash_store_new_with_paths(gchar *drive_name, gchar *icon_name, gchar *trash_path, gchar *trashinfo_path) {
+TrashStore *trash_store_new_with_extras(gchar *drive_name, GIcon *icon, gchar *path_prefix, gchar *trash_path, gchar *trashinfo_path) {
     return g_object_new(TRASH_TYPE_STORE,
                         "orientation", GTK_ORIENTATION_VERTICAL,
                         "drive-name", drive_name,
-                        "icon-name", icon_name,
+                        "icon", icon,
+                        "path-prefix", path_prefix,
                         "trash-path", trash_path,
                         "trashinfo-path", trashinfo_path,
                         NULL);
@@ -244,34 +260,48 @@ void trash_store_set_drive_name(TrashStore *self, gchar *drive_name) {
     g_object_notify_by_pspec(G_OBJECT(self), store_props[PROP_DRIVE_NAME]);
 }
 
-void trash_store_set_icon_name(TrashStore *self, gchar *icon_name) {
-    gchar *name_clone = g_strdup(icon_name);
-
-    if (name_clone == NULL || strcmp(name_clone, "") == 0) {
-        return;
-    }
-
+void trash_store_set_icon(TrashStore *self, GIcon *icon) {
     if (!GTK_IS_WIDGET(self->header)) {
         return;
     }
 
-    // Free existing text if it is different
-    if ((self->icon_name != NULL) && strcmp(self->icon_name, name_clone) != 0) {
-        g_free(self->icon_name);
+    if (g_icon_equal(self->icon, icon)) {
+        return;
+    } else {
+        if (self->icon) {
+            g_free(self->icon);
+        }
     }
 
-    self->icon_name = name_clone;
+    self->icon = icon;
 
     // If we already have an icon set, change it. Else, make a new one and prepend it
     // to our header.
     if (GTK_IS_IMAGE(self->header_icon)) {
-        gtk_image_set_from_icon_name(GTK_IMAGE(self->header_icon), self->icon_name, GTK_ICON_SIZE_SMALL_TOOLBAR);
+        gtk_image_set_from_gicon(GTK_IMAGE(self->header_icon), self->icon, GTK_ICON_SIZE_SMALL_TOOLBAR);
     } else {
-        self->header_icon = gtk_image_new_from_icon_name(self->icon_name, GTK_ICON_SIZE_SMALL_TOOLBAR);
+        self->header_icon = gtk_image_new_from_gicon(self->icon, GTK_ICON_SIZE_SMALL_TOOLBAR);
         gtk_box_pack_start(GTK_BOX(self->header), self->header_icon, FALSE, FALSE, 10);
     }
 
-    g_object_notify_by_pspec(G_OBJECT(self), store_props[PROP_ICON_NAME]);
+    g_object_notify_by_pspec(G_OBJECT(self), store_props[PROP_ICON]);
+}
+
+void trash_store_set_path_prefix(TrashStore *self, gchar *path_prefix) {
+    gchar *path_clone = g_strdup(path_prefix);
+
+    if (path_clone == NULL || strcmp(path_clone, "") == 0) {
+        return;
+    }
+
+    // Free existing text if it is different
+    if ((self->path_prefix != NULL) && strcmp(self->path_prefix, path_clone) != 0) {
+        g_free(self->path_prefix);
+    }
+
+    self->path_prefix = path_clone;
+
+    g_object_notify_by_pspec(G_OBJECT(self), store_props[PROP_PATH_PREFIX]);
 }
 
 void trash_store_set_trash_path(TrashStore *self, gchar *trash_path) {
@@ -298,7 +328,7 @@ void trash_store_set_trash_path(TrashStore *self, gchar *trash_path) {
     self->file_monitor = g_file_monitor_directory(dir, G_FILE_MONITOR_WATCH_MOVES, NULL, &err);
     g_signal_connect_object(self->file_monitor, "changed", G_CALLBACK(trash_store_handle_monitor_event), self, 0);
 
-    g_object_notify_by_pspec(G_OBJECT(self), store_props[PROP_ICON_NAME]);
+    g_object_notify_by_pspec(G_OBJECT(self), store_props[PROP_TRASH_PATH]);
 }
 
 void trash_store_set_trashinfo_path(TrashStore *self, gchar *trashinfo_path) {
@@ -315,7 +345,7 @@ void trash_store_set_trashinfo_path(TrashStore *self, gchar *trashinfo_path) {
 
     self->trashinfo_path = path_clone;
 
-    g_object_notify_by_pspec(G_OBJECT(self), store_props[PROP_ICON_NAME]);
+    g_object_notify_by_pspec(G_OBJECT(self), store_props[PROP_TRASHINFO_PATH]);
 }
 
 void trash_store_set_btns_sensitive(TrashStore *self, gboolean sensitive) {
@@ -445,11 +475,9 @@ void trash_store_load_items(TrashStore *self, GError *err) {
     }
 
     // Iterate over the directory's children and append each file name to a list
-    GFileInfo *current_file;
+    g_autoptr(GFileInfo) current_file = NULL;
     while ((current_file = g_file_enumerator_next_file(enumerator, NULL, &err))) {
         TrashItem *trash_item = trash_store_create_trash_item(self, current_file, &err);
-
-        g_object_unref(current_file);
 
         gtk_list_box_insert(GTK_LIST_BOX(self->file_box), GTK_WIDGET(trash_item), -1);
         self->trashed_files = g_slist_append(self->trashed_files, trash_item);
@@ -471,7 +499,7 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info,
         return NULL;
     }
 
-    g_autoptr(GString) restore_path = trash_get_restore_path(trash_info_contents);
+    g_autoptr(GString) restore_path = g_str_equal(self->path_prefix, "") ? trash_get_restore_path(trash_info_contents) : g_string_new(g_strconcat(self->path_prefix, G_DIR_SEPARATOR_S, trash_get_restore_path(trash_info_contents)->str, NULL));
     GDateTime *deletion_date = trash_get_deletion_date(trash_info_contents);
 
     TrashItem *trash_item = trash_item_new(g_strdup(file_name),

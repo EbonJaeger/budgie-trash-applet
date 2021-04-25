@@ -1,4 +1,9 @@
 #include "utils.h"
+#include <stdio.h>
+
+int get_num_digits(int number) {
+    return snprintf(NULL, 0, "%i", number);
+}
 
 gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **err) {
     gboolean success = TRUE;
