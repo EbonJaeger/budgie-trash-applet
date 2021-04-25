@@ -14,8 +14,8 @@ Manage items in your trash bin right from the Budgie panel.
 budgie-1.0 >= 2
 gtk+-3.0 >= 3.22
 glib-2.0 >= 2.46.0
+libnotify >= 0.7
 sassc
-vala
 ```
 
 You can get these on Solus with the following packages:
@@ -25,7 +25,6 @@ budgie-desktop-devel
 libgtk-3-devel
 glib2-devel
 sassc
-vala
 ```
 
 ### Building and Installing
