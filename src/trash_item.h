@@ -18,7 +18,13 @@ TrashItem *trash_item_new(gchar *name,
                           gchar *timestamp);
 void trash_item_apply_button_styles(TrashItem *self);
 void trash_item_set_btns_sensitive(TrashItem *self, gboolean sensitive);
-gint trash_item_compare(TrashItem *self, gchar *name);
+
+/**
+ * Compares the name of the TrashItem with the given string.
+ * 
+ * Returns `TRUE` if the name is the same.
+ */
+gint trash_item_has_name(TrashItem *self, gchar *name);
 
 void trash_item_set_icon(TrashItem *self, GIcon *icon);
 void trash_item_set_file_name(TrashItem *self, gchar *file_name);
@@ -36,5 +42,14 @@ void trash_item_toggle_info_revealer(TrashItem *self);
 
 void trash_item_delete(TrashItem *self, GError **err);
 void trash_item_restore(TrashItem *self, GError **err);
+
+/**
+ * Compares two TrashItems for sorting. This function uses the following rules:
+ * 
+ * 1. Directories should be above regular files
+ * 2. Directories should be sorted alphabetically
+ * 3. Files should be sorted alphabetically
+ */
+gint trash_item_collate_by_name(TrashItem *self, TrashItem *other);
 
 G_END_DECLS

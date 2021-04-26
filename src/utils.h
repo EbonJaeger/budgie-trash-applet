@@ -17,11 +17,6 @@
  */
 #define TRASH_INFO_DELETION_DATE_PREFIX_OFFSET 14
 
-/**
- * Get the number of digits in a number. E.g., 3 => 1, 25 => 2, etc.
- */
-int get_num_digits(int number);
-
 gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **err);
 
 gchar *substring(gchar *source, gint offset, size_t length);

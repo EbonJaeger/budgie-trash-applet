@@ -254,7 +254,7 @@ void trash_item_set_btns_sensitive(TrashItem *self, gboolean sensitive) {
     gtk_widget_set_sensitive(self->restore_btn, sensitive);
 }
 
-gint trash_item_compare(TrashItem *self, gchar *name) {
+gint trash_item_has_name(TrashItem *self, gchar *name) {
     return g_strcmp0(self->name, name);
 }
 
@@ -481,4 +481,20 @@ void trash_item_restore(TrashItem *self, GError **err) {
     // Delete the .trashinfo file
     g_autoptr(GFile) info_file = g_file_new_for_path(self->trashinfo_path);
     g_file_delete(info_file, NULL, err);
+}
+
+gint trash_item_collate_by_name(TrashItem *self, TrashItem *other) {
+    gint ret = 0;
+
+    if (self->is_directory && other->is_directory) {
+        ret = strcoll(self->name, other->name);
+    } else if (self->is_directory && !other->is_directory) {
+        ret = -1;
+    } else if (!self->is_directory && other->is_directory) {
+        ret = 1;
+    } else {
+        ret = strcoll(self->name, other->name);
+    }
+
+    return ret;
 }

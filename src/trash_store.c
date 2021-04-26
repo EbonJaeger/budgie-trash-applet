@@ -185,7 +185,7 @@ static void trash_store_init(TrashStore *self) {
     gtk_style_context_add_class(file_box_style, "empty");
     gtk_list_box_set_activate_on_single_click(GTK_LIST_BOX(self->file_box), TRUE);
     gtk_list_box_set_selection_mode(GTK_LIST_BOX(self->file_box), GTK_SELECTION_NONE);
-    gtk_list_box_set_sort_func(GTK_LIST_BOX(self->file_box), trash_store_sort_by_type, self, NULL);
+    gtk_list_box_set_sort_func(GTK_LIST_BOX(self->file_box), trash_store_sort, self, NULL);
 
     g_signal_connect_object(self->file_box, "row-activated", G_CALLBACK(trash_store_handle_row_activated), self, 0);
 
@@ -440,7 +440,7 @@ void trash_store_handle_monitor_event(__budgie_unused__ GFileMonitor *monitor,
         case G_FILE_MONITOR_EVENT_MOVED_OUT:
         case G_FILE_MONITOR_EVENT_DELETED: {
             g_autofree gchar *file_name = g_file_get_basename(file);
-            GSList *elem = g_slist_find_custom(self->trashed_files, file_name, (GCompareFunc) trash_item_compare);
+            GSList *elem = g_slist_find_custom(self->trashed_files, file_name, (GCompareFunc) trash_item_has_name);
             TrashItem *trash_item = (TrashItem *) g_slist_nth_data(self->trashed_files,
                                                                    g_slist_position(self->trashed_files, elem));
             g_return_if_fail(trash_item != NULL);
@@ -544,32 +544,9 @@ gchar *trash_store_read_trash_info(gchar *trashinfo_path, GError **err) {
     return buffer;
 }
 
-gint trash_store_sort_by_type(GtkListBoxRow *row1, GtkListBoxRow *row2, __budgie_unused__ gpointer user_data) {
+gint trash_store_sort(GtkListBoxRow *row1, GtkListBoxRow *row2, __budgie_unused__ gpointer user_data) {
     TrashItem *item1 = TRASH_ITEM(gtk_bin_get_child(GTK_BIN(row1)));
     TrashItem *item2 = TRASH_ITEM(gtk_bin_get_child(GTK_BIN(row2)));
 
-    gboolean item1_is_dir = FALSE;
-    gboolean item2_is_dir = FALSE;
-    g_autofree gchar *item1_name = NULL;
-    g_autofree gchar *item2_name = NULL;
-    g_object_get(item1,
-                 "is-directory", &item1_is_dir,
-                 "file-name", &item1_name, NULL);
-    g_object_get(item2,
-                 "is-directory", &item2_is_dir,
-                 "file-name", &item2_name, NULL);
-
-    gint ret = 0;
-
-    if (item1_is_dir && item2_is_dir) {
-        ret = strcoll(item1_name, item2_name);
-    } else if (item1_is_dir && !item2_is_dir) {
-        ret = -1;
-    } else if (!item1_is_dir && item2_is_dir) {
-        ret = 1;
-    } else {
-        ret = strcoll(item1_name, item2_name);
-    }
-
-    return ret;
+    return trash_item_collate_by_name(item1, item2);
 }

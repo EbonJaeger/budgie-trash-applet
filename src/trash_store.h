@@ -86,12 +86,8 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info,
 gchar *trash_store_read_trash_info(gchar *trashinfo_path, GError **err);
 
 /**
- * Sorts the trash items in the file box widget by the following rules:
- * 
- * 1. Directories should be above regular files
- * 2. Directories should be sorted alphabetically
- * 3. Files should be sorted alphabetically
+ * Sorts the trash items in the file box widget.
  */
-gint trash_store_sort_by_type(GtkListBoxRow *row1, GtkListBoxRow *row2, gpointer user_data);
+gint trash_store_sort(GtkListBoxRow *row1, GtkListBoxRow *row2, gpointer user_data);
 
 G_END_DECLS

@@ -209,8 +209,13 @@ void trash_add_mount(GMount *mount, TrashApplet *self) {
     g_autoptr(GFile) location = g_mount_get_default_location(mount);
     g_autofree gchar *attributes = g_strconcat(G_FILE_ATTRIBUTE_STANDARD_NAME, ",",
                                                G_FILE_ATTRIBUTE_STANDARD_TYPE, NULL);
-    g_autofree gchar *trash_dir_name = (gchar *) malloc(sizeof(gchar) * (8 + get_num_digits(self->priv->uid)));
-    g_snprintf(trash_dir_name, (8 + get_num_digits(self->priv->uid)), ".Trash-%i", self->priv->uid);
+
+    // Calculate the length of the dir name we're looking for, with an extra
+    // space for a NULL terminator. We use `snprintf` to count the length of
+    // the UID so we can properly allocate space for it in the name string.
+    gint name_length = (7 + snprintf(NULL, 0, "%i", self->priv->uid) + 1);
+    g_autofree gchar *trash_dir_name = (gchar *) malloc(sizeof(gchar) * name_length);
+    g_snprintf(trash_dir_name, name_length, ".Trash-%i", self->priv->uid);
 
     g_autoptr(GError) err = NULL;
     g_autoptr(GFileEnumerator) enumerator = g_file_enumerate_children(location,
