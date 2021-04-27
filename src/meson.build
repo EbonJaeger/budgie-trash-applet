@@ -22,6 +22,7 @@ custom_target(
 
 trash_applet_sources = [
     'trash_icon_button.c',
+    'trash_info.c',
     'trash_item.c',
     'trash_revealer.c',
     'trash_store.c',

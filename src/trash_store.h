@@ -75,7 +75,7 @@ void trash_store_load_items(TrashStore *self, GError *err);
  * 
  * TODO: Maybe this should be in TrashItem instead.
  */
-TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info, GError **err);
+TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info);
 
 /**
  * Read the contents of a trashinfo file for a file with the given name

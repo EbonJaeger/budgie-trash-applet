@@ -1,16 +1,13 @@
 #include "trash_item.h"
-#include "applet.h"
-#include "utils.h"
 
 enum {
     PROP_EXP_0,
     PROP_FILE_NAME,
     PROP_PATH,
     PROP_TRASHINFO_PATH,
-    PROP_RESTORE_PATH,
     PROP_FILE_ICON,
     PROP_IS_DIRECTORY,
-    PROP_TIMESTAMP,
+    PROP_TRASH_INFO,
     N_EXP_PROPERTIES
 };
 
@@ -26,10 +23,10 @@ struct _TrashItem {
     gchar *name;
     gchar *path;
     gchar *trashinfo_path;
-    gchar *restore_path;
     GIcon *icon;
     gboolean is_directory;
-    gchar *timestamp;
+
+    TrashInfo *trash_info;
 
     GtkWidget *header;
     GtkWidget *file_icon;
@@ -80,13 +77,6 @@ static void trash_item_class_init(TrashItemClass *klazz) {
         "",
         G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
-    item_props[PROP_RESTORE_PATH] = g_param_spec_string(
-        "restore-path",
-        "Restore Path",
-        "Path to where the trashed item used to be",
-        "",
-        G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
-
     item_props[PROP_FILE_ICON] = g_param_spec_gtype(
         "file-icon",
         "File icon",
@@ -101,11 +91,11 @@ static void trash_item_class_init(TrashItemClass *klazz) {
         FALSE,
         G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
-    item_props[PROP_TIMESTAMP] = g_param_spec_string(
-        "timestamp",
-        "Timestamp",
-        "The time when the item was deleted",
-        "",
+    item_props[PROP_TRASH_INFO] = g_param_spec_gtype(
+        "trash-info",
+        "Trash info",
+        "TrashInfo struct for special trash details",
+        G_TYPE_NONE,
         G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
     g_object_class_install_properties(class, N_EXP_PROPERTIES, item_props);
@@ -124,17 +114,14 @@ static void trash_item_get_property(GObject *obj, guint prop_id, GValue *val, GP
         case PROP_TRASHINFO_PATH:
             g_value_set_string(val, self->trashinfo_path);
             break;
-        case PROP_RESTORE_PATH:
-            g_value_set_string(val, self->restore_path);
-            break;
         case PROP_FILE_ICON:
             g_value_set_gtype(val, (GType) self->icon);
             break;
         case PROP_IS_DIRECTORY:
             g_value_set_boolean(val, self->is_directory);
             break;
-        case PROP_TIMESTAMP:
-            g_value_set_string(val, self->timestamp);
+        case PROP_TRASH_INFO:
+            g_value_set_gtype(val, (GType) self->trash_info);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
@@ -156,11 +143,6 @@ static void trash_item_set_property(GObject *obj, guint prop_id, const GValue *v
         case PROP_TRASHINFO_PATH:
             trash_item_set_trashinfo_path(self, g_strdup(g_value_get_string(val)));
             break;
-        case PROP_RESTORE_PATH:
-            g_return_if_fail(GTK_IS_WIDGET(self->header));
-            g_return_if_fail(GTK_IS_WIDGET(self->info_revealer));
-            trash_item_set_restore_path(self, g_strdup(g_value_get_string(val)));
-            break;
         case PROP_FILE_ICON:
             g_return_if_fail(GTK_IS_WIDGET(self->header));
             trash_item_set_icon(self, G_ICON(g_value_get_gtype(val)));
@@ -168,9 +150,9 @@ static void trash_item_set_property(GObject *obj, guint prop_id, const GValue *v
         case PROP_IS_DIRECTORY:
             trash_item_set_directory(self, g_value_get_boolean(val));
             break;
-        case PROP_TIMESTAMP:
+        case PROP_TRASH_INFO:
             g_return_if_fail(GTK_IS_WIDGET(self->info_revealer));
-            trash_item_set_timestamp(self, g_strdup(g_value_get_string(val)));
+            trash_item_set_info(self, (TrashInfo *) g_value_get_gtype(val));
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
@@ -224,19 +206,17 @@ static void trash_item_init(TrashItem *self) {
 TrashItem *trash_item_new(gchar *name,
                           gchar *path,
                           gchar *trashinfo_path,
-                          gchar *restore_path,
                           GIcon *icon,
                           gboolean is_directory,
-                          gchar *timestamp) {
+                          TrashInfo *trash_info) {
     return g_object_new(TRASH_TYPE_ITEM,
                         "orientation", GTK_ORIENTATION_VERTICAL,
                         "file-icon", icon,
                         "file-name", name,
                         "path", path,
                         "trashinfo-path", trashinfo_path,
-                        "restore-path", restore_path,
                         "is-directory", is_directory,
-                        "timestamp", timestamp,
+                        "trash-info", trash_info,
                         NULL);
 }
 
@@ -355,28 +335,24 @@ void trash_item_set_trashinfo_path(TrashItem *self, gchar *path) {
     g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_TRASHINFO_PATH]);
 }
 
-void trash_item_set_restore_path(TrashItem *self, gchar *path) {
-    gchar *path_clone = g_strdup(path);
+void trash_item_set_directory(TrashItem *self, gboolean is_directory) {
+    self->is_directory = is_directory;
+    g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_IS_DIRECTORY]);
+}
 
-    if (path_clone == NULL || strcmp(path_clone, "") == 0) {
-        return;
+void trash_item_set_info(TrashItem *self, TrashInfo *trash_info) {
+    g_return_if_fail(trash_info != NULL);
+
+    if (self->trash_info) {
+        g_free(self->trash_info);
     }
 
-    if (!GTK_IS_WIDGET(self->header)) {
-        return;
-    }
-
-    // Free existing text if it is different
-    if ((self->restore_path != NULL) && strcmp(self->restore_path, path_clone) != 0) {
-        g_free(self->path);
-    }
-
-    self->restore_path = path_clone;
+    self->trash_info = trash_info;
 
     if (GTK_IS_LABEL(self->path_label)) {
-        gtk_label_set_markup(GTK_LABEL(self->path_label), g_strconcat("<b>Path:</b> ", self->restore_path, NULL));
+        gtk_label_set_markup(GTK_LABEL(self->path_label), g_strconcat("<b>Path:</b> ", trash_info_get_restore_path(trash_info), NULL));
     } else {
-        self->path_label = gtk_label_new(g_strconcat("<b>Path:</b> ", self->restore_path, NULL));
+        self->path_label = gtk_label_new(g_strconcat("<b>Path:</b> ", trash_info_get_restore_path(trash_info), NULL));
         gtk_label_set_use_markup(GTK_LABEL(self->path_label), TRUE);
         gtk_label_set_ellipsize(GTK_LABEL(self->path_label), PANGO_ELLIPSIZE_END);
         gtk_widget_set_halign(self->path_label, GTK_ALIGN_START);
@@ -384,42 +360,19 @@ void trash_item_set_restore_path(TrashItem *self, gchar *path) {
         gtk_box_pack_start(GTK_BOX(self->info_container), self->path_label, TRUE, TRUE, 0);
     }
 
-    // Set the tooltip text
-    gtk_widget_set_tooltip_text(self->path_label, self->restore_path);
-
-    g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_RESTORE_PATH]);
-}
-
-void trash_item_set_directory(TrashItem *self, gboolean is_directory) {
-    self->is_directory = is_directory;
-    g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_IS_DIRECTORY]);
-}
-
-void trash_item_set_timestamp(TrashItem *self, gchar *timestamp) {
-    gchar *timestamp_clone = g_strdup(timestamp);
-
-    if (timestamp_clone == NULL || strcmp(timestamp_clone, "") == 0) {
-        return;
-    }
-
-    // Free existing text if it is different
-    if ((self->timestamp != NULL) && strcmp(self->timestamp, timestamp_clone) != 0) {
-        g_free(self->timestamp);
-    }
-
-    self->timestamp = timestamp_clone;
+    gtk_widget_set_tooltip_text(self->path_label, trash_info_get_restore_path(trash_info));
 
     if (GTK_IS_LABEL(self->timestamp_label)) {
-        gtk_label_set_markup(GTK_LABEL(self->timestamp_label), g_strconcat("<b>Deleted at:</b> ", self->timestamp, NULL));
+        gtk_label_set_markup(GTK_LABEL(self->timestamp_label), g_strconcat("<b>Deleted at:</b> ", trash_info_format_deletion_time(trash_info), NULL));
     } else {
-        self->timestamp_label = gtk_label_new(g_strconcat("<b>Deleted at:</b> ", self->timestamp, NULL));
+        self->timestamp_label = gtk_label_new(g_strconcat("<b>Deleted at:</b> ", trash_info_format_deletion_time(trash_info), NULL));
         gtk_label_set_use_markup(GTK_LABEL(self->timestamp_label), TRUE);
         gtk_widget_set_halign(self->timestamp_label, GTK_ALIGN_START);
         gtk_label_set_justify(GTK_LABEL(self->timestamp_label), GTK_JUSTIFY_LEFT);
         gtk_box_pack_end(GTK_BOX(self->info_container), self->timestamp_label, TRUE, TRUE, 0);
     }
 
-    g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_TIMESTAMP]);
+    g_object_notify_by_pspec(G_OBJECT(self), item_props[PROP_TRASH_INFO]);
 }
 
 void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self) {
@@ -472,7 +425,7 @@ void trash_item_delete(TrashItem *self, GError **err) {
 
 void trash_item_restore(TrashItem *self, GError **err) {
     g_autoptr(GFile) trashed_file = g_file_new_for_path(self->path);
-    g_autoptr(GFile) restored_file = g_file_new_for_path(self->restore_path);
+    g_autoptr(GFile) restored_file = g_file_new_for_path(trash_info_get_restore_path(self->trash_info));
 
     if (!g_file_move(trashed_file, restored_file, G_FILE_COPY_ALL_METADATA, NULL, NULL, NULL, err)) {
         return;

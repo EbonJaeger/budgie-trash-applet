@@ -61,31 +61,3 @@ gchar *substring(gchar *source, gint offset, size_t length) {
     dest[length] = '\0';
     return dest;
 }
-
-GDateTime *trash_get_deletion_date(gchar *data) {
-    gint substr_start = (gint)(strchr(data, '\n') - data + TRASH_INFO_DELETION_DATE_PREFIX_OFFSET);
-    gint length = strlen(data) - substr_start - 1;
-
-    gchar *deletion_date_str = substring(data, substr_start, length);
-    deletion_date_str[length] = '\0';
-
-    GTimeZone *tz = g_time_zone_new_local();
-    GDateTime *deletion_date = g_date_time_new_from_iso8601((const gchar *) deletion_date_str, tz);
-    g_time_zone_unref(tz);
-
-    return deletion_date;
-}
-
-GString *trash_get_restore_path(gchar *data) {
-    gint end_of_line = (gint)(strchr(data, '\n') - data);
-    gint length = end_of_line - TRASH_INFO_PATH_PREFIX_OFFSET;
-
-    gchar *tmp = substring(data, TRASH_INFO_PATH_PREFIX_OFFSET, length);
-
-    // TODO: Make this suck less
-    GString *restore_path = g_string_new(tmp);
-    g_string_replace(restore_path, "%20", " ", 0);
-    g_string_replace(restore_path, "%28", "(", 0);
-    g_string_replace(restore_path, "%29", ")", 0);
-    return restore_path;
-}
