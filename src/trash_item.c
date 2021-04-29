@@ -388,12 +388,12 @@ void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self) {
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->confirm_revealer), TRUE);
 }
 
-void trash_item_handle_cancel_clicked(__budgie_unused__ TrashRevealer *sender, TrashItem *self) {
+void trash_item_handle_cancel_clicked(__attribute__((unused)) TrashRevealer *sender, TrashItem *self) {
     trash_item_set_btns_sensitive(self, TRUE);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->confirm_revealer), FALSE);
 }
 
-void trash_item_handle_confirm_clicked(__budgie_unused__ TrashRevealer *sender, TrashItem *self) {
+void trash_item_handle_confirm_clicked(__attribute__((unused)) TrashRevealer *sender, TrashItem *self) {
     g_autoptr(GError) err = NULL;
     self->restoring ? trash_item_restore(self, &err) : trash_item_delete(self, &err);
     if (err) {
@@ -436,7 +436,18 @@ void trash_item_restore(TrashItem *self, GError **err) {
     g_file_delete(info_file, NULL, err);
 }
 
+gint trash_item_collate_by_date(TrashItem *self, TrashItem *other) {
+    g_autoptr(GDateTime) d1 = trash_info_get_deletion_time(self->trash_info);
+    g_autoptr(GDateTime) d2 = trash_info_get_deletion_time(other->trash_info);
+
+    return g_date_time_compare(d1, d2);
+}
+
 gint trash_item_collate_by_name(TrashItem *self, TrashItem *other) {
+    return strcoll(self->name, other->name);
+}
+
+gint trash_item_collate_by_type(TrashItem *self, TrashItem *other) {
     gint ret = 0;
 
     if (self->is_directory && other->is_directory) {

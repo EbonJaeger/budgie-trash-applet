@@ -8,23 +8,12 @@ trash_applet_deps = [
     dependency('libnotify', version: '>= 0.7'),
 ]
 
-gnome = import('gnome')
-intltool = find_program('intltool-merge')
-
-custom_target(
-    'plugin-file-trash',
-    input: 'TrashApplet.plugin.in',
-    output: 'TrashApplet.plugin',
-    command : [intltool, '--desktop-style', podir, '@INPUT@', '@OUTPUT@'],
-    install: true,
-    install_dir: APPLET_INSTALL_DIR
-)
-
 trash_applet_sources = [
     'trash_icon_button.c',
     'trash_info.c',
     'trash_item.c',
     'trash_revealer.c',
+    'trash_settings.c',
     'trash_store.c',
     'utils.c',
     'applet.c',
@@ -32,16 +21,41 @@ trash_applet_sources = [
     'notify.c',
 ]
 
-trash_applet_sources += gnome.compile_resources('trash-applet-resources',
-    'trash-applet.gresource.xml',
+# Compile our gresource file
+trash_applet_sources += gnome.compile_resources('budgie-trash-applet-resources',
+    'budgie-trash-applet.gresource.xml',
     dependencies: [ style ],
     c_name: 'budgie_trash_applet',
 )
 
+trash_applet_enum_headers = [
+    'trash_settings.h',
+]
+
+# Enumerations for GType
+trash_enums = gnome.mkenums_simple(
+    'trash_enum_types',
+    sources: trash_applet_enum_headers,
+)
+
+trashlib = library(
+    'budgietrashapplet',
+    sources: trash_enums,
+    dependencies: trash_applet_deps,
+    install: true,
+    install_dir: libdir,
+)
+
+trashlib_dep = declare_dependency(
+    sources: trash_enums[1],
+    link_with: trashlib,
+)
+
+# Build the applet binary
 shared_library(
     'trashapplet',
     trash_applet_sources,
-    dependencies: trash_applet_deps,
+    dependencies: trash_applet_deps + [ trashlib_dep ],
     install: true,
-    install_dir: APPLET_INSTALL_DIR
+    install_dir: APPLET_INSTALL_DIR,
 )

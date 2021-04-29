@@ -1,7 +1,11 @@
 #pragma once
 
+#include "notify.h"
+#include "trash_info.h"
 #include "trash_item.h"
 #include "trash_revealer.h"
+#include "trash_settings.h"
+#include "utils.h"
 #include <gtk/gtk.h>
 
 G_BEGIN_DECLS
@@ -16,8 +20,13 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE(TrashStore, trash_store, TRASH, STORE, GtkBox)
 
-TrashStore *trash_store_new(gchar *drive_name);
-TrashStore *trash_store_new_with_extras(gchar *drive_name, GIcon *icon, gchar *path_prefix, gchar *trash_path, gchar *trashinfo_path);
+TrashStore *trash_store_new(gchar *drive_name, TrashSortMode mode);
+TrashStore *trash_store_new_with_extras(gchar *drive_name,
+                                        TrashSortMode mode,
+                                        GIcon *icon,
+                                        gchar *path_prefix,
+                                        gchar *trash_path,
+                                        gchar *trashinfo_path);
 void trash_store_apply_button_styles(TrashStore *self);
 void trash_store_set_btns_sensitive(TrashStore *self, gboolean sensitive);
 void trash_store_check_empty(TrashStore *self);
@@ -88,6 +97,6 @@ gchar *trash_store_read_trash_info(gchar *trashinfo_path, GError **err);
 /**
  * Sorts the trash items in the file box widget.
  */
-gint trash_store_sort(GtkListBoxRow *row1, GtkListBoxRow *row2, gpointer user_data);
+gint trash_store_sort(GtkListBoxRow *row1, GtkListBoxRow *row2, TrashStore *self);
 
 G_END_DECLS

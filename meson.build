@@ -10,6 +10,8 @@ add_project_arguments([
 	'-I' + meson.current_build_dir(),
 ], language: 'c')
 
+gnome = import('gnome')
+
 #
 # Global stuff
 #
@@ -22,5 +24,10 @@ podir = join_paths(meson.source_root(), 'po')
 
 APPLET_INSTALL_DIR = join_paths(libdir, 'budgie-desktop', 'plugins', meson.project_name())
 
+subdir('data')
 subdir('style')
 subdir('src')
+
+gnome.post_install(
+    glib_compile_schemas: true
+)

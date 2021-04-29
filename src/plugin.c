@@ -2,7 +2,6 @@
 
 #include <budgie-desktop/plugin.h>
 
-#include "applet.h"
 #include "plugin.h"
 
 static void trash_plugin_iface_init(BudgiePluginIface *iface);

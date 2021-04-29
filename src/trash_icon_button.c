@@ -1,5 +1,4 @@
 #include "trash_icon_button.h"
-#include "applet.h"
 
 struct _TrashIconButton {
     GtkButton parent_instance;

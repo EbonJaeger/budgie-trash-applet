@@ -1,10 +1,6 @@
 #define _GNU_SOURCE
 
 #include "applet.h"
-#include "notify.h"
-#include "trash_icon_button.h"
-#include "trash_store.h"
-#include "utils.h"
 #include <libnotify/notify.h>
 #include <unistd.h>
 
@@ -12,8 +8,13 @@ struct _TrashAppletPrivate {
     BudgiePopoverManager *manager;
     GHashTable *mounts;
 
+    GSettings *settings;
+
     GtkWidget *popover;
+    GtkWidget *stack;
     GtkWidget *drive_box;
+    GtkWidget *settings_button;
+    GtkWidget *return_button;
     TrashIconButton *icon_button;
 
     gint uid;
@@ -53,6 +54,7 @@ static void trash_applet_class_init(TrashAppletClass *klazz) {
 
     // Set our function to update popovers
     BUDGIE_APPLET_CLASS(klazz)->update_popovers = trash_applet_update_popovers;
+    BUDGIE_APPLET_CLASS(klazz)->supports_settings = FALSE;
 }
 
 /**
@@ -70,6 +72,8 @@ static void trash_applet_init(TrashApplet *self) {
     // Create our 'private' struct
     self->priv = trash_applet_get_instance_private(self);
     self->priv->mounts = g_hash_table_new(g_str_hash, g_str_equal);
+    self->priv->settings = g_settings_new(TRASH_SETTINGS_SCHEMA_ID);
+    g_signal_connect_object(self->priv->settings, "changed", G_CALLBACK(trash_handle_setting_changed), self, 0);
 
     // Load our CSS
     GtkCssProvider *provider = gtk_css_provider_new();
@@ -80,15 +84,28 @@ static void trash_applet_init(TrashApplet *self) {
 
     // Create our panel widget
     self->priv->icon_button = trash_icon_button_new();
+    g_signal_connect_object(GTK_BUTTON(self->priv->icon_button), "clicked", G_CALLBACK(trash_toggle_popover), self, 0);
+    gtk_container_add(GTK_CONTAINER(self), GTK_WIDGET(self->priv->icon_button));
 
     // Create our popover widget
     self->priv->popover = budgie_popover_new(GTK_WIDGET(self->priv->icon_button));
-    g_object_set(self->priv->popover, "width-request", 300, NULL);
-    trash_create_widgets(self, self->priv->popover);
 
-    gtk_container_add(GTK_CONTAINER(self), GTK_WIDGET(self->priv->icon_button));
+    self->priv->stack = gtk_stack_new();
+    gtk_stack_set_transition_type(GTK_STACK(self->priv->stack), GTK_STACK_TRANSITION_TYPE_SLIDE_LEFT_RIGHT);
 
-    g_signal_connect_object(GTK_BUTTON(self->priv->icon_button), "clicked", G_CALLBACK(trash_toggle_popover), self, 0);
+    TrashSortMode sort_mode = g_settings_get_enum(self->priv->settings, "sort-mode");
+    GtkWidget *main_view = trash_create_main_view(self, sort_mode);
+    gtk_widget_set_size_request(main_view, 300, -1);
+    gtk_stack_add_named(GTK_STACK(self->priv->stack), main_view, "main");
+
+    TrashSettings *settings_view = trash_settings_new();
+    gtk_stack_add_named(GTK_STACK(self->priv->stack), GTK_WIDGET(settings_view), "settings");
+    g_signal_connect_object(settings_view, "return-clicked", G_CALLBACK(trash_handle_return), self, 0);
+
+    gtk_stack_set_visible_child_name(GTK_STACK(self->priv->stack), "main");
+    gtk_widget_show_all(GTK_WIDGET(self->priv->stack));
+
+    gtk_container_add(GTK_CONTAINER(self->priv->popover), self->priv->stack);
     gtk_widget_show_all(GTK_WIDGET(self));
 
     // Register notifications
@@ -122,12 +139,12 @@ BudgieApplet *trash_applet_new(void) {
     return g_object_new(TRASH_TYPE_APPLET, NULL);
 }
 
-void trash_create_widgets(TrashApplet *self, GtkWidget *popover) {
-    GtkWidget *view = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+GtkWidget *trash_create_main_view(TrashApplet *self, TrashSortMode sort_mode) {
+    GtkWidget *main_view = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
     // Create our popover header
     GtkWidget *header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    g_object_set(header, "height-request", 32, NULL);
+    gtk_widget_set_size_request(header, -1, 32);
     GtkStyleContext *header_style = gtk_widget_get_style_context(header);
     gtk_style_context_add_class(header_style, "trash-applet-header");
     GtkWidget *header_label = gtk_label_new("Trash");
@@ -149,20 +166,39 @@ void trash_create_widgets(TrashApplet *self, GtkWidget *popover) {
     gtk_container_add(GTK_CONTAINER(scroller), self->priv->drive_box);
 
     // Create the trash store widgets
-    TrashStore *default_store = trash_store_new("This PC");
+    TrashStore *default_store = trash_store_new("This PC", sort_mode);
     g_autoptr(GError) err = NULL;
     trash_store_load_items(default_store, err);
     if (err) {
         g_critical("%s:%d: Error loading trash items for the default trash store: %s", __BASE_FILE__, __LINE__, err->message);
     }
 
+    g_hash_table_insert(self->priv->mounts, "This PC", default_store);
     gtk_list_box_insert(GTK_LIST_BOX(self->priv->drive_box), GTK_WIDGET(default_store), -1);
 
-    gtk_box_pack_start(GTK_BOX(view), header, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(view), scroller, TRUE, TRUE, 0);
-    gtk_container_add(GTK_CONTAINER(popover), view);
+    // Footer
+    GtkWidget *footer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_size_request(footer, -1, 32);
+    GtkStyleContext *footer_style = gtk_widget_get_style_context(footer);
+    gtk_style_context_add_class(footer_style, "trash-applet-footer");
 
-    gtk_widget_show_all(view);
+    self->priv->settings_button = gtk_button_new_from_icon_name("emblem-system-symbolic", GTK_ICON_SIZE_BUTTON);
+    gtk_widget_set_tooltip_text(self->priv->settings_button, "Settings");
+    GtkStyleContext *settings_button_context = gtk_widget_get_style_context(self->priv->settings_button);
+    gtk_style_context_add_class(settings_button_context, "flat");
+    gtk_style_context_remove_class(settings_button_context, "button");
+    gtk_box_pack_start(GTK_BOX(footer), self->priv->settings_button, TRUE, FALSE, 0);
+    g_signal_connect_object(GTK_BUTTON(self->priv->settings_button), "clicked", G_CALLBACK(trash_settings_clicked), self, 0);
+
+    // Pack it all up
+    gtk_box_pack_start(GTK_BOX(main_view), header, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(main_view), scroller, TRUE, TRUE, 0);
+    gtk_box_pack_end(GTK_BOX(main_view), footer, FALSE, FALSE, 0);
+
+    // Show everything
+    gtk_widget_show_all(main_view);
+
+    return main_view;
 }
 
 void trash_toggle_popover(__budgie_unused__ GtkButton *sender, TrashApplet *self) {
@@ -242,7 +278,8 @@ void trash_add_mount(GMount *mount, TrashApplet *self) {
         g_autofree gchar *trash_path = g_build_path(G_DIR_SEPARATOR_S, g_file_get_path(location), g_file_info_get_name(current_file), "files", NULL);
         g_autofree gchar *trashinfo_path = g_build_path(G_DIR_SEPARATOR_S, g_file_get_path(location), g_file_info_get_name(current_file), "info", NULL);
 
-        TrashStore *store = trash_store_new_with_extras(g_mount_get_name(mount), g_mount_get_symbolic_icon(mount), g_strdup(g_file_get_path(location)), g_strdup(trash_path), g_strdup(trashinfo_path));
+        TrashSortMode sort_mode = g_settings_get_enum(self->priv->settings, "sort-mode");
+        TrashStore *store = trash_store_new_with_extras(g_mount_get_name(mount), sort_mode, g_mount_get_symbolic_icon(mount), g_strdup(g_file_get_path(location)), g_strdup(trash_path), g_strdup(trashinfo_path));
         g_autoptr(GError) inner_err = NULL;
         trash_store_load_items(store, inner_err);
         if (inner_err) {
@@ -271,4 +308,28 @@ void trash_handle_mount_removed(__budgie_unused__ GVolumeMonitor *monitor, GMoun
     GtkWidget *row = gtk_widget_get_parent(GTK_WIDGET(store));
     gtk_container_remove(GTK_CONTAINER(self->priv->drive_box), row);
     g_hash_table_remove(self->priv->mounts, mount_name);
+}
+
+void trash_settings_clicked(__budgie_unused__ GtkButton *sender, TrashApplet *self) {
+    gtk_stack_set_visible_child_name(GTK_STACK(self->priv->stack), "settings");
+}
+
+void trash_handle_return(__budgie_unused__ TrashSettings *sender, TrashApplet *self) {
+    gtk_stack_set_visible_child_name(GTK_STACK(self->priv->stack), "main");
+}
+
+void trash_handle_setting_changed(GSettings *settings, gchar *key, TrashApplet *self) {
+    if (strcmp(key, "sort-mode") == 0) {
+        // Set the sort mode everywhere
+        TrashSortMode new_mode = g_settings_get_enum(settings, key);
+        GHashTableIter iter;
+        gpointer hash_key, value;
+        g_hash_table_iter_init(&iter, self->priv->mounts);
+
+        while (g_hash_table_iter_next(&iter, &hash_key, &value)) {
+            g_object_set(value, key, new_mode, NULL);
+        }
+    } else {
+        g_critical("%s:%d: Unknown settings key '%s'", __BASE_FILE__, __LINE__, key);
+    }
 }

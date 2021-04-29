@@ -1,6 +1,5 @@
 #pragma once
 
-#include "applet.h"
 #include "trash_info.h"
 #include "trash_revealer.h"
 #include "utils.h"
@@ -45,12 +44,23 @@ void trash_item_delete(TrashItem *self, GError **err);
 void trash_item_restore(TrashItem *self, GError **err);
 
 /**
+ * Compares two TrashItems for sorting, putting them in order by deletion date
+ * in ascending order.
+ */
+gint trash_item_collate_by_date(TrashItem *self, TrashItem *other);
+
+/**
+ * Compares two TrashItems for sorting, putting them in alphabetical order.
+ */
+gint trash_item_collate_by_name(TrashItem *self, TrashItem *other);
+
+/**
  * Compares two TrashItems for sorting. This function uses the following rules:
  * 
  * 1. Directories should be above regular files
  * 2. Directories should be sorted alphabetically
  * 3. Files should be sorted alphabetically
  */
-gint trash_item_collate_by_name(TrashItem *self, TrashItem *other);
+gint trash_item_collate_by_type(TrashItem *self, TrashItem *other);
 
 G_END_DECLS

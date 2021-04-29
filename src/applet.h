@@ -1,5 +1,10 @@
 #pragma once
 
+#include "notify.h"
+#include "trash_icon_button.h"
+#include "trash_settings.h"
+#include "trash_store.h"
+#include "utils.h"
 #include <budgie-desktop/applet.h>
 #include <gtk/gtk.h>
 
@@ -42,7 +47,7 @@ BudgieApplet *trash_applet_new(void);
 /**
  * Create our widgets to show in our popover.
  */
-void trash_create_widgets(TrashApplet *self, GtkWidget *popover);
+GtkWidget *trash_create_main_view(TrashApplet *self, TrashSortMode sort_mode);
 
 /**
  * Shows our popover widget if it isn't currently visible, or hide
@@ -61,5 +66,10 @@ void trash_drag_data_received(TrashApplet *self,
 void trash_add_mount(GMount *mount, TrashApplet *self);
 void trash_handle_mount_added(GVolumeMonitor *monitor, GMount *mount, TrashApplet *self);
 void trash_handle_mount_removed(GVolumeMonitor *monitor, GMount *mount, TrashApplet *self);
+
+void trash_settings_clicked(GtkButton *sender, TrashApplet *self);
+void trash_handle_return(TrashSettings *sender, TrashApplet *self);
+
+void trash_handle_setting_changed(GSettings *settings, gchar *key, TrashApplet *self);
 
 G_END_DECLS

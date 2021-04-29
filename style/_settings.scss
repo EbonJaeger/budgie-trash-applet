@@ -1,8 +1,10 @@
 @import 'vars.scss';
 
 .trash-settings-box {
-  & > box > label {
-    border-bottom: 0.5px solid $border-color;
-    margin: 10px;
+  background-color: transparent;
+  padding: 10px;
+
+  & > box {
+    padding: 10px;
   }
 }

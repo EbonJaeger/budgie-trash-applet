@@ -1,14 +1,11 @@
 #include "trash_store.h"
-#include "applet.h"
-#include "notify.h"
-#include "trash_info.h"
-#include "utils.h"
 
 enum {
     PROP_EXP_0,
     PROP_DRIVE_NAME,
     PROP_ICON,
     PROP_PATH_PREFIX,
+    PROP_SORT_MODE,
     PROP_TRASH_PATH,
     PROP_TRASHINFO_PATH,
     N_EXP_PROPERTIES
@@ -26,6 +23,7 @@ struct _TrashStore {
     gchar *path_prefix;
     gchar *trash_path;
     gchar *trashinfo_path;
+    TrashSortMode sort_mode;
 
     gchar *drive_name;
     GIcon *icon;
@@ -78,6 +76,14 @@ static void trash_store_class_init(TrashStoreClass *klazz) {
         "",
         G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
+    store_props[PROP_SORT_MODE] = g_param_spec_enum(
+        "sort-mode",
+        "Sort mode",
+        "Set how trashed files should be sorted",
+        TRASH_TYPE_SORT_MODE,
+        TRASH_SORT_TYPE,
+        G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
     store_props[PROP_TRASH_PATH] = g_param_spec_string(
         "trash-path",
         "Trash path",
@@ -108,6 +114,9 @@ static void trash_store_get_property(GObject *obj, guint prop_id, GValue *val, G
         case PROP_PATH_PREFIX:
             g_value_set_string(val, self->path_prefix);
             break;
+        case PROP_SORT_MODE:
+            g_value_set_enum(val, self->sort_mode);
+            break;
         case PROP_TRASH_PATH:
             g_value_set_string(val, self->trash_path);
             break;
@@ -134,6 +143,11 @@ static void trash_store_set_property(GObject *obj, guint prop_id, const GValue *
             break;
         case PROP_PATH_PREFIX:
             trash_store_set_path_prefix(self, g_strdup(g_value_get_string(val)));
+            break;
+        case PROP_SORT_MODE:
+            self->sort_mode = g_value_get_enum(val);
+            gtk_list_box_invalidate_sort(GTK_LIST_BOX(self->file_box));
+            g_object_notify_by_pspec(obj, store_props[PROP_SORT_MODE]);
             break;
         case PROP_TRASH_PATH:
             trash_store_set_trash_path(self, g_strdup(g_value_get_string(val)));
@@ -186,7 +200,7 @@ static void trash_store_init(TrashStore *self) {
     gtk_style_context_add_class(file_box_style, "empty");
     gtk_list_box_set_activate_on_single_click(GTK_LIST_BOX(self->file_box), TRUE);
     gtk_list_box_set_selection_mode(GTK_LIST_BOX(self->file_box), GTK_SELECTION_NONE);
-    gtk_list_box_set_sort_func(GTK_LIST_BOX(self->file_box), trash_store_sort, self, NULL);
+    gtk_list_box_set_sort_func(GTK_LIST_BOX(self->file_box), (GtkListBoxSortFunc) trash_store_sort, self, NULL);
 
     g_signal_connect_object(self->file_box, "row-activated", G_CALLBACK(trash_store_handle_row_activated), self, 0);
 
@@ -197,18 +211,25 @@ static void trash_store_init(TrashStore *self) {
     gtk_box_pack_start(GTK_BOX(self), self->file_box, TRUE, TRUE, 0);
 }
 
-TrashStore *trash_store_new(gchar *drive_name) {
+TrashStore *trash_store_new(gchar *drive_name, TrashSortMode mode) {
     return g_object_new(TRASH_TYPE_STORE,
                         "orientation", GTK_ORIENTATION_VERTICAL,
                         "drive-name", drive_name,
                         "icon", g_icon_new_for_string("drive-harddisk-symbolic", NULL),
+                        "sort-mode", mode,
                         NULL);
 }
 
-TrashStore *trash_store_new_with_extras(gchar *drive_name, GIcon *icon, gchar *path_prefix, gchar *trash_path, gchar *trashinfo_path) {
+TrashStore *trash_store_new_with_extras(gchar *drive_name,
+                                        TrashSortMode mode,
+                                        GIcon *icon,
+                                        gchar *path_prefix,
+                                        gchar *trash_path,
+                                        gchar *trashinfo_path) {
     return g_object_new(TRASH_TYPE_STORE,
                         "orientation", GTK_ORIENTATION_VERTICAL,
                         "drive-name", drive_name,
+                        "sort-mode", mode,
                         "icon", icon,
                         "path-prefix", path_prefix,
                         "trash-path", trash_path,
@@ -382,12 +403,12 @@ void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self) 
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), TRUE);
 }
 
-void trash_store_handle_cancel_clicked(__budgie_unused__ TrashRevealer *sender, TrashStore *self) {
+void trash_store_handle_cancel_clicked(__attribute__((unused)) TrashRevealer *sender, TrashStore *self) {
     trash_store_set_btns_sensitive(self, TRUE);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
 }
 
-void trash_store_handle_confirm_clicked(__budgie_unused__ TrashRevealer *sender, TrashStore *self) {
+void trash_store_handle_confirm_clicked(__attribute__((unused)) TrashRevealer *sender, TrashStore *self) {
     g_autoptr(GError) err = NULL;
     g_slist_foreach(self->trashed_files, self->restoring ? (GFunc) trash_item_restore : (GFunc) trash_item_delete, &err);
     if (err) {
@@ -404,14 +425,14 @@ void trash_store_handle_confirm_clicked(__budgie_unused__ TrashRevealer *sender,
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
 }
 
-void trash_store_handle_row_activated(__budgie_unused__ GtkListBox *sender, GtkListBoxRow *row, __budgie_unused__ TrashStore *self) {
+void trash_store_handle_row_activated(__attribute__((unused)) GtkListBox *sender, GtkListBoxRow *row, __attribute__((unused)) TrashStore *self) {
     GtkWidget *child = gtk_bin_get_child(GTK_BIN(row));
     trash_item_toggle_info_revealer(TRASH_ITEM(child));
 }
 
-void trash_store_handle_monitor_event(__budgie_unused__ GFileMonitor *monitor,
+void trash_store_handle_monitor_event(__attribute__((unused)) GFileMonitor *monitor,
                                       GFile *file,
-                                      __budgie_unused__ GFile *other_file,
+                                      __attribute__((unused)) GFile *other_file,
                                       GFileMonitorEvent event_type,
                                       TrashStore *self) {
     switch (event_type) {
@@ -493,7 +514,7 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info)
     gchar *file_name = (gchar *) g_file_info_get_name(file_info);
     g_autofree gchar *info_file_path = g_build_path(G_DIR_SEPARATOR_S, self->trashinfo_path, g_strconcat(file_name, ".trashinfo", NULL), NULL);
     g_autoptr(GFile) info_file = g_file_new_for_path(info_file_path);
-    g_autoptr(TrashInfo) trash_info = NULL;
+    TrashInfo *trash_info = NULL;
 
     gboolean has_prefix = (self->path_prefix && !g_str_equal(self->path_prefix, ""));
     if (has_prefix) {
@@ -536,9 +557,23 @@ gchar *trash_store_read_trash_info(gchar *trashinfo_path, GError **err) {
     return buffer;
 }
 
-gint trash_store_sort(GtkListBoxRow *row1, GtkListBoxRow *row2, __budgie_unused__ gpointer user_data) {
+gint trash_store_sort(GtkListBoxRow *row1, GtkListBoxRow *row2, TrashStore *self) {
     TrashItem *item1 = TRASH_ITEM(gtk_bin_get_child(GTK_BIN(row1)));
     TrashItem *item2 = TRASH_ITEM(gtk_bin_get_child(GTK_BIN(row2)));
 
-    return trash_item_collate_by_name(item1, item2);
+    switch (self->sort_mode) {
+        case TRASH_SORT_A_Z:
+            return trash_item_collate_by_name(item1, item2);
+        case TRASH_SORT_Z_A:
+            return trash_item_collate_by_name(item2, item1);
+        case TRASH_SORT_DATE_ASCENDING:
+            return trash_item_collate_by_date(item2, item1);
+        case TRASH_SORT_DATE_DESCENDING:
+            return trash_item_collate_by_date(item1, item2);
+        case TRASH_SORT_TYPE:
+            return trash_item_collate_by_type(item1, item2);
+        default:
+            g_critical("%s:%d: Unknown sort mode '%d', defaulting to by type", __BASE_FILE__, __LINE__, self->sort_mode);
+            return trash_item_collate_by_type(item1, item2);
+    }
 }

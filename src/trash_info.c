@@ -1,5 +1,4 @@
 #include "trash_info.h"
-#include "utils.h"
 
 enum {
     PROP_EXP_0,
