@@ -66,7 +66,7 @@ static void trash_settings_class_init(TrashSettingsClass *klazz) {
         "Sort mode",
         "Set how trashed files should be sorted",
         TRASH_TYPE_SORT_MODE,
-        1,
+        TRASH_SORT_TYPE,
         G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
     g_object_class_install_properties(class, N_EXP_PROPERTIES, settings_props);
