@@ -23,6 +23,7 @@ You can get these on Solus with the following packages:
 ```
 budgie-desktop-devel
 libgtk-3-devel
+libnotify-devel
 glib2-devel
 sassc
 ```
