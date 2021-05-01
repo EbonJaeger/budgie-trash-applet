@@ -99,7 +99,7 @@ static void trash_revealer_set_property(GObject *obj, guint prop_id, const GValu
 
     if (!GTK_IS_LABEL(self->label)) {
         self->label = gtk_label_new("");
-        g_object_set(G_OBJECT(self->label), "height-request", 20, NULL);
+        gtk_widget_set_size_request(self->label, -1, 20);
         gtk_box_pack_start(GTK_BOX(self->container), self->label, TRUE, TRUE, 0);
     }
 

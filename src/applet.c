@@ -278,8 +278,7 @@ void trash_add_mount(GMount *mount, TrashApplet *self) {
         g_autofree gchar *trash_path = g_build_path(G_DIR_SEPARATOR_S, g_file_get_path(location), g_file_info_get_name(current_file), "files", NULL);
         g_autofree gchar *trashinfo_path = g_build_path(G_DIR_SEPARATOR_S, g_file_get_path(location), g_file_info_get_name(current_file), "info", NULL);
 
-        TrashSortMode sort_mode = g_settings_get_enum(self->priv->settings, "sort-mode");
-        TrashStore *store = trash_store_new_with_extras(g_mount_get_name(mount), sort_mode, g_mount_get_symbolic_icon(mount), g_strdup(g_file_get_path(location)), g_strdup(trash_path), g_strdup(trashinfo_path));
+        TrashStore *store = trash_store_new_with_extras(g_mount_get_name(mount), g_settings_get_enum(self->priv->settings, "sort-mode"), g_mount_get_symbolic_icon(mount), g_strdup(g_file_get_path(location)), g_strdup(trash_path), g_strdup(trashinfo_path));
         g_autoptr(GError) inner_err = NULL;
         trash_store_load_items(store, inner_err);
         if (inner_err) {
