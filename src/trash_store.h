@@ -20,7 +20,7 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE(TrashStore, trash_store, TRASH, STORE, GtkBox)
 
-TrashStore *trash_store_new(gchar *drive_name, TrashSortMode mode);
+TrashStore *trash_store_new(gchar *drive_name, GIcon *icon, TrashSortMode mode);
 TrashStore *trash_store_new_with_extras(gchar *drive_name,
                                         TrashSortMode mode,
                                         GIcon *icon,
@@ -30,24 +30,15 @@ TrashStore *trash_store_new_with_extras(gchar *drive_name,
 void trash_store_apply_button_styles(TrashStore *self);
 void trash_store_set_btns_sensitive(TrashStore *self, gboolean sensitive);
 void trash_store_check_empty(TrashStore *self);
-
-/*
- * Property functions
- */
-
-void trash_store_set_drive_name(TrashStore *self, gchar *drive_name);
-void trash_store_set_icon(TrashStore *self, GIcon *icon);
-void trash_store_set_path_prefix(TrashStore *self, gchar *path_prefix);
-void trash_store_set_trash_path(TrashStore *self, gchar *trash_path);
-void trash_store_set_trashinfo_path(TrashStore *self, gchar *trashinfo_path);
+void trash_store_start_monitor(TrashStore *self);
 
 /*
  * UI signal handlers
  */
 
 void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self);
-void trash_store_handle_cancel_clicked(TrashRevealer *sender, TrashStore *self);
-void trash_store_handle_confirm_clicked(TrashRevealer *sender, TrashStore *self);
+void trash_store_handle_cancel_clicked(GtkButton *sender, TrashStore *self);
+void trash_store_handle_confirm_clicked(GtkButton *sender, TrashStore *self);
 void trash_store_handle_row_activated(GtkListBox *sender, GtkListBoxRow *row, TrashStore *self);
 
 /*

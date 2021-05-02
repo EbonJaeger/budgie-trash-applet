@@ -166,12 +166,13 @@ GtkWidget *trash_create_main_view(TrashApplet *self, TrashSortMode sort_mode) {
     gtk_container_add(GTK_CONTAINER(scroller), self->priv->drive_box);
 
     // Create the trash store widgets
-    TrashStore *default_store = trash_store_new("This PC", sort_mode);
+    TrashStore *default_store = trash_store_new("This PC", g_icon_new_for_string("drive-harddisk-symbolic", NULL), sort_mode);
     g_autoptr(GError) err = NULL;
     trash_store_load_items(default_store, err);
     if (err) {
         g_critical("%s:%d: Error loading trash items for the default trash store: %s", __BASE_FILE__, __LINE__, err->message);
     }
+    trash_store_start_monitor(default_store);
 
     g_hash_table_insert(self->priv->mounts, "This PC", default_store);
     gtk_list_box_insert(GTK_LIST_BOX(self->priv->drive_box), GTK_WIDGET(default_store), -1);
@@ -285,7 +286,7 @@ void trash_add_mount(GMount *mount, TrashApplet *self) {
             g_critical("%s:%d: Error loading trash items for mount '%s': %s", __BASE_FILE__, __LINE__, g_mount_get_name(mount), err->message);
             break;
         }
-        gtk_widget_show_all(GTK_WIDGET(store));
+        trash_store_start_monitor(store);
 
         gtk_list_box_insert(GTK_LIST_BOX(self->priv->drive_box), GTK_WIDGET(store), -1);
         g_hash_table_insert(self->priv->mounts, g_strdup(g_mount_get_name(mount)), store);

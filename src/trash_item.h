@@ -13,7 +13,6 @@ G_DECLARE_FINAL_TYPE(TrashItem, trash_item, TRASH, ITEM, GtkBox)
 
 TrashItem *trash_item_new(gchar *name,
                           gchar *path,
-                          gchar *trashinfo_path,
                           GIcon *icon,
                           gboolean is_directory,
                           TrashInfo *trash_info);
@@ -27,16 +26,9 @@ void trash_item_set_btns_sensitive(TrashItem *self, gboolean sensitive);
  */
 gint trash_item_has_name(TrashItem *self, gchar *name);
 
-void trash_item_set_icon(TrashItem *self, GIcon *icon);
-void trash_item_set_file_name(TrashItem *self, gchar *file_name);
-void trash_item_set_path(TrashItem *self, gchar *path);
-void trash_item_set_trashinfo_path(TrashItem *self, gchar *path);
-void trash_item_set_directory(TrashItem *self, gboolean is_directory);
-void trash_item_set_info(TrashItem *self, TrashInfo *trash_info);
-
 void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self);
-void trash_item_handle_cancel_clicked(TrashRevealer *sender, TrashItem *self);
-void trash_item_handle_confirm_clicked(TrashRevealer *sender, TrashItem *self);
+void trash_item_handle_cancel_clicked(GtkButton *sender, TrashItem *self);
+void trash_item_handle_confirm_clicked(GtkButton *sender, TrashItem *self);
 
 void trash_item_toggle_info_revealer(TrashItem *self);
 

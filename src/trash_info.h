@@ -23,9 +23,20 @@ G_BEGIN_DECLS
  */
 #define TRASH_INFO_DELETION_DATE_PREFIX_OFFSET 13
 
-#define TRASH_TYPE_INFO (trash_info_get_type())
+typedef struct {
+    GObject parent_instance;
 
-G_DECLARE_FINAL_TYPE(TrashInfo, trash_info, TRASH, INFO, GObject);
+    gchar *restore_path;
+    GDateTime *deleted_time;
+} TrashInfo;
+
+typedef struct {
+    GObjectClass parent_class;
+} TrashInfoClass;
+
+#define TRASH_TYPE_INFO (trash_info_get_type())
+#define TRASH_INFO(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), TRASH_TYPE_INFO, TrashInfo))
+#define TRASH_IS_INFO(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), TRASH_TYPE_INFO))
 
 /**
  * Create a new TrashInfo struct by reading a .trashinfo file.
@@ -37,28 +48,5 @@ TrashInfo *trash_info_new_from_file(GFile *file);
  * with a path prefix for the restore path.
  */
 TrashInfo *trash_info_new_from_file_with_prefix(GFile *file, gchar *prefix);
-
-/**
- * Get the restore path for this TrashInfo struct.
- *
- * This returns a clone of the path.
- */
-gchar *trash_info_get_restore_path(TrashInfo *self);
-
-/**
- * Get the deletion date for this TrashInfo struct.
- * 
- * This function increases the ref count of the
- * returned GDateTime.
- */
-GDateTime *trash_info_get_deletion_time(TrashInfo *self);
-
-/**
- * Formats the deletion date for use in GTK widgets.
- */
-gchar *trash_info_format_deletion_time(TrashInfo *self);
-
-void trash_info_set_restore_path(TrashInfo *self, gchar *path);
-void trash_info_set_deletion_time(TrashInfo *self, GDateTime *timestamp);
 
 G_END_DECLS
