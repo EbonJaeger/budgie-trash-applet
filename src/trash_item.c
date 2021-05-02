@@ -29,9 +29,14 @@ struct _TrashItemClass {
     GtkBoxClass parent_class;
 };
 
+static void trash_item_finalize(GObject *obj);
+
 G_DEFINE_TYPE(TrashItem, trash_item, GTK_TYPE_BOX);
 
-static void trash_item_class_init(__attribute__((unused)) TrashItemClass *klazz) {}
+static void trash_item_class_init(TrashItemClass *klazz) {
+    GObjectClass *class = G_OBJECT_CLASS(klazz);
+    class->finalize = trash_item_finalize;
+}
 
 static void trash_item_init(TrashItem *self) {
     self->restoring = FALSE;
@@ -73,6 +78,16 @@ static void trash_item_init(TrashItem *self) {
     gtk_box_pack_start(GTK_BOX(self), self->header, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(self), self->info_revealer, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(self), GTK_WIDGET(self->confirm_revealer), FALSE, FALSE, 0);
+}
+
+static void trash_item_finalize(GObject *obj) {
+    TrashItem *self = TRASH_ITEM(obj);
+
+    g_free(self->name);
+    g_free(self->path);
+    g_slice_free(TrashInfo, self->trash_info);
+
+    G_OBJECT_CLASS(trash_item_parent_class)->finalize(obj);
 }
 
 TrashItem *trash_item_new(gchar *name,

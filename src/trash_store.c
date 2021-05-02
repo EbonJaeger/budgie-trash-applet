@@ -28,9 +28,15 @@ struct _TrashStoreClass {
     GtkBoxClass parent_class;
 };
 
+static void trash_store_finalize(GObject *obj);
+
 G_DEFINE_TYPE(TrashStore, trash_store, GTK_TYPE_BOX);
 
-static void trash_store_class_init(__attribute__((unused)) TrashStoreClass *klazz) {}
+static void trash_store_class_init(TrashStoreClass *klazz) {
+    GObjectClass *class = G_OBJECT_CLASS(klazz);
+
+    class->finalize = trash_store_finalize;
+}
 
 static void trash_store_init(TrashStore *self) {
     self->restoring = FALSE;
@@ -80,6 +86,23 @@ static void trash_store_init(TrashStore *self) {
     gtk_box_pack_start(GTK_BOX(self), self->header, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(self), GTK_WIDGET(self->revealer), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(self), self->file_box, TRUE, TRUE, 0);
+}
+
+static void trash_store_finalize(GObject *obj) {
+    TrashStore *self = TRASH_STORE(obj);
+
+    if (self->trashed_files) {
+        // Not trying to free the widgets stored in the list because
+        // I'm suspecting that they're already free'd by the time we
+        // get here due to the container being destroyed by this point.
+        g_slist_free(self->trashed_files);
+    }
+
+    g_free(self->path_prefix);
+    g_free(self->trash_path);
+    g_free(self->trashinfo_path);
+
+    G_OBJECT_CLASS(trash_store_parent_class)->finalize(obj);
 }
 
 TrashStore *trash_store_new(gchar *drive_name, GIcon *icon, TrashSortMode mode) {

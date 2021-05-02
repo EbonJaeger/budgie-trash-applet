@@ -1,11 +1,5 @@
 #include "trash_info.h"
 
-G_DEFINE_TYPE(TrashInfo, trash_info, G_TYPE_OBJECT);
-
-static void trash_info_init(__attribute__((unused)) TrashInfo *self) {}
-
-static void trash_info_class_init(__attribute__((unused)) TrashInfoClass *klazz) {}
-
 TrashInfo *trash_info_new_from_file(GFile *file) {
     return trash_info_new_from_file_with_prefix(file, NULL);
 }
@@ -39,7 +33,7 @@ TrashInfo *trash_info_new_from_file_with_prefix(GFile *file, gchar *prefix) {
     GDateTime *deletion_time = g_date_time_new_from_iso8601((const gchar *) deletion_time_str, tz);
     g_strfreev(lines);
 
-    TrashInfo *self = g_object_new(TRASH_TYPE_INFO, NULL);
+    TrashInfo *self = g_slice_new(TrashInfo);
     self->restore_path = restore_path;
     self->deleted_time = deletion_time;
 

@@ -26,11 +26,13 @@ G_DEFINE_DYNAMIC_TYPE_EXTENDED(TrashApplet, trash_applet, BUDGIE_TYPE_APPLET, 0,
 /**
  * Handle cleanup of the applet.
  */
-static void trash_applet_dispose(GObject *object) {
-    TrashApplet *self = TRASH_APPLET(object);
-    g_hash_table_destroy(self->priv->mounts);
-    g_object_unref(self->priv->volume_monitor);
-    G_OBJECT_CLASS(trash_applet_parent_class)->dispose(object);
+static void trash_applet_finalize(GObject *object) {
+    TrashAppletPrivate *priv = trash_applet_get_instance_private(TRASH_APPLET(object));
+
+    g_hash_table_destroy(priv->mounts);
+    g_object_unref(priv->volume_monitor);
+
+    G_OBJECT_CLASS(trash_applet_parent_class)->finalize(object);
 }
 
 /**
@@ -48,9 +50,8 @@ static void trash_applet_update_popovers(BudgieApplet *base, BudgiePopoverManage
  * Initialize the Trash Applet class.
  */
 static void trash_applet_class_init(TrashAppletClass *klazz) {
-    GObjectClass *obj_class = G_OBJECT_CLASS(klazz);
-
-    obj_class->dispose = trash_applet_dispose;
+    GObjectClass *class = G_OBJECT_CLASS(klazz);
+    class->finalize = trash_applet_finalize;
 
     // Set our function to update popovers
     BUDGIE_APPLET_CLASS(klazz)->update_popovers = trash_applet_update_popovers;
@@ -58,7 +59,7 @@ static void trash_applet_class_init(TrashAppletClass *klazz) {
 }
 
 /**
- * Apparently for cleanup that we don't have?
+ * Handle cleanup of the applet class.
  */
 static void trash_applet_class_finalize(__budgie_unused__ TrashAppletClass *klass) {
     notify_uninit();

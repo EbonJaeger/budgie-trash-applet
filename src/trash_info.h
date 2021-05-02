@@ -3,8 +3,6 @@
 #include "utils.h"
 #include <gio/gio.h>
 
-G_BEGIN_DECLS
-
 /**
  * The offset to the beginning of the line containing the
  * restore path.
@@ -34,10 +32,6 @@ typedef struct {
     GObjectClass parent_class;
 } TrashInfoClass;
 
-#define TRASH_TYPE_INFO (trash_info_get_type())
-#define TRASH_INFO(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), TRASH_TYPE_INFO, TrashInfo))
-#define TRASH_IS_INFO(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), TRASH_TYPE_INFO))
-
 /**
  * Create a new TrashInfo struct by reading a .trashinfo file.
  */
@@ -48,5 +42,3 @@ TrashInfo *trash_info_new_from_file(GFile *file);
  * with a path prefix for the restore path.
  */
 TrashInfo *trash_info_new_from_file_with_prefix(GFile *file, gchar *prefix);
-
-G_END_DECLS
