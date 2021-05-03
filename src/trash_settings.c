@@ -39,11 +39,13 @@ struct _TrashSettingsClass {
 
 G_DEFINE_TYPE(TrashSettings, trash_settings, GTK_TYPE_BOX)
 
+static void trash_settings_dispose(GObject *obj);
 static void trash_settings_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec);
 static void trash_settings_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec);
 
 static void trash_settings_class_init(TrashSettingsClass *klazz) {
     GObjectClass *class = G_OBJECT_CLASS(klazz);
+    class->dispose = trash_settings_dispose;
     class->get_property = trash_settings_get_property;
     class->set_property = trash_settings_set_property;
 
@@ -70,6 +72,14 @@ static void trash_settings_class_init(TrashSettingsClass *klazz) {
         G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
     g_object_class_install_properties(class, N_EXP_PROPERTIES, settings_props);
+}
+
+static void trash_settings_dispose(GObject *obj) {
+    TrashSettings *self = TRASH_SETTINGS(obj);
+
+    g_settings_unbind(self->settings, TRASH_SETTINGS_KEY_SORT_MODE);
+
+    G_OBJECT_CLASS(trash_settings_parent_class)->dispose(obj);
 }
 
 static void trash_settings_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec) {
@@ -101,7 +111,7 @@ static void trash_settings_set_property(GObject *obj, guint prop_id, const GValu
 static void trash_settings_init(TrashSettings *self) {
     self->settings = g_settings_new(TRASH_SETTINGS_SCHEMA_ID);
     g_settings_bind(self->settings,
-                    "sort-mode",
+                    TRASH_SETTINGS_KEY_SORT_MODE,
                     self,
                     "sort-mode",
                     G_SETTINGS_BIND_DEFAULT);

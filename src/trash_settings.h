@@ -18,6 +18,8 @@ typedef enum {
  */
 #define TRASH_SETTINGS_SCHEMA_ID "com.github.ebonjaeger.budgie-trash-applet"
 
+#define TRASH_SETTINGS_KEY_SORT_MODE "sort-mode"
+
 #define TRASH_TYPE_SETTINGS (trash_settings_get_type())
 #define TRASH_SETTINGS(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), TRASH_TYPE_SETTINGS, TrashSettings))
 #define TRASH_IS_SETTINGS(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), TRASH_TYPE_SETTINGS))

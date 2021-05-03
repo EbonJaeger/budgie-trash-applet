@@ -13,7 +13,7 @@ struct _TrashIconButtonClass {
 
 G_DEFINE_TYPE(TrashIconButton, trash_icon_button, GTK_TYPE_BUTTON);
 
-static void trash_icon_button_class_init(__budgie_unused__ TrashIconButtonClass *c) {
+static void trash_icon_button_class_init(__attribute__((unused)) TrashIconButtonClass *klazz) {
 }
 
 static void trash_icon_button_init(TrashIconButton *self) {
