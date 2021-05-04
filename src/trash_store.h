@@ -36,6 +36,7 @@ void trash_store_start_monitor(TrashStore *self);
  * UI signal handlers
  */
 
+gboolean trash_store_handle_header_clicked(GtkWidget *sender, GdkEventButton *event, TrashStore *self);
 void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self);
 void trash_store_handle_cancel_clicked(GtkButton *sender, TrashStore *self);
 void trash_store_handle_confirm_clicked(GtkButton *sender, TrashStore *self);

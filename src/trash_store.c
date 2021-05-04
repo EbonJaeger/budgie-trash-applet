@@ -1,4 +1,5 @@
 #include "trash_store.h"
+#include "gtk/gtkrevealer.h"
 
 struct _TrashStore {
     GtkBox parent_instance;
@@ -16,9 +17,11 @@ struct _TrashStore {
     GtkWidget *header;
     GtkWidget *header_icon;
     GtkWidget *header_label;
+    GtkWidget *reveal_icon;
     GtkWidget *delete_btn;
     GtkWidget *restore_btn;
 
+    GtkWidget *file_revealer;
     GtkWidget *file_box;
 
     TrashRevealer *revealer;
@@ -48,9 +51,12 @@ static void trash_store_init(TrashStore *self) {
     gtk_widget_set_vexpand(GTK_WIDGET(self), TRUE);
 
     // Create our header box
+    GtkWidget *header_event_box = gtk_event_box_new();
+    GtkStyleContext *header_style = gtk_widget_get_style_context(header_event_box);
+    gtk_style_context_add_class(header_style, "trash-store-header");
+    g_signal_connect_object(header_event_box, "button-press-event", G_CALLBACK(trash_store_handle_header_clicked), self, 0);
+
     self->header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    GtkStyleContext *header_style = gtk_widget_get_style_context(self->header);
-    gtk_style_context_add_class(header_style, "trash-store-widget");
     gtk_widget_set_size_request(self->header, -1, 48);
 
     self->delete_btn = gtk_button_new_from_icon_name("list-remove-all-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
@@ -70,6 +76,10 @@ static void trash_store_init(TrashStore *self) {
     g_signal_connect_object(GTK_BUTTON(self->revealer->cancel_button), "clicked", G_CALLBACK(trash_store_handle_cancel_clicked), self, 0);
     g_signal_connect_object(GTK_BUTTON(self->revealer->confirm_button), "clicked", G_CALLBACK(trash_store_handle_confirm_clicked), self, 0);
 
+    self->file_revealer = gtk_revealer_new();
+    gtk_revealer_set_transition_type(GTK_REVEALER(self->file_revealer), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->file_revealer), TRUE);
+
     // Create our file list
     self->file_box = gtk_list_box_new();
     GtkStyleContext *file_box_style = gtk_widget_get_style_context(self->file_box);
@@ -81,11 +91,16 @@ static void trash_store_init(TrashStore *self) {
 
     g_signal_connect_object(self->file_box, "row-activated", G_CALLBACK(trash_store_handle_row_activated), self, 0);
 
+    gtk_container_add(GTK_CONTAINER(self->file_revealer), self->file_box);
+
     // Pack ourselves up
     trash_store_apply_button_styles(self);
-    gtk_box_pack_start(GTK_BOX(self), self->header, TRUE, TRUE, 0);
+
+    gtk_container_add(GTK_CONTAINER(header_event_box), self->header);
+
+    gtk_box_pack_start(GTK_BOX(self), header_event_box, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(self), GTK_WIDGET(self->revealer), FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(self), self->file_box, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(self), self->file_revealer, TRUE, TRUE, 0);
 }
 
 static void trash_store_finalize(GObject *obj) {
@@ -111,17 +126,20 @@ TrashStore *trash_store_new(gchar *drive_name, GIcon *icon, TrashSortMode mode) 
     self->trash_path = g_build_path(G_DIR_SEPARATOR_S, g_get_user_data_dir(), "Trash", "files", NULL);
     self->trashinfo_path = g_build_path(G_DIR_SEPARATOR_S, g_get_user_data_dir(), "Trash", "info", NULL);
 
+    self->header_icon = gtk_image_new_from_gicon(icon, GTK_ICON_SIZE_SMALL_TOOLBAR);
+    gtk_box_pack_start(GTK_BOX(self->header), self->header_icon, FALSE, FALSE, 0);
+
     self->header_label = gtk_label_new(g_strdup(drive_name));
     gtk_label_set_max_width_chars(GTK_LABEL(self->header_label), 30);
     gtk_label_set_ellipsize(GTK_LABEL(self->header_label), PANGO_ELLIPSIZE_END);
     gtk_widget_set_halign(self->header_label, GTK_ALIGN_START);
     gtk_label_set_justify(GTK_LABEL(self->header_label), GTK_JUSTIFY_LEFT);
-    gtk_box_pack_end(GTK_BOX(self->header), self->header_label, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(self->header), self->header_label, TRUE, TRUE, 0);
 
     gtk_widget_set_tooltip_text(self->header, g_strdup(drive_name));
 
-    self->header_icon = gtk_image_new_from_gicon(icon, GTK_ICON_SIZE_SMALL_TOOLBAR);
-    gtk_box_pack_start(GTK_BOX(self->header), self->header_icon, FALSE, FALSE, 10);
+    self->reveal_icon = gtk_image_new_from_icon_name("pan-down-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
+    gtk_box_pack_start(GTK_BOX(self->header), self->reveal_icon, FALSE, FALSE, 0);
 
     gtk_widget_show_all(GTK_WIDGET(self));
 
@@ -184,6 +202,25 @@ void trash_store_start_monitor(TrashStore *self) {
     g_autoptr(GError) err = NULL;
     self->file_monitor = g_file_monitor_directory(dir, G_FILE_MONITOR_WATCH_MOVES, NULL, &err);
     g_signal_connect_object(self->file_monitor, "changed", G_CALLBACK(trash_store_handle_monitor_event), self, 0);
+}
+
+gboolean trash_store_handle_header_clicked(__attribute__((unused)) GtkWidget *sender, GdkEventButton *event, TrashStore *self) {
+    switch (event->type) {
+        case GDK_BUTTON_PRESS:
+            if (gtk_revealer_get_child_revealed(GTK_REVEALER(self->file_revealer))) {
+                gtk_revealer_set_reveal_child(GTK_REVEALER(self->file_revealer), FALSE);
+                gtk_image_set_from_icon_name(GTK_IMAGE(self->reveal_icon), "pan-start-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
+            } else {
+                gtk_revealer_set_reveal_child(GTK_REVEALER(self->file_revealer), TRUE);
+                gtk_image_set_from_icon_name(GTK_IMAGE(self->reveal_icon), "pan-down-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
+            }
+
+            return TRUE;
+        default:
+            return FALSE;
+    }
+
+    return FALSE;
 }
 
 void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self) {
