@@ -122,7 +122,7 @@ TrashItem *trash_item_new(gchar *name,
 
     gtk_widget_set_tooltip_text(self->path_label, trash_info->restore_path);
 
-    self->timestamp_label = gtk_label_new(g_strconcat("<b>Deleted at:</b> ", g_date_time_format(trash_info->deleted_time, "%Y-%m-%d %H:%M %Z"), NULL));
+    self->timestamp_label = gtk_label_new(g_strconcat("<b>Deleted at:</b> ", g_date_time_format(trash_info->deleted_time, "%d %b %Y %X"), NULL));
     gtk_label_set_use_markup(GTK_LABEL(self->timestamp_label), TRUE);
     gtk_widget_set_halign(self->timestamp_label, GTK_ALIGN_START);
     gtk_label_set_justify(GTK_LABEL(self->timestamp_label), GTK_JUSTIFY_LEFT);
