@@ -1,5 +1,4 @@
 #include "trash_store.h"
-#include "gtk/gtkrevealer.h"
 
 struct _TrashStore {
     GtkBox parent_instance;
