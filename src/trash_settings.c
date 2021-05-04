@@ -78,6 +78,7 @@ static void trash_settings_dispose(GObject *obj) {
     TrashSettings *self = TRASH_SETTINGS(obj);
 
     g_settings_unbind(self->settings, TRASH_SETTINGS_KEY_SORT_MODE);
+    g_clear_object(&self->settings);
 
     G_OBJECT_CLASS(trash_settings_parent_class)->dispose(obj);
 }

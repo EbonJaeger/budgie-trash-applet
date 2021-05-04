@@ -31,6 +31,9 @@ static void trash_applet_finalize(GObject *object) {
 
     g_hash_table_destroy(priv->mounts);
     g_object_unref(priv->volume_monitor);
+    if (priv->settings) {
+        g_clear_object(&priv->settings);
+    }
 
     G_OBJECT_CLASS(trash_applet_parent_class)->finalize(object);
 }
