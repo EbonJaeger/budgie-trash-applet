@@ -225,10 +225,10 @@ gboolean trash_store_handle_header_clicked(__attribute__((unused)) GtkWidget *se
 void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self) {
     if (sender == GTK_BUTTON(self->delete_btn)) {
         self->restoring = FALSE;
-        trash_revealer_set_text(self->revealer, "<b>Permanently delete all items in the trash bin?</b>");
+        trash_revealer_set_text(self->revealer, "<b>Permanently delete all items in the trash bin?</b>", self->restoring);
     } else {
         self->restoring = TRUE;
-        trash_revealer_set_text(self->revealer, "<b>Restore all items from the trash bin?</b>");
+        trash_revealer_set_text(self->revealer, "<b>Restore all items from the trash bin?</b>", self->restoring);
     }
 
     trash_store_set_btns_sensitive(self, FALSE);

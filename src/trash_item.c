@@ -46,7 +46,6 @@ static void trash_item_init(TrashItem *self) {
 
     // Create the main part of the widget
     self->header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_set_size_request(self->header, -1, 32);
 
     // Create the item's delete and restore button
     self->delete_btn = gtk_button_new_from_icon_name("user-trash-symbolic", GTK_ICON_SIZE_SMALL_TOOLBAR);
@@ -154,10 +153,10 @@ gint trash_item_has_name(TrashItem *self, gchar *name) {
 void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self) {
     if (sender == GTK_BUTTON(self->delete_btn)) {
         self->restoring = FALSE;
-        trash_revealer_set_text(self->confirm_revealer, "<b>Permanently delete this item?</b>");
+        trash_revealer_set_text(self->confirm_revealer, "<b>Permanently delete this item?</b>", self->restoring);
     } else {
         self->restoring = TRUE;
-        trash_revealer_set_text(self->confirm_revealer, "<b>Restore this item?</b>");
+        trash_revealer_set_text(self->confirm_revealer, "<b>Restore this item?</b>", self->restoring);
     }
 
     trash_item_set_btns_sensitive(self, FALSE);

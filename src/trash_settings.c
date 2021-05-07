@@ -118,10 +118,11 @@ static void trash_settings_init(TrashSettings *self) {
                     G_SETTINGS_BIND_DEFAULT);
 
     GtkWidget *header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_set_size_request(header, -1, 32);
     GtkStyleContext *header_style = gtk_widget_get_style_context(header);
     gtk_style_context_add_class(header_style, "trash-applet-header");
     GtkWidget *header_label = gtk_label_new("Settings");
+    GtkStyleContext *header_label_style = gtk_widget_get_style_context(header_label);
+    gtk_style_context_add_class(header_label_style, "title");
     gtk_box_pack_start(GTK_BOX(header), header_label, TRUE, TRUE, 0);
 
     gtk_box_pack_start(GTK_BOX(self), header, FALSE, FALSE, 0);
@@ -213,7 +214,6 @@ static void trash_settings_init(TrashSettings *self) {
 
     // Create the footer
     GtkWidget *footer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_set_size_request(footer, -1, 32);
     GtkStyleContext *footer_style = gtk_widget_get_style_context(footer);
     gtk_style_context_add_class(footer_style, "trash-applet-footer");
 

@@ -23,7 +23,6 @@ static void trash_revealer_init(TrashRevealer *self) {
     gtk_style_context_remove_class(cancel_style, "button");
     GtkStyleContext *confirm_style = gtk_widget_get_style_context(self->confirm_button);
     gtk_style_context_add_class(confirm_style, "flat");
-    gtk_style_context_add_class(confirm_style, "destructive-action");
     gtk_style_context_remove_class(confirm_style, "button");
 
     gtk_box_pack_start(GTK_BOX(revealer_btns), self->cancel_button, TRUE, TRUE, 0);
@@ -38,7 +37,7 @@ TrashRevealer *trash_revealer_new() {
     return g_object_new(TRASH_TYPE_REVEALER, NULL);
 }
 
-void trash_revealer_set_text(TrashRevealer *self, gchar *text) {
+void trash_revealer_set_text(TrashRevealer *self, gchar *text, gboolean destructive) {
     gchar *text_clone = g_strdup(text);
 
     if (text_clone == NULL || strcmp(text_clone, "") == 0) {
@@ -47,4 +46,11 @@ void trash_revealer_set_text(TrashRevealer *self, gchar *text) {
 
     // Set the label text
     gtk_label_set_markup(GTK_LABEL(self->label), text_clone);
+
+    GtkStyleContext *confirm_style = gtk_widget_get_style_context(self->confirm_button);
+    if (destructive) {
+        gtk_style_context_add_class(confirm_style, "destructive-action");
+    } else {
+        gtk_style_context_add_class(confirm_style, "suggested-action");
+    }
 }

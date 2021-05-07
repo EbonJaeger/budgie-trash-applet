@@ -8,13 +8,14 @@
 
 .trash-applet-header {
   border-bottom: 1px solid $border-color;
-  font-weight: 500;
+  min-height: $header-height;
   padding-top: 10px;
   padding-bottom: 10px;
 }
 
 .trash-applet-footer {
   border-top: 1px solid $border-color;
+  min-height: $header-height;
   padding-top: 5px;
   padding-bottom: 5px;
 }

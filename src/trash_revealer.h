@@ -24,6 +24,6 @@ typedef struct {
 TrashRevealer *trash_revealer_new(void);
 void trash_revealer_handle_clicked(GtkButton *sender, TrashRevealer *self);
 
-void trash_revealer_set_text(TrashRevealer *self, gchar *text);
+void trash_revealer_set_text(TrashRevealer *self, gchar *text, gboolean destructive);
 
 G_END_DECLS
