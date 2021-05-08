@@ -269,26 +269,13 @@ void trash_store_handle_monitor_event(__attribute__((unused)) GFileMonitor *moni
                                       TrashStore *self) {
     switch (event_type) {
         case G_FILE_MONITOR_EVENT_MOVED_IN: {
-            g_autofree gchar *attributes = g_strconcat(G_FILE_ATTRIBUTE_STANDARD_NAME, ",",
-                                                       G_FILE_ATTRIBUTE_STANDARD_ICON, ",",
-                                                       G_FILE_ATTRIBUTE_STANDARD_TYPE,
-                                                       NULL);
-            GFileInfo *file_info = g_file_query_info(file, attributes, G_FILE_QUERY_INFO_NONE, NULL, NULL);
-
-            g_autoptr(GError) err = NULL;
-            TrashItem *trash_item = trash_store_create_trash_item(self, file_info);
-            if (err) {
-                g_critical("%s:%d: Couldn't create trash item from GFileInfo: %s", __BASE_FILE__, __LINE__, err->message);
-                g_object_unref(file_info);
-                break;
-            }
+            TrashItem *trash_item = trash_store_create_trash_item(self, g_file_get_path(file));
 
             gtk_list_box_insert(GTK_LIST_BOX(self->file_box), GTK_WIDGET(trash_item), -1);
             self->trashed_files = g_slist_append(self->trashed_files, trash_item);
             self->file_count++;
-            trash_store_check_empty(self);
 
-            g_object_unref(file_info);
+            trash_store_check_empty(self);
             break;
         }
         case G_FILE_MONITOR_EVENT_MOVED_OUT:
@@ -320,12 +307,8 @@ void trash_store_handle_monitor_event(__attribute__((unused)) GFileMonitor *moni
 void trash_store_load_items(TrashStore *self, GError *err) {
     // Open our trash directory
     g_autoptr(GFile) trash_dir = g_file_new_for_path(self->trash_path);
-    g_autofree gchar *attributes = g_strconcat(G_FILE_ATTRIBUTE_STANDARD_NAME, ",",
-                                               G_FILE_ATTRIBUTE_STANDARD_ICON, ",",
-                                               G_FILE_ATTRIBUTE_STANDARD_TYPE,
-                                               NULL);
     g_autoptr(GFileEnumerator) enumerator = g_file_enumerate_children(trash_dir,
-                                                                      attributes,
+                                                                      G_FILE_ATTRIBUTE_STANDARD_NAME,
                                                                       G_FILE_QUERY_INFO_NONE,
                                                                       NULL,
                                                                       &err);
@@ -337,7 +320,8 @@ void trash_store_load_items(TrashStore *self, GError *err) {
     // Iterate over the directory's children and append each file name to a list
     g_autoptr(GFileInfo) current_file = NULL;
     while ((current_file = g_file_enumerator_next_file(enumerator, NULL, &err))) {
-        TrashItem *trash_item = trash_store_create_trash_item(self, current_file);
+        gchar *path = g_build_path(G_DIR_SEPARATOR_S, self->trash_path, g_file_info_get_name(current_file), NULL);
+        TrashItem *trash_item = trash_store_create_trash_item(self, path);
 
         gtk_list_box_insert(GTK_LIST_BOX(self->file_box), GTK_WIDGET(trash_item), -1);
         self->trashed_files = g_slist_append(self->trashed_files, trash_item);
@@ -348,7 +332,14 @@ void trash_store_load_items(TrashStore *self, GError *err) {
     g_file_enumerator_close(enumerator, NULL, NULL);
 }
 
-TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info) {
+TrashItem *trash_store_create_trash_item(TrashStore *self, gchar *path) {
+    g_autoptr(GFile) file = g_file_new_for_path(path);
+    g_autofree gchar *attributes = g_strconcat(G_FILE_ATTRIBUTE_STANDARD_NAME, ",",
+                                               G_FILE_ATTRIBUTE_STANDARD_ICON, ",",
+                                               G_FILE_ATTRIBUTE_STANDARD_TYPE,
+                                               NULL);
+    g_autoptr(GFileInfo) file_info = g_file_query_info(file, attributes, G_FILE_QUERY_INFO_NONE, NULL, NULL);
+
     gchar *file_name = (gchar *) g_file_info_get_name(file_info);
     g_autofree gchar *info_file_path = g_build_path(G_DIR_SEPARATOR_S, self->trashinfo_path, g_strconcat(file_name, ".trashinfo", NULL), NULL);
     g_autoptr(GFile) info_file = g_file_new_for_path(info_file_path);

@@ -70,13 +70,11 @@ void trash_store_handle_monitor_event(GFileMonitor *monitor,
 void trash_store_load_items(TrashStore *self, GError *err);
 
 /**
- * Create a new [TrashItem] from a GFileInfo.
- * 
- * If an error is encountered, `err` is set and `NULL` is returned.
+ * Create a new [TrashItem] from a file path.
  * 
  * TODO: Maybe this should be in TrashItem instead.
  */
-TrashItem *trash_store_create_trash_item(TrashStore *self, GFileInfo *file_info);
+TrashItem *trash_store_create_trash_item(TrashStore *self, gchar *path);
 
 /**
  * Read the contents of a trashinfo file for a file with the given name
