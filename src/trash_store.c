@@ -1,5 +1,13 @@
 #include "trash_store.h"
 
+enum {
+    PROP_EXP_0,
+    PROP_SORT_MODE,
+    N_EXP_PROPERTIES
+};
+
+static GParamSpec *store_props[N_EXP_PROPERTIES] = { NULL };
+
 struct _TrashStore {
     GtkBox parent_instance;
     GFileMonitor *file_monitor;
@@ -31,13 +39,54 @@ struct _TrashStoreClass {
 };
 
 static void trash_store_finalize(GObject *obj);
+static void trash_store_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec);
+static void trash_store_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec);
 
 G_DEFINE_TYPE(TrashStore, trash_store, GTK_TYPE_BOX);
 
 static void trash_store_class_init(TrashStoreClass *klazz) {
     GObjectClass *class = G_OBJECT_CLASS(klazz);
-
     class->finalize = trash_store_finalize;
+    class->get_property = trash_store_get_property;
+    class->set_property = trash_store_set_property;
+
+    store_props[PROP_SORT_MODE] = g_param_spec_enum(
+        "sort-mode",
+        "Sort mode",
+        "Set how trashed files should be sorted",
+        TRASH_TYPE_SORT_MODE,
+        TRASH_SORT_TYPE,
+        G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    g_object_class_install_properties(class, N_EXP_PROPERTIES, store_props);
+}
+
+static void trash_store_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec) {
+    TrashStore *self = TRASH_STORE(obj);
+
+    switch (prop_id) {
+        case PROP_SORT_MODE:
+            g_value_set_enum(val, self->sort_mode);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
+            break;
+    }
+}
+
+static void trash_store_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec) {
+    TrashStore *self = TRASH_STORE(obj);
+
+    switch (prop_id) {
+        case PROP_SORT_MODE:
+            self->sort_mode = g_value_get_enum(val);
+            gtk_list_box_invalidate_sort(GTK_LIST_BOX(self->file_box));
+            g_object_notify_by_pspec(obj, store_props[PROP_SORT_MODE]);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
+            break;
+    }
 }
 
 static void trash_store_init(TrashStore *self) {
@@ -120,8 +169,7 @@ static void trash_store_finalize(GObject *obj) {
 }
 
 TrashStore *trash_store_new(gchar *drive_name, GIcon *icon, TrashSortMode mode) {
-    TrashStore *self = g_object_new(TRASH_TYPE_STORE, "orientation", GTK_ORIENTATION_VERTICAL, NULL);
-    self->sort_mode = mode;
+    TrashStore *self = g_object_new(TRASH_TYPE_STORE, "orientation", GTK_ORIENTATION_VERTICAL, "sort-mode", mode, NULL);
     self->trash_path = g_build_path(G_DIR_SEPARATOR_S, g_get_user_data_dir(), "Trash", "files", NULL);
     self->trashinfo_path = g_build_path(G_DIR_SEPARATOR_S, g_get_user_data_dir(), "Trash", "info", NULL);
 
