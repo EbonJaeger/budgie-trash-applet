@@ -49,8 +49,10 @@ void trash_revealer_set_text(TrashRevealer *self, gchar *text, gboolean destruct
 
     GtkStyleContext *confirm_style = gtk_widget_get_style_context(self->confirm_button);
     if (destructive) {
+        gtk_style_context_remove_class(confirm_style, "suggested-action");
         gtk_style_context_add_class(confirm_style, "destructive-action");
     } else {
+        gtk_style_context_remove_class(confirm_style, "destructive-action");
         gtk_style_context_add_class(confirm_style, "suggested-action");
     }
 }

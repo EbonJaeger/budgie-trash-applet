@@ -153,10 +153,10 @@ gint trash_item_has_name(TrashItem *self, gchar *name) {
 void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self) {
     if (sender == GTK_BUTTON(self->delete_btn)) {
         self->restoring = FALSE;
-        trash_revealer_set_text(self->confirm_revealer, "<b>Permanently delete this item?</b>", self->restoring);
+        trash_revealer_set_text(self->confirm_revealer, "<b>Permanently delete this item?</b>", TRUE);
     } else {
         self->restoring = TRUE;
-        trash_revealer_set_text(self->confirm_revealer, "<b>Restore this item?</b>", self->restoring);
+        trash_revealer_set_text(self->confirm_revealer, "<b>Restore this item?</b>", FALSE);
     }
 
     trash_item_set_btns_sensitive(self, FALSE);
