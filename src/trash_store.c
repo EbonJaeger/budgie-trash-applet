@@ -6,7 +6,7 @@ enum {
     N_EXP_PROPERTIES
 };
 
-static GParamSpec *store_props[N_EXP_PROPERTIES] = { NULL };
+static GParamSpec *store_props[N_EXP_PROPERTIES] = {NULL};
 
 struct _TrashStore {
     GtkBox parent_instance;
