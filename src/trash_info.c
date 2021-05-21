@@ -1,10 +1,20 @@
 #include "trash_info.h"
 
-TrashInfo *trash_info_new_from_file(gchar *file_name, gchar *file_path, gboolean is_directory, GFile *info_file, gchar *prefix) {
+TrashInfo *trash_info_new(gchar *file_name, gchar *file_path, gboolean is_directory) {
+    TrashInfo *self = g_slice_new(TrashInfo);
+    self->file_name = g_strdup(file_name);
+    self->file_path = g_strdup(file_path);
+    self->is_directory = is_directory;
+
+    return self;
+}
+
+void trash_info_set_from_trashinfo(TrashInfo *self, GFile *info_file, gchar *prefix) {
     g_autoptr(GError) err = NULL;
     g_autoptr(GFileInputStream) input_stream = g_file_read(info_file, NULL, &err);
     if (!input_stream) {
-        return NULL;
+        g_critical("%s:%d: Unable to open .trashinfo file: %s",  __FILE__, __LINE__, err->message);
+        return;
     }
 
     // Seek to the Path line
@@ -29,12 +39,6 @@ TrashInfo *trash_info_new_from_file(gchar *file_name, gchar *file_path, gboolean
     GDateTime *deletion_time = g_date_time_new_from_iso8601((const gchar *) deletion_time_str, tz);
     g_strfreev(lines);
 
-    TrashInfo *self = g_slice_new(TrashInfo);
-    self->file_name = g_strdup(file_name);
-    self->file_path = g_strdup(file_path);
-    self->is_directory = is_directory;
     self->restore_path = restore_path;
     self->deleted_time = deletion_time;
-
-    return self;
 }

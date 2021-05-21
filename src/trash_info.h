@@ -38,7 +38,12 @@ typedef struct {
 } TrashInfoClass;
 
 /**
- * Create a new TrashInfo struct by reading a .trashinfo file
- * with a path prefix for the restore path.
+ * Create a new TrashInfo struct.
  */
-TrashInfo *trash_info_new_from_file(gchar *file_name, gchar *file_path, gboolean is_directory, GFile *info_file, gchar *prefix);
+TrashInfo *trash_info_new(gchar *file_name, gchar *file_path, gboolean is_directory);
+
+/**
+ * Set fields of the TrashInfo struct that have to be read
+ * from the .trashinfo file.
+ */
+void trash_info_set_from_trashinfo(TrashInfo *self, GFile *info_file, gchar *prefix);

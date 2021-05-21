@@ -394,11 +394,10 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, gchar *path) {
     g_autoptr(GFile) info_file = g_file_new_for_path(info_file_path);
     TrashInfo *trash_info = NULL;
 
-    trash_info = trash_info_new_from_file(file_name,
-                                          g_build_path(G_DIR_SEPARATOR_S, self->trash_path, file_name, NULL),
-                                          (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY),
-                                          info_file,
-                                          self->path_prefix);
+    trash_info = trash_info_new(file_name,
+                                g_build_path(G_DIR_SEPARATOR_S, self->trash_path, file_name, NULL),
+                                (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY));
+    trash_info_set_from_trashinfo(trash_info, info_file, self->path_prefix);
 
     TrashItem *trash_item = trash_item_new(g_file_info_get_icon(file_info), trash_info);
     gtk_widget_show_all(GTK_WIDGET(trash_item));
