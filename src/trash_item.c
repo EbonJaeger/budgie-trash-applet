@@ -5,10 +5,6 @@ struct _TrashItem {
 
     gboolean restoring;
 
-    gchar *name;
-    gchar *path;
-    gboolean is_directory;
-
     TrashInfo *trash_info;
 
     GtkWidget *header;
@@ -82,30 +78,21 @@ static void trash_item_init(TrashItem *self) {
 static void trash_item_finalize(GObject *obj) {
     TrashItem *self = TRASH_ITEM(obj);
 
-    g_free(self->name);
-    g_free(self->path);
     g_slice_free(TrashInfo, self->trash_info);
 
     G_OBJECT_CLASS(trash_item_parent_class)->finalize(obj);
 }
 
-TrashItem *trash_item_new(gchar *name,
-                          gchar *path,
-                          GIcon *icon,
-                          gboolean is_directory,
-                          TrashInfo *trash_info) {
+TrashItem *trash_item_new(GIcon *icon, TrashInfo *trash_info) {
     TrashItem *self = g_object_new(TRASH_TYPE_ITEM, "orientation", GTK_ORIENTATION_VERTICAL, NULL);
-    self->name = g_strdup(name);
-    self->path = g_strdup(path);
-    self->is_directory = is_directory;
     self->trash_info = trash_info;
 
-    gtk_widget_set_tooltip_text(self->header, self->name);
+    gtk_widget_set_tooltip_text(self->header, self->trash_info->file_name);
 
     self->file_icon = gtk_image_new_from_gicon(icon, GTK_ICON_SIZE_SMALL_TOOLBAR);
     gtk_box_pack_start(GTK_BOX(self->header), self->file_icon, FALSE, FALSE, 5);
 
-    self->file_name_label = gtk_label_new(self->name);
+    self->file_name_label = gtk_label_new(self->trash_info->file_name);
     gtk_label_set_max_width_chars(GTK_LABEL(self->file_name_label), 30);
     gtk_label_set_ellipsize(GTK_LABEL(self->file_name_label), PANGO_ELLIPSIZE_END);
     gtk_widget_set_halign(self->file_name_label, GTK_ALIGN_START);
@@ -147,7 +134,7 @@ void trash_item_set_btns_sensitive(TrashItem *self, gboolean sensitive) {
 }
 
 gint trash_item_has_name(TrashItem *self, gchar *name) {
-    return g_strcmp0(self->name, name);
+    return g_strcmp0(self->trash_info->file_name, name);
 }
 
 void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self) {
@@ -172,7 +159,7 @@ void trash_item_handle_confirm_clicked(__attribute__((unused)) GtkButton *sender
     g_autoptr(GError) err = NULL;
     self->restoring ? trash_item_restore(self, &err) : trash_item_delete(self, &err);
     if (err) {
-        g_critical("%s:%d: Error clearing file from trash '%s': %s", __BASE_FILE__, __LINE__, self->name, err->message);
+        g_critical("%s:%d: Error clearing file from trash '%s': %s", __BASE_FILE__, __LINE__, self->trash_info->file_name, err->message);
     }
 
     trash_item_set_btns_sensitive(self, TRUE);
@@ -189,11 +176,11 @@ void trash_item_toggle_info_revealer(TrashItem *self) {
 
 void trash_item_delete(TrashItem *self, GError **err) {
     // Delete the trashed file (if it's a directory, it will delete recursively)
-    trash_delete_file(self->path, self->is_directory, err);
+    trash_delete_file(self->trash_info->file_path, self->trash_info->is_directory, err);
 }
 
 void trash_item_restore(TrashItem *self, GError **err) {
-    g_autoptr(GFile) trashed_file = g_file_new_for_path(self->path);
+    g_autoptr(GFile) trashed_file = g_file_new_for_path(self->trash_info->file_path);
     g_autoptr(GFile) restored_file = g_file_new_for_path(self->trash_info->restore_path);
 
     g_file_move(trashed_file, restored_file, G_FILE_COPY_ALL_METADATA, NULL, NULL, NULL, err);
@@ -204,20 +191,20 @@ gint trash_item_collate_by_date(TrashItem *self, TrashItem *other) {
 }
 
 gint trash_item_collate_by_name(TrashItem *self, TrashItem *other) {
-    return strcoll(self->name, other->name);
+    return strcoll(self->trash_info->file_name, other->trash_info->file_name);
 }
 
 gint trash_item_collate_by_type(TrashItem *self, TrashItem *other) {
     gint ret = 0;
 
-    if (self->is_directory && other->is_directory) {
-        ret = strcoll(self->name, other->name);
-    } else if (self->is_directory && !other->is_directory) {
+    if (self->trash_info->is_directory && other->trash_info->is_directory) {
+        ret = strcoll(self->trash_info->file_name, other->trash_info->file_name);
+    } else if (self->trash_info->is_directory && !other->trash_info->is_directory) {
         ret = -1;
-    } else if (!self->is_directory && other->is_directory) {
+    } else if (!self->trash_info->is_directory && other->trash_info->is_directory) {
         ret = 1;
     } else {
-        ret = strcoll(self->name, other->name);
+        ret = strcoll(self->trash_info->file_name, other->trash_info->file_name);
     }
 
     return ret;

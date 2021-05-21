@@ -1,12 +1,8 @@
 #include "trash_info.h"
 
-TrashInfo *trash_info_new_from_file(GFile *file) {
-    return trash_info_new_from_file_with_prefix(file, NULL);
-}
-
-TrashInfo *trash_info_new_from_file_with_prefix(GFile *file, gchar *prefix) {
+TrashInfo *trash_info_new_from_file(gchar *file_name, gchar *file_path, gboolean is_directory, GFile *info_file, gchar *prefix) {
     g_autoptr(GError) err = NULL;
-    g_autoptr(GFileInputStream) input_stream = g_file_read(file, NULL, &err);
+    g_autoptr(GFileInputStream) input_stream = g_file_read(info_file, NULL, &err);
     if (!input_stream) {
         return NULL;
     }
@@ -34,6 +30,9 @@ TrashInfo *trash_info_new_from_file_with_prefix(GFile *file, gchar *prefix) {
     g_strfreev(lines);
 
     TrashInfo *self = g_slice_new(TrashInfo);
+    self->file_name = g_strdup(file_name);
+    self->file_path = g_strdup(file_path);
+    self->is_directory = is_directory;
     self->restore_path = restore_path;
     self->deleted_time = deletion_time;
 

@@ -11,11 +11,7 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE(TrashItem, trash_item, TRASH, ITEM, GtkBox)
 
-TrashItem *trash_item_new(gchar *name,
-                          gchar *path,
-                          GIcon *icon,
-                          gboolean is_directory,
-                          TrashInfo *trash_info);
+TrashItem *trash_item_new(GIcon *icon, TrashInfo *trash_info);
 void trash_item_apply_button_styles(TrashItem *self);
 void trash_item_set_btns_sensitive(TrashItem *self, gboolean sensitive);
 

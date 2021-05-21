@@ -24,6 +24,11 @@
 typedef struct {
     GObject parent_instance;
 
+    gchar *file_name;
+    gchar *file_path;
+
+    gboolean is_directory;
+
     gchar *restore_path;
     GDateTime *deleted_time;
 } TrashInfo;
@@ -33,12 +38,7 @@ typedef struct {
 } TrashInfoClass;
 
 /**
- * Create a new TrashInfo struct by reading a .trashinfo file.
- */
-TrashInfo *trash_info_new_from_file(GFile *file);
-
-/**
  * Create a new TrashInfo struct by reading a .trashinfo file
  * with a path prefix for the restore path.
  */
-TrashInfo *trash_info_new_from_file_with_prefix(GFile *file, gchar *prefix);
+TrashInfo *trash_info_new_from_file(gchar *file_name, gchar *file_path, gboolean is_directory, GFile *info_file, gchar *prefix);

@@ -172,6 +172,7 @@ TrashStore *trash_store_new(gchar *drive_name, GIcon *icon, TrashSortMode mode) 
     TrashStore *self = g_object_new(TRASH_TYPE_STORE, "orientation", GTK_ORIENTATION_VERTICAL, "sort-mode", mode, NULL);
     self->trash_path = g_build_path(G_DIR_SEPARATOR_S, g_get_user_data_dir(), "Trash", "files", NULL);
     self->trashinfo_path = g_build_path(G_DIR_SEPARATOR_S, g_get_user_data_dir(), "Trash", "info", NULL);
+    self->path_prefix = NULL;
 
     self->header_icon = gtk_image_new_from_gicon(icon, GTK_ICON_SIZE_SMALL_TOOLBAR);
     gtk_box_pack_start(GTK_BOX(self->header), self->header_icon, FALSE, FALSE, 0);
@@ -393,18 +394,13 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, gchar *path) {
     g_autoptr(GFile) info_file = g_file_new_for_path(info_file_path);
     TrashInfo *trash_info = NULL;
 
-    gboolean has_prefix = (self->path_prefix && !g_str_equal(self->path_prefix, ""));
-    if (has_prefix) {
-        trash_info = trash_info_new_from_file_with_prefix(info_file, self->path_prefix);
-    } else {
-        trash_info = trash_info_new_from_file(info_file);
-    }
+    trash_info = trash_info_new_from_file(file_name,
+                                          g_build_path(G_DIR_SEPARATOR_S, self->trash_path, file_name, NULL),
+                                          (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY),
+                                          info_file,
+                                          self->path_prefix);
 
-    TrashItem *trash_item = trash_item_new(g_strdup(file_name),
-                                           g_build_path(G_DIR_SEPARATOR_S, self->trash_path, file_name, NULL),
-                                           g_file_info_get_icon(file_info),
-                                           (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY),
-                                           trash_info);
+    TrashItem *trash_item = trash_item_new(g_file_info_get_icon(file_info), trash_info);
     gtk_widget_show_all(GTK_WIDGET(trash_item));
 
     return trash_item;

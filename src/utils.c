@@ -18,16 +18,14 @@ gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **e
             if (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY) {
                 // Directories must be empty to be deleted, so recursively delete all children first
                 success = trash_delete_file(child_path, TRUE, err);
-                if (!success) {
-                    break;
-                }
             } else {
                 // Not a directory, just delete the file
                 g_autoptr(GFile) child_file = g_file_new_for_path(child_path);
                 success = g_file_delete(child_file, NULL, err);
-                if (!success) {
-                    break;
-                }
+            }
+
+            if (!success) {
+                break;
             }
 
             g_object_unref(file_info);
@@ -42,13 +40,12 @@ gboolean trash_delete_file(const gchar *file_path, gint is_directory, GError **e
     }
 
     // Delete the current file
-    success = g_file_delete(file, NULL, err);
-    return success;
+    return g_file_delete(file, NULL, err);
 }
 
 gchar *substring(gchar *source, gint offset, size_t length) {
     if ((offset + length > strlen(source)) && length != strlen(source)) {
-        return '\0';
+        return NULL;
     }
 
     if (length == strlen(source)) {
