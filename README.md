@@ -2,7 +2,7 @@
 
 Manage items in your trash bin right from the Budgie panel.
 
-![Main View](https://i.imgur.com/riBmriJ.png) ![Confirm Delete All](https://i.imgur.com/DW7ZlRj.png) ![Confirm Restore](https://i.imgur.com/QZkqu07.png)
+![Main View](https://github.com/EbonJaeger/budgie-trash-applet/blob/master/data/images/screenshot1.png)
 
 ---
 
