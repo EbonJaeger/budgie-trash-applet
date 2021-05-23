@@ -6,8 +6,8 @@ install_data('com.github.ebonjaeger.budgie-trash-applet.gschema.xml',
     install_dir: join_paths(get_option('datadir'), 'glib-2.0', 'schemas')
 )
 
-metainfo_file = 'com.github.ebonjaeger.budgie-trash-applet.metainfo.xml'
-install_data(metainfo_file, install_dir: join_paths(get_option('datadir'), 'metainfo'))
+appstream_file = 'com.github.ebonjaeger.budgie-trash-applet.appdata.xml'
+install_data(appstream_file, install_dir: join_paths(get_option('datadir'), 'metainfo'))
 
 compile_schemas = find_program('glib-compile-schemas', required: false)
 if compile_schemas.found()
@@ -21,6 +21,6 @@ appstream_util = find_program('appstream-util', required: false)
 if appstream_util.found()
   test('validate metainfo file',
         appstream_util,
-        args: ['validate', join_paths('data', metainfo_file)]
+        args: ['validate', join_paths(meson.current_source_dir(), appstream_file)]
   )
 endif
