@@ -175,8 +175,15 @@ void trash_item_toggle_info_revealer(TrashItem *self) {
 }
 
 void trash_item_delete(TrashItem *self, GError **err) {
-    // Delete the trashed file (if it's a directory, it will delete recursively)
-    trash_delete_file(self->trash_info->file_path, self->trash_info->is_directory, err);
+    FileDeleteData *data = file_delete_data_new(self->trash_info->file_path, self->trash_info->is_directory);
+    GThread *thread = g_thread_try_new("trash-delete-thread", (GThreadFunc) trash_delete_file, file_delete_data_ref(data), err);
+    if (!thread) {
+        file_delete_data_unref(data);
+        return;
+    }
+
+    file_delete_data_unref(data);
+    g_thread_unref(thread);
 }
 
 void trash_item_restore(TrashItem *self, GError **err) {

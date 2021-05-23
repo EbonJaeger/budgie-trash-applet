@@ -13,7 +13,7 @@ void trash_info_set_from_trashinfo(TrashInfo *self, GFile *info_file, gchar *pre
     g_autoptr(GError) err = NULL;
     g_autoptr(GFileInputStream) input_stream = g_file_read(info_file, NULL, &err);
     if (!input_stream) {
-        g_critical("%s:%d: Unable to open .trashinfo file: %s",  __FILE__, __LINE__, err->message);
+        g_critical("%s:%d: Unable to open .trashinfo file: %s", __BASE_FILE__, __LINE__, err->message);
         return;
     }
 
