@@ -42,7 +42,9 @@ void trash_applet_init_gtype(GTypeModule *module);
 /**
  * Constructs a new  Trash Applet instance.
  */
-BudgieApplet *trash_applet_new(void);
+TrashApplet *trash_applet_new(const gchar *uuid);
+
+void trash_applet_update_uuid(TrashApplet *self, const gchar *value);
 
 /**
  * Create our widgets to show in our popover.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "applet.h"
+#include <budgie-desktop/plugin.h>
 #include <gtk/gtk.h>
 
 G_BEGIN_DECLS

@@ -4,9 +4,19 @@
 #include <libnotify/notify.h>
 #include <unistd.h>
 
+enum {
+    PROP_EXP_0,
+    PROP_APPLET_UUID,
+    N_EXP_PROPERTIES
+};
+
+static GParamSpec *applet_props[N_EXP_PROPERTIES] = {NULL};
+
 struct _TrashAppletPrivate {
     BudgiePopoverManager *manager;
     GHashTable *mounts;
+
+    gchar *uuid;
 
     GSettings *settings;
 
@@ -21,6 +31,9 @@ struct _TrashAppletPrivate {
     GVolumeMonitor *volume_monitor;
 };
 
+static void trash_applet_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec);
+static void trash_applet_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec);
+
 G_DEFINE_DYNAMIC_TYPE_EXTENDED(TrashApplet, trash_applet, BUDGIE_TYPE_APPLET, 0, G_ADD_PRIVATE_DYNAMIC(TrashApplet))
 
 /**
@@ -31,9 +44,8 @@ static void trash_applet_finalize(GObject *object) {
 
     g_hash_table_destroy(priv->mounts);
     g_object_unref(priv->volume_monitor);
-    if (priv->settings) {
-        g_clear_object(&priv->settings);
-    }
+    g_object_unref(priv->settings);
+    g_free(priv->uuid);
 
     G_OBJECT_CLASS(trash_applet_parent_class)->finalize(object);
 }
@@ -55,6 +67,17 @@ static void trash_applet_update_popovers(BudgieApplet *base, BudgiePopoverManage
 static void trash_applet_class_init(TrashAppletClass *klazz) {
     GObjectClass *class = G_OBJECT_CLASS(klazz);
     class->finalize = trash_applet_finalize;
+    class->get_property = trash_applet_get_property;
+    class->set_property = trash_applet_set_property;
+
+    applet_props[PROP_APPLET_UUID] = g_param_spec_string(
+        "uuid",
+        "uuid",
+        "The applet's UUID",
+        NULL,
+        G_PARAM_STATIC_STRINGS | G_PARAM_READABLE | G_PARAM_WRITABLE);
+
+    g_object_class_install_properties(class, N_EXP_PROPERTIES, applet_props);
 
     // Set our function to update popovers
     BUDGIE_APPLET_CLASS(klazz)->update_popovers = trash_applet_update_popovers;
@@ -66,6 +89,32 @@ static void trash_applet_class_init(TrashAppletClass *klazz) {
  */
 static void trash_applet_class_finalize(__budgie_unused__ TrashAppletClass *klass) {
     notify_uninit();
+}
+
+static void trash_applet_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec) {
+    TrashApplet *self = TRASH_APPLET(obj);
+
+    switch (prop_id) {
+        case PROP_APPLET_UUID:
+            g_value_set_string(val, self->priv->uuid);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
+            break;
+    }
+}
+
+static void trash_applet_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec) {
+    TrashApplet *self = TRASH_APPLET(obj);
+
+    switch (prop_id) {
+        case PROP_APPLET_UUID:
+            trash_applet_update_uuid(self, (const gchar *) val);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
+            break;
+    }
 }
 
 /**
@@ -139,8 +188,18 @@ void trash_applet_init_gtype(GTypeModule *module) {
     trash_applet_register_type(module);
 }
 
-BudgieApplet *trash_applet_new(void) {
-    return g_object_new(TRASH_TYPE_APPLET, NULL);
+TrashApplet *trash_applet_new(const gchar *uuid) {
+    return g_object_new(TRASH_TYPE_APPLET, "uuid", uuid, NULL);
+}
+
+void trash_applet_update_uuid(TrashApplet *self, const gchar *value) {
+    g_return_if_fail(self != NULL);
+
+    if (g_strcmp0(self->priv->uuid, value) != 0) {
+        g_free(self->priv->uuid);
+        self->priv->uuid = g_strdup(value);
+        g_object_notify_by_pspec(G_OBJECT(self), applet_props[PROP_APPLET_UUID]);
+    }
 }
 
 GtkWidget *trash_create_main_view(TrashApplet *self, TrashSortMode sort_mode) {

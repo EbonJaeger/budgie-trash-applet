@@ -1,6 +1,5 @@
+#include "applet.h"
 #define _GNU_SOURCE
-
-#include <budgie-desktop/plugin.h>
 
 #include "plugin.h"
 
@@ -13,10 +12,10 @@ G_DEFINE_DYNAMIC_TYPE_EXTENDED(TrashPlugin, trash_plugin, G_TYPE_OBJECT, 0,
 /**
  * Return a new panel widget.
  */
-static BudgieApplet *trash_applet_get_panel_widget(__budgie_unused__ BudgiePlugin *self,
-                                                   __budgie_unused__ gchar *uuid) {
-    // TODO: Propagate the UUID to the applet
-    return trash_applet_new();
+static BudgieApplet *trash_applet_get_panel_widget(__budgie_unused__ BudgiePlugin *base,
+                                                   gchar *uuid) {
+    TrashApplet *self = trash_applet_new(uuid);
+    return BUDGIE_APPLET(g_object_ref_sink(self));
 }
 
 /**
