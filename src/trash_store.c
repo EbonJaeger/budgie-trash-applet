@@ -139,6 +139,18 @@ static void trash_store_init(TrashStore *self) {
 
     g_signal_connect_object(self->file_box, "row-activated", G_CALLBACK(trash_store_handle_row_activated), self, 0);
 
+    GtkWidget *placeholder = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    GtkStyleContext *placeholder_style_context = gtk_widget_get_style_context(placeholder);
+    gtk_style_context_add_class(placeholder_style_context, "dim-label");
+    GtkWidget *label = gtk_label_new("<big>Trash bin is empty!</big>");
+    gtk_label_set_use_markup(GTK_LABEL(label), TRUE);
+    gtk_box_pack_start(GTK_BOX(placeholder), label, FALSE, FALSE, 0);
+    gtk_widget_set_halign(placeholder, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(placeholder, GTK_ALIGN_CENTER);
+    gtk_widget_show_all(placeholder);
+
+    gtk_list_box_set_placeholder(GTK_LIST_BOX(self->file_box), placeholder);
+
     gtk_container_add(GTK_CONTAINER(self->file_revealer), self->file_box);
 
     // Pack ourselves up

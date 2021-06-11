@@ -223,7 +223,6 @@ GtkWidget *trash_create_main_view(TrashApplet *self, TrashSortMode sort_mode) {
     // Create the listbox that the mounted drives will go into
     self->priv->drive_box = gtk_list_box_new();
     gtk_widget_set_size_request(self->priv->drive_box, -1, 300);
-    gtk_list_box_set_activate_on_single_click(GTK_LIST_BOX(self->priv->drive_box), TRUE);
     gtk_list_box_set_selection_mode(GTK_LIST_BOX(self->priv->drive_box), GTK_SELECTION_NONE);
     GtkStyleContext *drive_box_style = gtk_widget_get_style_context(self->priv->drive_box);
     gtk_style_context_add_class(drive_box_style, "trash-applet-list");
