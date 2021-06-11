@@ -22,7 +22,7 @@ datadir = join_paths(prefix, get_option('datadir'))
 localedir = join_paths(prefix, get_option('localedir'))
 podir = join_paths(meson.source_root(), 'po')
 
-APPLET_INSTALL_DIR = join_paths(libdir, 'budgie-desktop', 'plugins', meson.project_name())
+APPLET_INSTALL_DIR = join_paths(libdir, 'budgie-desktop', 'plugins', 'com.github.EbonJaeger.budgie-trash-applet')
 
 subdir('data')
 subdir('style')
