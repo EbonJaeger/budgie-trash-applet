@@ -9,6 +9,7 @@ trash_applet_deps = [
 ]
 
 trash_applet_sources = [
+    'trash_enum_types.c',
     'trash_icon_button.c',
     'trash_info.c',
     'trash_item.c',
@@ -28,34 +29,11 @@ trash_applet_sources += gnome.compile_resources('budgie-trash-applet-resources',
     c_name: 'budgie_trash_applet',
 )
 
-trash_applet_enum_headers = [
-    'trash_settings.h',
-]
-
-# Enumerations for GType
-trash_enums = gnome.mkenums_simple(
-    'trash_enum_types',
-    sources: trash_applet_enum_headers,
-)
-
-trashlib = library(
-    'budgietrashapplet',
-    sources: trash_enums,
-    dependencies: trash_applet_deps,
-    install: true,
-    install_dir: libdir,
-)
-
-trashlib_dep = declare_dependency(
-    sources: trash_enums[1],
-    link_with: trashlib,
-)
-
 # Build the applet binary
 shared_library(
     'trashapplet',
     trash_applet_sources,
-    dependencies: trash_applet_deps + [ trashlib_dep ],
+    dependencies: trash_applet_deps,
     install: true,
     install_dir: APPLET_INSTALL_DIR,
 )
