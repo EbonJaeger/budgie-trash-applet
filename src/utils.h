@@ -30,6 +30,14 @@ gpointer trash_delete_file(FileDeleteData *data);
 gboolean trash_delete_directory_recursive(const gchar *path, GError **err);
 
 /**
+ * Sanitize a path by replacing certain character codes with the actual
+ * character, e.g. '%20' becomes a space.
+ *
+ * The returned string should be freed with `g_free()`.
+ */
+gchar *sanitize_path(gchar *path);
+
+/**
  * Returns a new string consisting of the substring of the full string
  * starting at `offset` and going until `length`.
  *

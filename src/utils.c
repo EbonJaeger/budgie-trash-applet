@@ -85,6 +85,17 @@ gboolean trash_delete_directory_recursive(const gchar *path, GError **err) {
     return g_file_delete(file, NULL, err);
 }
 
+gchar *sanitize_path(gchar *path) {
+    g_strstrip(path);
+
+    g_autoptr(GString) tmp = g_string_new(path);
+    g_string_replace(tmp, "%20", " ", 0);
+    g_string_replace(tmp, "%28", "(", 0);
+    g_string_replace(tmp, "%29", ")", 0);
+
+    return g_strdup(tmp->str);
+}
+
 gchar *substring(gchar *source, gint offset, size_t length) {
     if ((offset + length > strlen(source)) && length != strlen(source)) {
         return NULL;

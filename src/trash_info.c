@@ -1,4 +1,5 @@
 #include "trash_info.h"
+#include "utils.h"
 
 TrashInfo *trash_info_new(gchar *file_name, gchar *file_path, gboolean is_directory) {
     TrashInfo *self = g_slice_new(TrashInfo);
@@ -34,6 +35,7 @@ void trash_info_set_from_trashinfo(TrashInfo *self, GFile *info_file, gchar *pre
     if (prefix) {
         restore_path = g_strconcat(prefix, G_DIR_SEPARATOR_S, restore_path, NULL);
     }
+    restore_path = sanitize_path(restore_path);
     g_autofree gchar *deletion_time_str = g_strstrip(substring(lines[1], TRASH_INFO_DELETION_DATE_PREFIX_OFFSET, strlen(lines[1])));
     g_autoptr(GTimeZone) tz = g_time_zone_new_local();
     GDateTime *deletion_time = g_date_time_new_from_iso8601((const gchar *) deletion_time_str, tz);
