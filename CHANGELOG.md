@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v2.0.0] - 2021-06-13
+
 - Formatting improvements to the item info revealers
 - Tooltip improvements throughout the applet (more relevant, descriptive, etc.)
 - Confirmation revealer text now line-wraps if it is too long
@@ -16,5 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Trash bins can now be collapsed by clicking on the header
 - Add placeholder text when a trash bin is empty
 - Add appstream info file
+- Various style changes
 
-[unreleased]: https://github.com/EbonJaeger/budgie-trash-applet/compare/v1.2.0...master
+[unreleased]: https://github.com/EbonJaeger/budgie-trash-applet/compare/v2.0.0...master
+[v2.0.0]: https://github.com/EbonJaeger/budgie-trash-applet/compare/v1.2.0...v2.0.0
