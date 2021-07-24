@@ -109,7 +109,7 @@ static void trash_applet_set_property(GObject *obj, guint prop_id, const GValue 
 
     switch (prop_id) {
         case PROP_APPLET_UUID:
-            trash_applet_update_uuid(self, (const gchar *) val);
+            trash_applet_update_uuid(self, g_value_get_string(val));
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
@@ -193,13 +193,18 @@ TrashApplet *trash_applet_new(const gchar *uuid) {
 }
 
 void trash_applet_update_uuid(TrashApplet *self, const gchar *value) {
-    g_return_if_fail(self != NULL);
+    g_return_if_fail(TRASH_IS_APPLET(self));
 
-    if (g_strcmp0(self->priv->uuid, value) != 0) {
-        g_free(self->priv->uuid);
-        self->priv->uuid = g_strdup(value);
-        g_object_notify_by_pspec(G_OBJECT(self), applet_props[PROP_APPLET_UUID]);
+    if (value == NULL || g_strcmp0(value, "") == 0) {
+        return;
     }
+
+    if (self->priv->uuid != NULL && g_strcmp0(self->priv->uuid, "") != 0) {
+        g_free(self->priv->uuid);
+    }
+
+    self->priv->uuid = g_strdup(value);
+    g_object_notify_by_pspec(G_OBJECT(self), applet_props[PROP_APPLET_UUID]);
 }
 
 GtkWidget *trash_create_main_view(TrashApplet *self, TrashSortMode sort_mode) {
