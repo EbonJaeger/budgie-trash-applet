@@ -31,12 +31,15 @@ void trash_info_set_from_trashinfo(TrashInfo *self, GFile *info_file, gchar *pre
     g_input_stream_close(G_INPUT_STREAM(input_stream), NULL, NULL);
 
     gchar **lines = g_strsplit(buffer, "\n", 2);
-    gchar *restore_path = substring(lines[0], TRASH_INFO_PATH_PREFIX_OFFSET, strlen(lines[0]));
+    gchar *restore_path = trash_utils_substring(lines[0], TRASH_INFO_PATH_PREFIX_OFFSET, strlen(lines[0]));
+    g_return_if_fail(restore_path != NULL);
     if (prefix) {
         restore_path = g_strconcat(prefix, G_DIR_SEPARATOR_S, restore_path, NULL);
     }
-    restore_path = sanitize_path(restore_path);
-    g_autofree gchar *deletion_time_str = g_strstrip(substring(lines[1], TRASH_INFO_DELETION_DATE_PREFIX_OFFSET, strlen(lines[1])));
+    restore_path = trash_utils_sanitize_path(restore_path);
+    g_autofree gchar *deletion_time_str = trash_utils_substring(lines[1], TRASH_INFO_DELETION_DATE_PREFIX_OFFSET, strlen(lines[1]));
+    g_return_if_fail(deletion_time_str != NULL);
+    g_strstrip(deletion_time_str);
     g_autoptr(GTimeZone) tz = g_time_zone_new_local();
     GDateTime *deletion_time = g_date_time_new_from_iso8601((const gchar *) deletion_time_str, tz);
     g_strfreev(lines);

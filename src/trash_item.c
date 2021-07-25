@@ -176,7 +176,7 @@ void trash_item_toggle_info_revealer(TrashItem *self) {
 
 void trash_item_delete(TrashItem *self, GError **err) {
     FileDeleteData *data = file_delete_data_new(self->trash_info->file_path, self->trash_info->is_directory);
-    GThread *thread = g_thread_try_new("trash-delete-thread", (GThreadFunc) trash_delete_file, file_delete_data_ref(data), err);
+    GThread *thread = g_thread_try_new("trash-delete-thread", (GThreadFunc) trash_utils_delete_file, file_delete_data_ref(data), err);
     if (!thread) {
         file_delete_data_unref(data);
         return;

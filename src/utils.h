@@ -19,7 +19,7 @@ void file_delete_data_unref(gpointer user_data);
  * the entire file tree inside the directory because directories
  * must be empty in order to be deleted.
  */
-gpointer trash_delete_file(FileDeleteData *data);
+gpointer trash_utils_delete_file(FileDeleteData *data);
 
 /**
  * Recursively attempt to delete an entire directory tree from the
@@ -27,7 +27,7 @@ gpointer trash_delete_file(FileDeleteData *data);
  *
  * On error, FALSE is returned and err is set.
  */
-gboolean trash_delete_directory_recursive(const gchar *path, GError **err);
+gboolean trash_utils_delete_directory_recursive(const gchar *path, GError **err);
 
 /**
  * Sanitize a path by replacing certain character codes with the actual
@@ -35,7 +35,7 @@ gboolean trash_delete_directory_recursive(const gchar *path, GError **err);
  *
  * The returned string should be freed with `g_free()`.
  */
-gchar *sanitize_path(gchar *path);
+gchar *trash_utils_sanitize_path(gchar *path);
 
 /**
  * Returns a new string consisting of the substring of the full string
@@ -43,4 +43,4 @@ gchar *sanitize_path(gchar *path);
  *
  * The returned string should be freed with `g_free()`.
  */
-gchar *substring(gchar *source, gint offset, size_t length);
+gchar *trash_utils_substring(gchar *source, gint offset, size_t length);

@@ -29,13 +29,13 @@ FileDeleteData *file_delete_data_new(const char *file_path, gboolean is_director
     return data;
 }
 
-gpointer trash_delete_file(FileDeleteData *data) {
+gpointer trash_utils_delete_file(FileDeleteData *data) {
     g_autoptr(GFile) file = g_file_new_for_path(data->file_path);
     g_autoptr(GError) err = NULL;
     gboolean success = TRUE;
 
     if (data->is_directory) {
-        success = trash_delete_directory_recursive(data->file_path, &err);
+        success = trash_utils_delete_directory_recursive(data->file_path, &err);
     } else {
         success = g_file_delete(file, NULL, &err);
     }
@@ -48,7 +48,7 @@ gpointer trash_delete_file(FileDeleteData *data) {
     return NULL;
 }
 
-gboolean trash_delete_directory_recursive(const gchar *path, GError **err) {
+gboolean trash_utils_delete_directory_recursive(const gchar *path, GError **err) {
     GFileInfo *file_info;
     g_autoptr(GFile) file = g_file_new_for_path(path);
     g_autoptr(GFileEnumerator) enumerator = g_file_enumerate_children(file,
@@ -65,7 +65,7 @@ gboolean trash_delete_directory_recursive(const gchar *path, GError **err) {
 
         if (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY) {
             // Directories must be empty to be deleted, so recursively delete all children first
-            success = trash_delete_directory_recursive(child_path, err);
+            success = trash_utils_delete_directory_recursive(child_path, err);
         } else {
             // Not a directory, just delete the file
             g_autoptr(GFile) child_file = g_file_new_for_path(child_path);
@@ -85,7 +85,8 @@ gboolean trash_delete_directory_recursive(const gchar *path, GError **err) {
     return g_file_delete(file, NULL, err);
 }
 
-gchar *sanitize_path(gchar *path) {
+gchar *trash_utils_sanitize_path(gchar *path) {
+    g_return_val_if_fail(path != NULL, NULL);
     g_strstrip(path);
 
     g_autoptr(GString) tmp = g_string_new(path);
@@ -96,16 +97,21 @@ gchar *sanitize_path(gchar *path) {
     return g_strdup(tmp->str);
 }
 
-gchar *substring(gchar *source, gint offset, size_t length) {
-    if ((offset + length > strlen(source)) && length != strlen(source)) {
+gchar *trash_utils_substring(gchar *source, gint offset, size_t length) {
+    size_t source_len = strlen(source);
+
+    // Make sure we aren't trying to copy past the length of the source string
+    if ((offset + length > source_len) && length != source_len) {
         return NULL;
     }
 
-    if (length == strlen(source)) {
+    if (length == source_len) {
+        // Set the length to the number of chars being copied
         length = length - offset;
     }
 
     gchar *dest = malloc(sizeof(gchar) * length + 1);
+    g_return_val_if_fail(dest != NULL, NULL);
 
     strncpy(dest, source + offset, length);
     dest[length] = '\0';

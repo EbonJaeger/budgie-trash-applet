@@ -290,7 +290,7 @@ void trash_drag_data_received(__budgie_unused__ TrashApplet *self,
 
     g_autofree gchar *d = g_strdup((gchar *) gtk_selection_data_get_data(data));
     if (g_str_has_prefix(d, "file://")) {
-        g_autofree gchar *path = sanitize_path(substring(d, 7, strlen(d)));
+        g_autofree gchar *path = trash_utils_sanitize_path(trash_utils_substring(d, 7, strlen(d)));
 
         g_autoptr(GFile) file = g_file_new_for_path(path);
         g_autoptr(GError) err = NULL;
