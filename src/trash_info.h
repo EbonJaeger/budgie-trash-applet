@@ -27,6 +27,8 @@ typedef struct {
     gchar *file_name;
     gchar *file_path;
 
+    goffset size;
+
     gboolean is_directory;
 
     gchar *restore_path;
@@ -40,7 +42,7 @@ typedef struct {
 /**
  * Create a new TrashInfo struct.
  */
-TrashInfo *trash_info_new(gchar *file_name, gchar *file_path, gboolean is_directory);
+TrashInfo *trash_info_new(gchar *file_name, gchar *file_path, gboolean is_directory, goffset size);
 
 /**
  * Set fields of the TrashInfo struct that have to be read

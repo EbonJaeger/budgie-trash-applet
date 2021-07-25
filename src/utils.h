@@ -2,6 +2,7 @@
 
 #include "notify.h"
 #include <gio/gio.h>
+#include <math.h>
 #include <string.h>
 
 #define FILE_ATTRIBUTES_STANDARD_NAME_AND_TYPE "standard::name,standard::type"
@@ -28,6 +29,22 @@ gpointer trash_utils_delete_file(FileDeleteData *data);
  * On error, FALSE is returned and err is set.
  */
 gboolean trash_utils_delete_directory_recursive(const gchar *path, GError **err);
+
+/**
+ * Constructs a string with the given size (in bytes) at the given base
+ * (1024 for bytes, KB, MB, etc).
+ * 
+ * The returned string will consist of the number and the correct unit
+ * suffix.
+ * 
+ * The returned string should be freed with `g_free()`.
+ */
+gchar *trash_utils_humanize_bytes(goffset size, gint base);
+
+/**
+ * Calculate the logarithm of a number for a given base.
+ */
+gdouble trash_utils_logn(gdouble n, gdouble base);
 
 /**
  * Sanitize a path by replacing certain character codes with the actual

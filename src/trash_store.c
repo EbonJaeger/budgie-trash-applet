@@ -397,6 +397,7 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, gchar *path) {
     g_autoptr(GFile) file = g_file_new_for_path(path);
     g_autofree gchar *attributes = g_strconcat(G_FILE_ATTRIBUTE_STANDARD_NAME, ",",
                                                G_FILE_ATTRIBUTE_STANDARD_ICON, ",",
+                                               G_FILE_ATTRIBUTE_STANDARD_SIZE, ",",
                                                G_FILE_ATTRIBUTE_STANDARD_TYPE,
                                                NULL);
     g_autoptr(GFileInfo) file_info = g_file_query_info(file, attributes, G_FILE_QUERY_INFO_NONE, NULL, NULL);
@@ -408,7 +409,8 @@ TrashItem *trash_store_create_trash_item(TrashStore *self, gchar *path) {
 
     trash_info = trash_info_new(file_name,
                                 g_build_path(G_DIR_SEPARATOR_S, self->trash_path, file_name, NULL),
-                                (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY));
+                                (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY),
+                                g_file_info_get_size(file_info));
     trash_info_set_from_trashinfo(trash_info, info_file, self->path_prefix);
 
     TrashItem *trash_item = trash_item_new(g_file_info_get_icon(file_info), trash_info);

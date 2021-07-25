@@ -16,6 +16,7 @@ struct _TrashItem {
     GtkWidget *info_revealer;
     GtkWidget *info_container;
     GtkWidget *path_label;
+    GtkWidget *size_label;
     GtkWidget *timestamp_label;
 
     TrashRevealer *confirm_revealer;
@@ -107,6 +108,12 @@ TrashItem *trash_item_new(GIcon *icon, TrashInfo *trash_info) {
     gtk_box_pack_start(GTK_BOX(self->info_container), self->path_label, TRUE, TRUE, 0);
 
     gtk_widget_set_tooltip_text(self->path_label, trash_info->restore_path);
+
+    self->size_label = gtk_label_new(g_strconcat("<b>Size:</b> ", trash_utils_humanize_bytes(self->trash_info->size, 1024), NULL));
+    gtk_label_set_use_markup(GTK_LABEL(self->size_label), TRUE);
+    gtk_widget_set_halign(self->size_label, GTK_ALIGN_START);
+    gtk_label_set_justify(GTK_LABEL(self->size_label), GTK_JUSTIFY_LEFT);
+    gtk_box_pack_start(GTK_BOX(self->info_container), self->size_label, TRUE, TRUE, 0);
 
     self->timestamp_label = gtk_label_new(g_strconcat("<b>Deleted at:</b> ", g_date_time_format(trash_info->deleted_time, "%d %b %Y %X"), NULL));
     gtk_label_set_use_markup(GTK_LABEL(self->timestamp_label), TRUE);

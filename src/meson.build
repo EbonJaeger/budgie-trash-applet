@@ -34,6 +34,7 @@ shared_library(
     'trashapplet',
     trash_applet_sources,
     dependencies: trash_applet_deps,
+    link_args: '-lm',
     install: true,
     install_dir: APPLET_INSTALL_DIR,
 )

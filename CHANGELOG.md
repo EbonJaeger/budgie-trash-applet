@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Add file size to info displays (credit to brent for the idea)
+
 ## [v2.0.0] - 2021-06-13
 
 - Formatting improvements to the item info revealers

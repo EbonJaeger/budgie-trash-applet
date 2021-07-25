@@ -85,6 +85,20 @@ gboolean trash_utils_delete_directory_recursive(const gchar *path, GError **err)
     return g_file_delete(file, NULL, err);
 }
 
+gchar *trash_utils_humanize_bytes(goffset size, gint base) {
+    const gchar *units[5] = {"B", "KB", "MB", "GB", "TB"};
+
+    gdouble exponent = floor(trash_utils_logn(size, base));
+    const gchar *suffix = units[(size_t) exponent];
+    gdouble value = floor(size / pow(base, exponent) * 10 + 0.5) / 10;
+
+    return g_strdup_printf("%#.1f %s", value, suffix);
+}
+
+gdouble trash_utils_logn(gdouble n, gdouble base) {
+    return log(n) / log(base);
+}
+
 gchar *trash_utils_sanitize_path(gchar *path) {
     g_return_val_if_fail(path != NULL, NULL);
     g_strstrip(path);
