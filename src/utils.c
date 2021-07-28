@@ -82,16 +82,6 @@ gpointer trash_utils_delete_file(FileDeleteData *data) {
     return NULL;
 }
 
-gchar *trash_utils_humanize_bytes(goffset size, gint base) {
-    const gchar *units[5] = {"B", "KB", "MB", "GB", "TB"};
-
-    gdouble exponent = floor(trash_utils_logn(size, base));
-    const gchar *suffix = units[(size_t) exponent];
-    gdouble value = floor(size / pow(base, exponent) * 10 + 0.5) / 10;
-
-    return g_strdup_printf("%#.1f %s", value, suffix);
-}
-
 gboolean trash_utils_is_string_valid(gchar *string) {
     return (string != NULL && g_strcmp0(string, "") != 0);
 }

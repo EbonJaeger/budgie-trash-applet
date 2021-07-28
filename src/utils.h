@@ -19,17 +19,6 @@ void file_delete_data_unref(gpointer user_data);
 gpointer trash_utils_delete_file(FileDeleteData *data);
 
 /**
- * Constructs a string with the given size (in bytes) at the given base
- * (1024 for bytes, KB, MB, etc).
- * 
- * The returned string will consist of the number and the correct unit
- * suffix.
- * 
- * The returned string should be freed with `g_free()`.
- */
-gchar *trash_utils_humanize_bytes(goffset size, gint base);
-
-/**
  * Checks if a string is not `NULL` and not empty.
  */
 gboolean trash_utils_is_string_valid(gchar *string);

@@ -130,7 +130,7 @@ TrashItem *trash_item_new(const gchar *uri) {
 
     gtk_widget_set_tooltip_text(self->path_label, trash_info->restore_path);
 
-    self->size_label = gtk_label_new(g_strconcat("<b>Size:</b> ", trash_utils_humanize_bytes(self->trash_info->size, 1024), NULL));
+    self->size_label = gtk_label_new(g_strconcat("<b>Size:</b> ", g_format_size(self->trash_info->size), NULL));
     gtk_label_set_use_markup(GTK_LABEL(self->size_label), TRUE);
     gtk_widget_set_halign(self->size_label, GTK_ALIGN_START);
     gtk_label_set_justify(GTK_LABEL(self->size_label), GTK_JUSTIFY_LEFT);
