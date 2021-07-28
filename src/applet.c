@@ -195,11 +195,11 @@ TrashApplet *trash_applet_new(const gchar *uuid) {
 void trash_applet_update_uuid(TrashApplet *self, const gchar *value) {
     g_return_if_fail(TRASH_IS_APPLET(self));
 
-    if (value == NULL || g_strcmp0(value, "") == 0) {
+    if (!trash_utils_is_string_valid((char *) value)) {
         return;
     }
 
-    if (self->priv->uuid != NULL && g_strcmp0(self->priv->uuid, "") != 0) {
+    if (trash_utils_is_string_valid(self->priv->uuid)) {
         g_free(self->priv->uuid);
     }
 
@@ -306,8 +306,6 @@ void trash_drag_data_received(__budgie_unused__ TrashApplet *self,
 
 void trash_add_mount(GMount *mount, TrashApplet *self) {
     g_autoptr(GFile) location = g_mount_get_default_location(mount);
-    g_autofree gchar *attributes = g_strconcat(G_FILE_ATTRIBUTE_STANDARD_NAME, ",",
-                                               G_FILE_ATTRIBUTE_STANDARD_TYPE, NULL);
 
     // Calculate the length of the dir name we're looking for, with an extra
     // space for a NULL terminator. We use `snprintf` to count the length of
@@ -318,7 +316,7 @@ void trash_add_mount(GMount *mount, TrashApplet *self) {
 
     g_autoptr(GError) err = NULL;
     g_autoptr(GFileEnumerator) enumerator = g_file_enumerate_children(location,
-                                                                      attributes,
+                                                                      G_FILE_ATTRIBUTE_STANDARD_NAME "," G_FILE_ATTRIBUTE_STANDARD_TYPE,
                                                                       G_FILE_QUERY_INFO_NONE,
                                                                       NULL,
                                                                       &err);
@@ -338,10 +336,9 @@ void trash_add_mount(GMount *mount, TrashApplet *self) {
             continue;
         }
 
+        // TODO: Make sure we aren't copying this twice
         g_autofree gchar *trash_path = g_build_path(G_DIR_SEPARATOR_S, g_file_get_path(location), g_file_info_get_name(current_file), "files", NULL);
-        g_autofree gchar *trashinfo_path = g_build_path(G_DIR_SEPARATOR_S, g_file_get_path(location), g_file_info_get_name(current_file), "info", NULL);
-
-        TrashStore *store = trash_store_new_with_extras(g_mount_get_name(mount), g_settings_get_enum(self->priv->settings, TRASH_SETTINGS_KEY_SORT_MODE), g_mount_get_symbolic_icon(mount), g_strdup(g_file_get_path(location)), g_strdup(trash_path), g_strdup(trashinfo_path));
+        TrashStore *store = trash_store_new_with_path(g_mount_get_name(mount), g_settings_get_enum(self->priv->settings, TRASH_SETTINGS_KEY_SORT_MODE), g_mount_get_symbolic_icon(mount), g_strdup(trash_path));
         g_autoptr(GError) inner_err = NULL;
         trash_store_load_items(store, inner_err);
         if (inner_err) {

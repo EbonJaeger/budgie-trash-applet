@@ -26,9 +26,9 @@ struct _TrashItemClass {
     GtkBoxClass parent_class;
 };
 
-static void trash_item_finalize(GObject *obj);
+G_DEFINE_TYPE(TrashItem, trash_item, GTK_TYPE_BOX)
 
-G_DEFINE_TYPE(TrashItem, trash_item, GTK_TYPE_BOX);
+static void trash_item_finalize(GObject *obj);
 
 static void trash_item_class_init(TrashItemClass *klazz) {
     GObjectClass *class = G_OBJECT_CLASS(klazz);
@@ -84,13 +84,34 @@ static void trash_item_finalize(GObject *obj) {
     G_OBJECT_CLASS(trash_item_parent_class)->finalize(obj);
 }
 
-TrashItem *trash_item_new(GIcon *icon, TrashInfo *trash_info) {
+TrashItem *trash_item_new(const gchar *uri) {
+    g_autoptr(GFile) file = g_file_new_for_uri(uri);
+    g_autoptr(GError) err = NULL;
+    g_autoptr(GFileInfo) file_info = g_file_query_info(file, TRASH_FILE_ATTRIBUTES, G_FILE_QUERY_INFO_NONE, NULL, &err);
+
+    if (!G_IS_FILE_INFO(file_info)) {
+        g_warning("%s:%d: Unable to get file info for '%s': %s", __BASE_FILE__, __LINE__, uri, err->message);
+        return NULL;
+    }
+
+    gchar *file_name = (gchar *) g_file_info_get_name(file_info);
+    TrashInfo *trash_info = NULL;
+
+    // TODO: ew
+    trash_info = trash_info_new(file_name,
+                                uri,
+                                (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY),
+                                g_file_info_get_size(file_info));
+    trash_info->deleted_time = g_file_info_get_deletion_date(file_info);
+    trash_info->restore_path = g_strdup(g_file_info_get_attribute_byte_string(file_info, G_FILE_ATTRIBUTE_TRASH_ORIG_PATH));
+
+    // Create the widget
     TrashItem *self = g_object_new(TRASH_TYPE_ITEM, "orientation", GTK_ORIENTATION_VERTICAL, NULL);
     self->trash_info = trash_info;
 
     gtk_widget_set_tooltip_text(self->header, self->trash_info->file_name);
 
-    self->file_icon = gtk_image_new_from_gicon(icon, GTK_ICON_SIZE_SMALL_TOOLBAR);
+    self->file_icon = gtk_image_new_from_gicon(g_file_info_get_icon(file_info), GTK_ICON_SIZE_SMALL_TOOLBAR);
     gtk_box_pack_start(GTK_BOX(self->header), self->file_icon, FALSE, FALSE, 5);
 
     self->file_name_label = gtk_label_new(self->trash_info->file_name);
@@ -168,9 +189,6 @@ void trash_item_handle_confirm_clicked(__attribute__((unused)) GtkButton *sender
     if (err) {
         g_critical("%s:%d: Error clearing file from trash '%s': %s", __BASE_FILE__, __LINE__, self->trash_info->file_name, err->message);
     }
-
-    trash_item_set_btns_sensitive(self, TRUE);
-    gtk_revealer_set_reveal_child(GTK_REVEALER(self->confirm_revealer), FALSE);
 }
 
 void trash_item_toggle_info_revealer(TrashItem *self) {
@@ -182,20 +200,32 @@ void trash_item_toggle_info_revealer(TrashItem *self) {
 }
 
 void trash_item_delete(TrashItem *self, GError **err) {
-    FileDeleteData *data = file_delete_data_new(self->trash_info->file_path, self->trash_info->is_directory);
+    GFile *file = g_file_new_for_uri(self->trash_info->file_path);
+    if (!G_IS_FILE(file)) {
+        return;
+    }
+
+    FileDeleteData *data = file_delete_data_new(file, self->trash_info->is_directory, self->trash_info->is_directory && !g_file_has_uri_scheme(file, "trash"));
     GThread *thread = g_thread_try_new("trash-delete-thread", (GThreadFunc) trash_utils_delete_file, file_delete_data_ref(data), err);
     if (!thread) {
         file_delete_data_unref(data);
         return;
     }
 
-    file_delete_data_unref(data);
     g_thread_unref(thread);
 }
 
 void trash_item_restore(TrashItem *self, GError **err) {
-    g_autoptr(GFile) trashed_file = g_file_new_for_path(self->trash_info->file_path);
+    g_autoptr(GFile) trashed_file = g_file_new_for_uri(self->trash_info->file_path);
     g_autoptr(GFile) restored_file = g_file_new_for_path(self->trash_info->restore_path);
+
+    if (!G_IS_FILE(trashed_file)) {
+        return;
+    }
+
+    if (!G_IS_FILE(restored_file)) {
+        return;
+    }
 
     g_file_move(trashed_file, restored_file, G_FILE_COPY_ALL_METADATA, NULL, NULL, NULL, err);
 }

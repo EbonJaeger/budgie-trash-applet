@@ -3,8 +3,10 @@
 struct _FileDeleteData {
     int _ref_count;
 
-    const gchar *file_path;
+    GFile *file;
+
     gboolean is_directory;
+    gboolean delete_children;
 };
 
 FileDeleteData *file_delete_data_ref(FileDeleteData *data) {
@@ -15,74 +17,69 @@ FileDeleteData *file_delete_data_ref(FileDeleteData *data) {
 void file_delete_data_unref(gpointer user_data) {
     FileDeleteData *data = (FileDeleteData *) user_data;
     if (g_atomic_int_dec_and_test(&data->_ref_count)) {
-        g_free((gchar *) data->file_path);
         g_slice_free(FileDeleteData, data);
     }
 }
 
-FileDeleteData *file_delete_data_new(const char *file_path, gboolean is_directory) {
+FileDeleteData *file_delete_data_new(GFile *file, gboolean is_directory, gboolean delete_children) {
     FileDeleteData *data = g_slice_new0(FileDeleteData);
     data->_ref_count = 1;
-    data->file_path = file_path;
+    data->file = file;
     data->is_directory = is_directory;
+    data->delete_children = delete_children;
 
     return data;
 }
 
 gpointer trash_utils_delete_file(FileDeleteData *data) {
-    g_autoptr(GFile) file = g_file_new_for_path(data->file_path);
     g_autoptr(GError) err = NULL;
     gboolean success = TRUE;
 
-    if (data->is_directory) {
-        success = trash_utils_delete_directory_recursive(data->file_path, &err);
-    } else {
-        success = g_file_delete(file, NULL, &err);
+    if (data->delete_children) {
+        /* 
+        * The `g_file_delete` operation works differently for locations provided
+        * by the trash backend as it prevents modifications of trashed items.
+        * For that reason, it is enough to call `g_file_delete` on top-level
+        * items only.
+        * 
+        * Source: https://github.com/GNOME/nautilus/blob/master/src/nautilus-file-operations.c#L8037-L8041
+        */
+        gboolean should_recurse = !g_file_has_uri_scheme(data->file, "trash");
+
+        g_autoptr(GFileEnumerator) enumerator = g_file_enumerate_children(data->file,
+                                                                          FILE_ATTRIBUTES_STANDARD_NAME_AND_TYPE,
+                                                                          G_FILE_QUERY_INFO_NONE,
+                                                                          NULL,
+                                                                          NULL);
+
+        if (enumerator) {
+            GFileInfo *file_info;
+            GFile *child;
+            while ((file_info = g_file_enumerator_next_file(enumerator, NULL, NULL))) {
+                child = g_file_get_child(data->file, g_file_info_get_name(file_info));
+                gboolean is_dir = (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY);
+                FileDeleteData *child_data = file_delete_data_new(child, is_dir, should_recurse && is_dir);
+                trash_utils_delete_file(child_data);
+
+                g_object_unref(child);
+                g_object_unref(file_info);
+                file_delete_data_unref(child_data);
+            }
+
+            g_file_enumerator_close(enumerator, NULL, NULL);
+        }
     }
+
+    success = g_file_delete(data->file, NULL, &err);
 
     if (!success) {
         trash_notify_try_send("Trash Bin Error", err->message, "dialog-error-symbolic");
-        g_critical("%s:%d: Error deleting item: %s", __BASE_FILE__, __LINE__, err->message);
+        g_critical("%s:%d: Error deleting item at '%s': %s", __BASE_FILE__, __LINE__, g_file_get_uri(data->file), err->message);
     }
+
+    file_delete_data_unref(data);
 
     return NULL;
-}
-
-gboolean trash_utils_delete_directory_recursive(const gchar *path, GError **err) {
-    GFileInfo *file_info;
-    g_autoptr(GFile) file = g_file_new_for_path(path);
-    g_autoptr(GFileEnumerator) enumerator = g_file_enumerate_children(file,
-                                                                      FILE_ATTRIBUTES_STANDARD_NAME_AND_TYPE,
-                                                                      G_FILE_QUERY_INFO_NONE,
-                                                                      NULL,
-                                                                      NULL);
-
-    gboolean success = TRUE;
-
-    // Iterate over all of the children and delete them
-    while ((file_info = g_file_enumerator_next_file(enumerator, NULL, NULL))) {
-        g_autofree gchar *child_path = g_build_path(G_DIR_SEPARATOR_S, path, g_file_info_get_name(file_info), NULL);
-
-        if (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY) {
-            // Directories must be empty to be deleted, so recursively delete all children first
-            success = trash_utils_delete_directory_recursive(child_path, err);
-        } else {
-            // Not a directory, just delete the file
-            g_autoptr(GFile) child_file = g_file_new_for_path(child_path);
-            success = g_file_delete(child_file, NULL, err);
-        }
-
-        g_object_unref(file_info);
-
-        if (!success) {
-            return success;
-        }
-    }
-
-    g_file_enumerator_close(enumerator, NULL, NULL);
-
-    // Delete the current file
-    return g_file_delete(file, NULL, err);
 }
 
 gchar *trash_utils_humanize_bytes(goffset size, gint base) {
@@ -95,6 +92,10 @@ gchar *trash_utils_humanize_bytes(goffset size, gint base) {
     return g_strdup_printf("%#.1f %s", value, suffix);
 }
 
+gboolean trash_utils_is_string_valid(gchar *string) {
+    return (string != NULL && g_strcmp0(string, "") != 0);
+}
+
 gdouble trash_utils_logn(gdouble n, gdouble base) {
     return log(n) / log(base);
 }
@@ -104,9 +105,13 @@ gchar *trash_utils_sanitize_path(gchar *path) {
     g_strstrip(path);
 
     g_autoptr(GString) tmp = g_string_new(path);
+    g_string_replace(tmp, "%25", "%", 0);
     g_string_replace(tmp, "%20", " ", 0);
     g_string_replace(tmp, "%28", "(", 0);
     g_string_replace(tmp, "%29", ")", 0);
+    g_string_replace(tmp, "%5C", "/", 0);
+    g_string_replace(tmp, "%29", ")", 0);
+    g_string_replace(tmp, "\\", "/", 0);
 
     return g_strdup(tmp->str);
 }
