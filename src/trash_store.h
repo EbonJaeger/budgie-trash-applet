@@ -51,7 +51,7 @@ void trash_store_handle_row_activated(GtkListBox *sender, GtkListBoxRow *row, Tr
  * Otherwise, in the case of mounts, the function will escape the path to the file because
  * that is what seems to happen when GLib(?) puts items in the `trash` URI scheme.
  */
-GUri *trash_store_get_uri_for_file(TrashStore *self, GFileInfo *file_info);
+GUri *trash_store_get_uri_for_file(TrashStore *self, const gchar *file_name);
 
 /**
  * Handles file events for this store's trash directory.

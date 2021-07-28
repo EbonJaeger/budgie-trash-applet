@@ -313,16 +313,15 @@ void trash_store_handle_row_activated(__attribute__((unused)) GtkListBox *sender
     trash_item_toggle_info_revealer(TRASH_ITEM(child));
 }
 
-GUri *trash_store_get_uri_for_file(TrashStore *self, GFileInfo *file_info) {
+GUri *trash_store_get_uri_for_file(TrashStore *self, const gchar *file_name) {
     if (!TRASH_IS_STORE(self)) {
         return NULL;
     }
 
-    if (!G_IS_FILE_INFO(file_info)) {
+    if (!trash_utils_is_string_valid((gchar *) file_name)) {
         return NULL;
     }
 
-    const gchar *file_name = g_file_info_get_name(file_info);
     g_autofree gchar *path = NULL;
     if (self->is_default) {
         path = g_strconcat("/", file_name, NULL);
@@ -360,12 +359,7 @@ void trash_store_handle_monitor_event(__attribute__((unused)) GFileMonitor *moni
                                       TrashStore *self) {
     switch (event_type) {
         case G_FILE_MONITOR_EVENT_MOVED_IN: {
-            g_autoptr(GFileInfo) file_info = g_file_query_info(file,
-                                                               G_FILE_ATTRIBUTE_STANDARD_NAME "," G_FILE_ATTRIBUTE_STANDARD_ICON,
-                                                               G_FILE_QUERY_INFO_NONE,
-                                                               NULL,
-                                                               NULL);
-            g_autoptr(GUri) uri = trash_store_get_uri_for_file(self, file_info);
+            g_autoptr(GUri) uri = trash_store_get_uri_for_file(self, g_file_get_basename(file));
             g_return_if_fail(uri != NULL);
             TrashItem *trash_item = trash_item_new(g_uri_to_string(uri));
             g_return_if_fail(TRASH_IS_ITEM(trash_item));
@@ -415,7 +409,7 @@ void trash_store_load_items(TrashStore *self, GError *err) {
     // Iterate over the directory's children and append each file name to a list
     g_autoptr(GFileInfo) current_file = NULL;
     while ((current_file = g_file_enumerator_next_file(enumerator, NULL, &err))) {
-        g_autoptr(GUri) uri = trash_store_get_uri_for_file(self, current_file);
+        g_autoptr(GUri) uri = trash_store_get_uri_for_file(self, g_file_info_get_name(current_file));
         TrashItem *trash_item = trash_item_new(g_uri_to_string(uri));
 
         if (!TRASH_IS_ITEM(trash_item)) {
