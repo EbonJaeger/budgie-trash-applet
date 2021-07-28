@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 - Add file size to info displays (credit to brent for the idea)
+- Fix file operations on trashed items failing because of permission issues (#8)
 
 ## [v2.0.0] - 2021-06-13
 
