@@ -100,22 +100,6 @@ gdouble trash_utils_logn(gdouble n, gdouble base) {
     return log(n) / log(base);
 }
 
-gchar *trash_utils_sanitize_path(gchar *path) {
-    g_return_val_if_fail(path != NULL, NULL);
-    g_strstrip(path);
-
-    g_autoptr(GString) tmp = g_string_new(path);
-    g_string_replace(tmp, "%25", "%", 0);
-    g_string_replace(tmp, "%20", " ", 0);
-    g_string_replace(tmp, "%28", "(", 0);
-    g_string_replace(tmp, "%29", ")", 0);
-    g_string_replace(tmp, "%5C", "/", 0);
-    g_string_replace(tmp, "%29", ")", 0);
-    g_string_replace(tmp, "\\", "/", 0);
-
-    return g_strdup(tmp->str);
-}
-
 gchar *trash_utils_substring(gchar *source, gint offset, size_t length) {
     size_t source_len = strlen(source);
 

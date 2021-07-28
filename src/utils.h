@@ -40,14 +40,6 @@ gboolean trash_utils_is_string_valid(gchar *string);
 gdouble trash_utils_logn(gdouble n, gdouble base);
 
 /**
- * Sanitize a path by replacing certain character codes with the actual
- * character, e.g. '%20' becomes a space.
- *
- * The returned string should be freed with `g_free()`.
- */
-gchar *trash_utils_sanitize_path(gchar *path);
-
-/**
  * Returns a new string consisting of the substring of the full string
  * starting at `offset` and going until `length`.
  *

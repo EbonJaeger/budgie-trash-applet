@@ -288,11 +288,12 @@ void trash_drag_data_received(__budgie_unused__ TrashApplet *self,
         return;
     }
 
-    g_autofree gchar *d = g_strdup((gchar *) gtk_selection_data_get_data(data));
-    if (g_str_has_prefix(d, "file://")) {
-        g_autofree gchar *path = trash_utils_sanitize_path(trash_utils_substring(d, 7, strlen(d)));
+    g_autofree gchar *uri = g_strdup((gchar *) gtk_selection_data_get_data(data));
+    if (g_str_has_prefix(uri, "file://")) {
+        g_autofree gchar *unescaped_uri = g_uri_unescape_string(uri, NULL);
+        g_strstrip(unescaped_uri); // Make sure there's nothing silly like a trailing newline
+        g_autoptr(GFile) file = g_file_new_for_uri(unescaped_uri);
 
-        g_autoptr(GFile) file = g_file_new_for_path(path);
         g_autoptr(GError) err = NULL;
         if (!g_file_trash(file, NULL, &err)) {
             trash_notify_try_send("Error Trashing File", err->message, "dialog-error-symbolic");
