@@ -7,13 +7,11 @@
 
 G_BEGIN_DECLS
 
-#define TRASH_FILE_ATTRIBUTES G_FILE_ATTRIBUTE_STANDARD_NAME "," G_FILE_ATTRIBUTE_STANDARD_ICON "," G_FILE_ATTRIBUTE_STANDARD_SIZE "," G_FILE_ATTRIBUTE_STANDARD_TYPE "," G_FILE_ATTRIBUTE_TRASH_DELETION_DATE "," G_FILE_ATTRIBUTE_TRASH_ORIG_PATH
-
 #define TRASH_TYPE_ITEM (trash_item_get_type())
 
 G_DECLARE_FINAL_TYPE(TrashItem, trash_item, TRASH, ITEM, GtkBox)
 
-TrashItem *trash_item_new(const gchar *uri);
+TrashItem *trash_item_new(TrashInfo *trash_info);
 void trash_item_apply_button_styles(TrashItem *self);
 void trash_item_set_btns_sensitive(TrashItem *self, gboolean sensitive);
 

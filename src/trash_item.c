@@ -79,64 +79,51 @@ static void trash_item_init(TrashItem *self) {
 static void trash_item_finalize(GObject *obj) {
     TrashItem *self = TRASH_ITEM(obj);
 
-    g_slice_free(TrashInfo, self->trash_info);
+    trash_info_free(self->trash_info);
 
     G_OBJECT_CLASS(trash_item_parent_class)->finalize(obj);
 }
 
-TrashItem *trash_item_new(const gchar *uri) {
-    g_autoptr(GFile) file = g_file_new_for_uri(uri);
-    g_autoptr(GError) err = NULL;
-    g_autoptr(GFileInfo) file_info = g_file_query_info(file, TRASH_FILE_ATTRIBUTES, G_FILE_QUERY_INFO_NONE, NULL, &err);
-
-    if (!G_IS_FILE_INFO(file_info)) {
-        g_warning("%s:%d: Unable to get file info for '%s': %s", __BASE_FILE__, __LINE__, uri, err->message);
+TrashItem *trash_item_new(TrashInfo *trash_info) {
+    if (!TRASH_IS_INFO(trash_info)) {
         return NULL;
     }
-
-    gchar *file_name = (gchar *) g_file_info_get_name(file_info);
-    TrashInfo *trash_info = NULL;
-
-    // TODO: ew
-    trash_info = trash_info_new(file_name,
-                                uri,
-                                (g_file_info_get_file_type(file_info) == G_FILE_TYPE_DIRECTORY),
-                                g_file_info_get_size(file_info));
-    trash_info->deleted_time = g_file_info_get_deletion_date(file_info);
-    trash_info->restore_path = g_strdup(g_file_info_get_attribute_byte_string(file_info, G_FILE_ATTRIBUTE_TRASH_ORIG_PATH));
 
     // Create the widget
     TrashItem *self = g_object_new(TRASH_TYPE_ITEM, "orientation", GTK_ORIENTATION_VERTICAL, NULL);
     self->trash_info = trash_info;
 
-    gtk_widget_set_tooltip_text(self->header, self->trash_info->file_name);
+    gtk_widget_set_tooltip_text(self->header, trash_info_get_name(trash_info));
 
-    self->file_icon = gtk_image_new_from_gicon(g_file_info_get_icon(file_info), GTK_ICON_SIZE_SMALL_TOOLBAR);
+    self->file_icon = gtk_image_new_from_gicon(trash_info_get_icon(trash_info), GTK_ICON_SIZE_SMALL_TOOLBAR);
     gtk_box_pack_start(GTK_BOX(self->header), self->file_icon, FALSE, FALSE, 5);
 
-    self->file_name_label = gtk_label_new(self->trash_info->file_name);
+    self->file_name_label = gtk_label_new(trash_info_get_name(trash_info));
     gtk_label_set_max_width_chars(GTK_LABEL(self->file_name_label), 30);
     gtk_label_set_ellipsize(GTK_LABEL(self->file_name_label), PANGO_ELLIPSIZE_END);
     gtk_widget_set_halign(self->file_name_label, GTK_ALIGN_START);
     gtk_label_set_justify(GTK_LABEL(self->file_name_label), GTK_JUSTIFY_LEFT);
     gtk_box_pack_end(GTK_BOX(self->header), self->file_name_label, TRUE, TRUE, 0);
 
-    self->path_label = gtk_label_new(g_strdup_printf("<b>Path:</b> %s", trash_info->restore_path));
+    self->path_label = gtk_label_new(g_strdup_printf("<b>Path:</b> %s", trash_info_get_uri(trash_info)));
     gtk_label_set_use_markup(GTK_LABEL(self->path_label), TRUE);
     gtk_label_set_ellipsize(GTK_LABEL(self->path_label), PANGO_ELLIPSIZE_END);
     gtk_widget_set_halign(self->path_label, GTK_ALIGN_START);
     gtk_label_set_justify(GTK_LABEL(self->path_label), GTK_JUSTIFY_LEFT);
     gtk_box_pack_start(GTK_BOX(self->info_container), self->path_label, TRUE, TRUE, 0);
 
-    gtk_widget_set_tooltip_text(self->path_label, trash_info->restore_path);
+    gtk_widget_set_tooltip_text(self->path_label, trash_info_get_restore_path(trash_info));
 
-    self->size_label = gtk_label_new(g_strdup_printf("<b>Size:</b> %s", g_format_size(self->trash_info->size)));
+    self->size_label = gtk_label_new(g_strdup_printf("<b>Size:</b> %s", g_format_size(trash_info_get_size(trash_info))));
     gtk_label_set_use_markup(GTK_LABEL(self->size_label), TRUE);
     gtk_widget_set_halign(self->size_label, GTK_ALIGN_START);
     gtk_label_set_justify(GTK_LABEL(self->size_label), GTK_JUSTIFY_LEFT);
     gtk_box_pack_start(GTK_BOX(self->info_container), self->size_label, TRUE, TRUE, 0);
 
-    self->timestamp_label = gtk_label_new(g_strdup_printf("<b>Deleted at:</b> %s", g_date_time_format(trash_info->deleted_time, "%d %b %Y %X")));
+    self->timestamp_label = gtk_label_new(g_strdup_printf("<b>Deleted at:</b> %s",
+                                                          g_date_time_format(
+                                                              trash_info_get_deletion_time(trash_info),
+                                                              "%d %b %Y %X")));
     gtk_label_set_use_markup(GTK_LABEL(self->timestamp_label), TRUE);
     gtk_widget_set_halign(self->timestamp_label, GTK_ALIGN_START);
     gtk_label_set_justify(GTK_LABEL(self->timestamp_label), GTK_JUSTIFY_LEFT);
@@ -162,7 +149,7 @@ void trash_item_set_btns_sensitive(TrashItem *self, gboolean sensitive) {
 }
 
 gint trash_item_has_name(TrashItem *self, gchar *name) {
-    return g_strcmp0(self->trash_info->file_name, name);
+    return g_strcmp0(trash_info_get_name(self->trash_info), name);
 }
 
 void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self) {
@@ -188,7 +175,10 @@ void trash_item_handle_confirm_clicked(__attribute__((unused)) GtkButton *sender
     self->restoring ? trash_item_restore(self, err) : trash_item_delete(self, err);
 
     if (err) {
-        g_autofree gchar *body = g_strdup_printf("Error %s '%s' from trash bin: %s", self->restoring ? "restoring" : "deleting", self->trash_info->file_name, err->message);
+        g_autofree gchar *body = g_strdup_printf("Error %s '%s' from trash bin: %s",
+                                                 self->restoring ? "restoring" : "deleting",
+                                                 trash_info_get_name(self->trash_info),
+                                                 err->message);
         trash_notify_try_send("Trash Bin Error", body, "dialog-error-symbolic");
     }
 }
@@ -202,7 +192,7 @@ void trash_item_toggle_info_revealer(TrashItem *self) {
 }
 
 void trash_item_delete(TrashItem *self, GError *err) {
-    GFile *file = g_file_new_for_uri(self->trash_info->file_path);
+    GFile *file = g_file_new_for_uri(trash_info_get_uri(self->trash_info));
     if (!G_IS_FILE(file)) {
         return;
     }
@@ -215,8 +205,8 @@ void trash_item_delete_finish(GFile *file, GAsyncResult *result, GError *err) {
 }
 
 void trash_item_restore(TrashItem *self, GError *err) {
-    g_autoptr(GFile) trashed_file = g_file_new_for_uri(self->trash_info->file_path);
-    g_autoptr(GFile) restored_file = g_file_new_for_path(self->trash_info->restore_path);
+    g_autoptr(GFile) trashed_file = g_file_new_for_uri(trash_info_get_uri(self->trash_info));
+    g_autoptr(GFile) restored_file = g_file_new_for_path(trash_info_get_restore_path(self->trash_info));
 
     if (!G_IS_FILE(trashed_file)) {
         return;
@@ -230,24 +220,25 @@ void trash_item_restore(TrashItem *self, GError *err) {
 }
 
 gint trash_item_collate_by_date(TrashItem *self, TrashItem *other) {
-    return g_date_time_compare(self->trash_info->deleted_time, other->trash_info->deleted_time);
+    return g_date_time_compare(trash_info_get_deletion_time(self->trash_info),
+                               trash_info_get_deletion_time(other->trash_info));
 }
 
 gint trash_item_collate_by_name(TrashItem *self, TrashItem *other) {
-    return strcoll(self->trash_info->file_name, other->trash_info->file_name);
+    return strcoll(trash_info_get_name(self->trash_info), trash_info_get_name(other->trash_info));
 }
 
 gint trash_item_collate_by_type(TrashItem *self, TrashItem *other) {
     gint ret = 0;
 
-    if (self->trash_info->is_directory && other->trash_info->is_directory) {
-        ret = strcoll(self->trash_info->file_name, other->trash_info->file_name);
-    } else if (self->trash_info->is_directory && !other->trash_info->is_directory) {
+    if (trash_info_is_directory(self->trash_info) && trash_info_is_directory(other->trash_info)) {
+        ret = trash_item_collate_by_name(self, other);
+    } else if (trash_info_is_directory(self->trash_info) && !trash_info_is_directory(other->trash_info)) {
         ret = -1;
-    } else if (!self->trash_info->is_directory && other->trash_info->is_directory) {
+    } else if (!trash_info_is_directory(self->trash_info) && trash_info_is_directory(other->trash_info)) {
         ret = 1;
     } else {
-        ret = strcoll(self->trash_info->file_name, other->trash_info->file_name);
+        ret = trash_item_collate_by_name(self, other);
     }
 
     return ret;

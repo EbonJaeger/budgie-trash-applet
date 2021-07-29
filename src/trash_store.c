@@ -363,7 +363,15 @@ void trash_store_handle_monitor_event(__attribute__((unused)) GFileMonitor *moni
         case G_FILE_MONITOR_EVENT_MOVED_IN: {
             g_autoptr(GUri) uri = trash_store_get_uri_for_file(self, g_file_get_basename(file));
             g_return_if_fail(uri != NULL);
-            TrashItem *trash_item = trash_item_new(g_uri_to_string(uri));
+
+            g_autoptr(GError) err = NULL;
+            TrashInfo *trash_info = trash_info_new(g_uri_to_string(uri), err);
+            if (!TRASH_IS_INFO(trash_info)) {
+                g_warning("%s:%d: Error making trash info for URI '%s': %s", __BASE_FILE__, __LINE__, g_uri_to_string(uri), err->message);
+                return;
+            }
+
+            TrashItem *trash_item = trash_item_new(trash_info);
             g_return_if_fail(TRASH_IS_ITEM(trash_item));
 
             gtk_widget_show_all(GTK_WIDGET(trash_item));
@@ -412,8 +420,15 @@ void trash_store_load_items(TrashStore *self, GError *err) {
     g_autoptr(GFileInfo) current_file = NULL;
     while ((current_file = g_file_enumerator_next_file(enumerator, NULL, &err))) {
         g_autoptr(GUri) uri = trash_store_get_uri_for_file(self, g_file_info_get_name(current_file));
-        TrashItem *trash_item = trash_item_new(g_uri_to_string(uri));
 
+        g_autoptr(GError) err = NULL;
+        TrashInfo *trash_info = trash_info_new(g_uri_to_string(uri), err);
+        if (!TRASH_IS_INFO(trash_info)) {
+            g_warning("%s:%d: Error making trash info for URI '%s': %s", __BASE_FILE__, __LINE__, g_uri_to_string(uri), err->message);
+            continue;
+        }
+
+        TrashItem *trash_item = trash_item_new(trash_info);
         if (!TRASH_IS_ITEM(trash_item)) {
             g_warning("%s:%d: Unable to make trash item for URI '%s'", __BASE_FILE__, __LINE__, g_uri_to_string(uri));
             continue;
