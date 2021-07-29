@@ -1,0 +1,67 @@
+{
+	"version": "2.0.0",
+	// Thanks to JoshStrobl for the idea to use tasks
+	"tasks": [
+		{
+			"label": "Clean",
+			"type": "shell",
+			"command": "rm",
+			"args": [
+				"-rf",
+				"build"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Meson Configure and Build",
+			"type": "shell",
+			"command": "",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"Meson Configure",
+				"Meson Compile"
+			]
+		},
+		{
+			"label": "Meson Configure",
+			"type": "shell",
+			"command": "meson",
+			"args": [
+				"--prefix=/usr",
+				"--libdir=\"libdir\"",
+				"build"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Meson Compile",
+			"type": "shell",
+			"command": "meson",
+			"args": [
+				"compile",
+				"-C",
+				"build",
+			],
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "Meson Install",
+			"type": "shell",
+			"command": "sudo",
+			"args": [
+				"meson",
+				"install",
+				"-C",
+				"build",
+				"--destdir",
+				"/",
+				"--no-rebuild"
+			],
+			"problemMatcher": []
+		}
+	]
+}

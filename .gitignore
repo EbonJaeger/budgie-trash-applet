@@ -2,4 +2,5 @@ build/
 builddir/
 .cache/
 .clangd/
-.vscode/
+
+.vscode/settings.json
