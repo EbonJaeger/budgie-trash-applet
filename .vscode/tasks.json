@@ -34,7 +34,7 @@
 			"problemMatcher": []
 		},
 		{
-			"label": "Meson Compile",
+			"label": "Meson Build",
 			"type": "shell",
 			"command": "meson",
 			"args": [
