@@ -296,7 +296,7 @@ void trash_store_handle_confirm_clicked(__attribute__((unused)) GtkButton *sende
     g_slist_foreach(self->trashed_files, self->restoring ? (GFunc) trash_item_restore : (GFunc) trash_item_delete, &err);
 
     if (err) {
-        g_autofree gchar *body = g_strconcat("Error ", self->restoring ? "restoring" : "deleting", " item from trash bin: ", err->message, NULL);
+        g_autofree gchar *body = g_strdup_printf("Error %s item from trash bin: %s", self->restoring ? "restoring" : "deleting", err->message);
         trash_notify_try_send("Trash Bin Error", body, "dialog-error-symbolic");
     } else {
         if (self->restoring) {
@@ -326,7 +326,7 @@ GUri *trash_store_get_uri_for_file(TrashStore *self, const gchar *file_name) {
 
     g_autofree gchar *path = NULL;
     if (self->is_default) {
-        path = g_strconcat("/", file_name, NULL);
+        path = g_strdup_printf("/%s", file_name);
     } else {
         /*
         * This abomination is because GLib does some really weird things with escaping characters
@@ -336,11 +336,11 @@ GUri *trash_store_get_uri_for_file(TrashStore *self, const gchar *file_name) {
         * escaped). So, to get a valid URI to a trash file, we have to emulate that behavior.
         */
 
-        g_autoptr(GString) unescaped = g_string_new(g_strconcat(self->trash_path, "\\", file_name, NULL));
+        g_autoptr(GString) unescaped = g_string_new(g_strdup_printf("%s\\%s", self->trash_path, file_name));
         g_string_replace(unescaped, "/", "\\", 0);
         g_string_replace(unescaped, " ", "%20", 0);
         g_autofree gchar *escaped = g_uri_escape_string(unescaped->str, NULL, TRUE);
-        path = g_strconcat("/", escaped, NULL);
+        path = g_strdup_printf("/%s", escaped);
     }
 
     return g_uri_build(

@@ -121,7 +121,7 @@ TrashItem *trash_item_new(const gchar *uri) {
     gtk_label_set_justify(GTK_LABEL(self->file_name_label), GTK_JUSTIFY_LEFT);
     gtk_box_pack_end(GTK_BOX(self->header), self->file_name_label, TRUE, TRUE, 0);
 
-    self->path_label = gtk_label_new(g_strconcat("<b>Path:</b> ", trash_info->restore_path, NULL));
+    self->path_label = gtk_label_new(g_strdup_printf("<b>Path:</b> %s", trash_info->restore_path));
     gtk_label_set_use_markup(GTK_LABEL(self->path_label), TRUE);
     gtk_label_set_ellipsize(GTK_LABEL(self->path_label), PANGO_ELLIPSIZE_END);
     gtk_widget_set_halign(self->path_label, GTK_ALIGN_START);
@@ -130,13 +130,13 @@ TrashItem *trash_item_new(const gchar *uri) {
 
     gtk_widget_set_tooltip_text(self->path_label, trash_info->restore_path);
 
-    self->size_label = gtk_label_new(g_strconcat("<b>Size:</b> ", g_format_size(self->trash_info->size), NULL));
+    self->size_label = gtk_label_new(g_strdup_printf("<b>Size:</b> %s", g_format_size(self->trash_info->size)));
     gtk_label_set_use_markup(GTK_LABEL(self->size_label), TRUE);
     gtk_widget_set_halign(self->size_label, GTK_ALIGN_START);
     gtk_label_set_justify(GTK_LABEL(self->size_label), GTK_JUSTIFY_LEFT);
     gtk_box_pack_start(GTK_BOX(self->info_container), self->size_label, TRUE, TRUE, 0);
 
-    self->timestamp_label = gtk_label_new(g_strconcat("<b>Deleted at:</b> ", g_date_time_format(trash_info->deleted_time, "%d %b %Y %X"), NULL));
+    self->timestamp_label = gtk_label_new(g_strdup_printf("<b>Deleted at:</b> %s", g_date_time_format(trash_info->deleted_time, "%d %b %Y %X")));
     gtk_label_set_use_markup(GTK_LABEL(self->timestamp_label), TRUE);
     gtk_widget_set_halign(self->timestamp_label, GTK_ALIGN_START);
     gtk_label_set_justify(GTK_LABEL(self->timestamp_label), GTK_JUSTIFY_LEFT);
@@ -188,7 +188,7 @@ void trash_item_handle_confirm_clicked(__attribute__((unused)) GtkButton *sender
     self->restoring ? trash_item_restore(self, err) : trash_item_delete(self, err);
 
     if (err) {
-        g_autofree gchar *body = g_strconcat("Error ", self->restoring ? "restoring" : "deleting", " '", self->trash_info->file_name, "' from trash bin: ", err->message, NULL);
+        g_autofree gchar *body = g_strdup_printf("Error %s '%s' from trash bin: %s", self->restoring ? "restoring" : "deleting", self->trash_info->file_name, err->message);
         trash_notify_try_send("Trash Bin Error", body, "dialog-error-symbolic");
     }
 }
