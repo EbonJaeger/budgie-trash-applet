@@ -19,7 +19,7 @@
 			"dependsOrder": "sequence",
 			"dependsOn": [
 				"Meson Configure",
-				"Meson Compile"
+				"Meson Build"
 			]
 		},
 		{
@@ -28,7 +28,6 @@
 			"command": "meson",
 			"args": [
 				"--prefix=/usr",
-				"--libdir=\"libdir\"",
 				"build"
 			],
 			"problemMatcher": []
