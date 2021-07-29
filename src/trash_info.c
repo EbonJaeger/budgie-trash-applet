@@ -91,11 +91,11 @@ static void trash_info_class_init(TrashInfoClass *klazz) {
         FALSE,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
-    props[PROP_DELETION_TIME] = g_param_spec_object(
+    props[PROP_DELETION_TIME] = g_param_spec_gtype(
         "deletion-time",
         "deletion time",
         "The timestamp of when the file was deleted",
-        G_TYPE_DATE_TIME,
+        G_TYPE_NONE,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
     g_object_class_install_properties(class, N_EXP_PROPERTIES, props);
@@ -124,7 +124,7 @@ static void trash_info_get_property(GObject *obj, guint prop_id, GValue *val, GP
             g_value_set_boolean(val, self->is_directory);
             break;
         case PROP_DELETION_TIME:
-            g_value_set_object(val, G_OBJECT(self->deleted_time));
+            g_value_set_gtype(val, (GType) self->deleted_time);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
@@ -155,7 +155,7 @@ static void trash_info_set_property(GObject *obj, guint prop_id, const GValue *v
             trash_info_set_is_directory(self, g_value_get_boolean(val));
             break;
         case PROP_DELETION_TIME:
-            trash_info_set_deletion_time(self, (GDateTime *) g_value_get_object(val));
+            trash_info_set_deletion_time(self, (GDateTime *) g_value_get_gtype(val));
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
@@ -201,7 +201,6 @@ void trash_info_free(TrashInfo *self) {
     g_free((gchar *) self->name);
     g_free((gchar *) self->uri);
     g_free((gchar *) self->restore_path);
-    g_free(self->icon);
     g_date_time_unref(self->deleted_time);
 }
 
