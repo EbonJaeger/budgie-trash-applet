@@ -185,9 +185,11 @@ void trash_item_handle_cancel_clicked(__attribute__((unused)) GtkButton *sender,
 
 void trash_item_handle_confirm_clicked(__attribute__((unused)) GtkButton *sender, TrashItem *self) {
     g_autoptr(GError) err = NULL;
-    self->restoring ? trash_item_restore(self, &err) : trash_item_delete(self, &err);
+    self->restoring ? trash_item_restore(self, err) : trash_item_delete(self, err);
+
     if (err) {
-        g_critical("%s:%d: Error clearing file from trash '%s': %s", __BASE_FILE__, __LINE__, self->trash_info->file_name, err->message);
+        g_autofree gchar *body = g_strconcat("Error ", self->restoring ? "restoring" : "deleting", " '", self->trash_info->file_name, "' from trash bin: ", err->message, NULL);
+        trash_notify_try_send("Trash Bin Error", body, "dialog-error-symbolic");
     }
 }
 
@@ -199,23 +201,20 @@ void trash_item_toggle_info_revealer(TrashItem *self) {
     }
 }
 
-void trash_item_delete(TrashItem *self, GError **err) {
+void trash_item_delete(TrashItem *self, GError *err) {
     GFile *file = g_file_new_for_uri(self->trash_info->file_path);
     if (!G_IS_FILE(file)) {
         return;
     }
 
-    FileDeleteData *data = file_delete_data_new(file, self->trash_info->is_directory, self->trash_info->is_directory && !g_file_has_uri_scheme(file, "trash"));
-    GThread *thread = g_thread_try_new("trash-delete-thread", (GThreadFunc) trash_utils_delete_file, file_delete_data_ref(data), err);
-    if (!thread) {
-        file_delete_data_unref(data);
-        return;
-    }
-
-    g_thread_unref(thread);
+    g_file_delete_async(file, G_PRIORITY_DEFAULT, NULL, (GAsyncReadyCallback) trash_item_delete_finish, err);
 }
 
-void trash_item_restore(TrashItem *self, GError **err) {
+void trash_item_delete_finish(GFile *file, GAsyncResult *result, GError *err) {
+    g_file_delete_finish(file, result, &err);
+}
+
+void trash_item_restore(TrashItem *self, GError *err) {
     g_autoptr(GFile) trashed_file = g_file_new_for_uri(self->trash_info->file_path);
     g_autoptr(GFile) restored_file = g_file_new_for_path(self->trash_info->restore_path);
 
@@ -227,7 +226,7 @@ void trash_item_restore(TrashItem *self, GError **err) {
         return;
     }
 
-    g_file_move(trashed_file, restored_file, G_FILE_COPY_ALL_METADATA, NULL, NULL, NULL, err);
+    g_file_move(trashed_file, restored_file, G_FILE_COPY_ALL_METADATA, NULL, NULL, NULL, &err);
 }
 
 gint trash_item_collate_by_date(TrashItem *self, TrashItem *other) {

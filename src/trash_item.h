@@ -30,8 +30,9 @@ void trash_item_handle_confirm_clicked(GtkButton *sender, TrashItem *self);
 
 void trash_item_toggle_info_revealer(TrashItem *self);
 
-void trash_item_delete(TrashItem *self, GError **err);
-void trash_item_restore(TrashItem *self, GError **err);
+void trash_item_delete(TrashItem *self, GError *err);
+void trash_item_delete_finish(GFile *file, GAsyncResult *result, GError *err);
+void trash_item_restore(TrashItem *self, GError *err);
 
 /**
  * Compares two TrashItems for sorting, putting them in order by deletion date
