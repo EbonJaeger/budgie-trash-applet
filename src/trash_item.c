@@ -105,7 +105,7 @@ TrashItem *trash_item_new(TrashInfo *trash_info) {
     gtk_label_set_justify(GTK_LABEL(self->file_name_label), GTK_JUSTIFY_LEFT);
     gtk_box_pack_end(GTK_BOX(self->header), self->file_name_label, TRUE, TRUE, 0);
 
-    self->path_label = gtk_label_new(g_strdup_printf("<b>Path:</b> %s", trash_info_get_uri(trash_info)));
+    self->path_label = gtk_label_new(g_strdup_printf("<b>Path:</b> %s", trash_info_get_restore_path(trash_info)));
     gtk_label_set_use_markup(GTK_LABEL(self->path_label), TRUE);
     gtk_label_set_ellipsize(GTK_LABEL(self->path_label), PANGO_ELLIPSIZE_END);
     gtk_widget_set_halign(self->path_label, GTK_ALIGN_START);
