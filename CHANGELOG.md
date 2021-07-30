@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add file size to info displays (credit to brent for the idea)
 - Fix file operations on trashed items failing because of permission issues (#8)
 - Improve error handling and notificiations
+- Use different panel icons when there are no items in the trash vs when there are items (credit to Katoa for the idea)
 
 ## [v2.0.0] - 2021-06-13
 
