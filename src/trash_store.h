@@ -17,8 +17,11 @@ G_BEGIN_DECLS
 #define TRASH_INFO_PATH_OFFSET 13
 
 #define TRASH_TYPE_STORE (trash_store_get_type())
+#define TRASH_STORE(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), TRASH_TYPE_STORE, TrashStore))
+#define TRASH_IS_STORE(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), TRASH_TYPE_STORE))
 
-G_DECLARE_FINAL_TYPE(TrashStore, trash_store, TRASH, STORE, GtkBox)
+typedef struct _TrashStore TrashStore;
+typedef struct _TrashStoreClass TrashStoreClass;
 
 TrashStore *trash_store_new(gchar *drive_name, GIcon *icon, TrashSortMode mode);
 TrashStore *trash_store_new_with_path(gchar *drive_name,
@@ -74,19 +77,15 @@ void trash_store_handle_monitor_event(GFileMonitor *monitor,
  * 
  * If an error is encountered, `err` is set.
  */
-void trash_store_load_items(TrashStore *self, GError *err);
-
-/**
- * Read the contents of a trashinfo file for a file with the given name
- * into memory.
- * 
- * If an error is encountered, `err` is set and `NULL` is returned.
- */
-gchar *trash_store_read_trash_info(gchar *trashinfo_path, GError **err);
+gint trash_store_load_items(TrashStore *self, GError *err);
 
 /**
  * Sorts the trash items in the file box widget.
  */
 gint trash_store_sort(GtkListBoxRow *row1, GtkListBoxRow *row2, TrashStore *self);
+
+gint trash_store_get_count(TrashStore *self);
+
+GType trash_store_get_type(void) G_GNUC_CONST;
 
 G_END_DECLS

@@ -1,6 +1,14 @@
 #include "trash_store.h"
 
 enum {
+    SIGNAL_TRASH_ADDED,
+    SIGNAL_TRASH_REMOVED,
+    N_SIGNALS
+};
+
+static guint signals[N_SIGNALS] = {0};
+
+enum {
     PROP_EXP_0,
     PROP_SORT_MODE,
     N_EXP_PROPERTIES
@@ -35,6 +43,9 @@ struct _TrashStore {
 
 struct _TrashStoreClass {
     GtkBoxClass parent_class;
+
+    void (*trash_added)(TrashStore *);
+    void (*trash_removed)(TrashStore *);
 };
 
 static void trash_store_finalize(GObject *obj);
@@ -48,6 +59,34 @@ static void trash_store_class_init(TrashStoreClass *klazz) {
     class->finalize = trash_store_finalize;
     class->get_property = trash_store_get_property;
     class->set_property = trash_store_set_property;
+
+    // Signals
+
+    signals[SIGNAL_TRASH_ADDED] = g_signal_new(
+        "trash-added",
+        G_TYPE_FROM_CLASS(class),
+        G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
+        G_STRUCT_OFFSET(TrashStoreClass, trash_added),
+        NULL,
+        NULL,
+        NULL,
+        G_TYPE_NONE,
+        0,
+        NULL);
+
+    signals[SIGNAL_TRASH_REMOVED] = g_signal_new(
+        "trash-removed",
+        G_TYPE_FROM_CLASS(class),
+        G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
+        G_STRUCT_OFFSET(TrashStoreClass, trash_removed),
+        NULL,
+        NULL,
+        NULL,
+        G_TYPE_NONE,
+        0,
+        NULL);
+
+    // Properties
 
     store_props[PROP_SORT_MODE] = g_param_spec_enum(
         "sort-mode",
@@ -378,6 +417,7 @@ void trash_store_handle_monitor_event(__attribute__((unused)) GFileMonitor *moni
             gtk_list_box_insert(GTK_LIST_BOX(self->file_box), GTK_WIDGET(trash_item), -1);
             self->trashed_files = g_slist_append(self->trashed_files, trash_item);
             self->file_count++;
+            g_signal_emit(self, signals[SIGNAL_TRASH_ADDED], 0, NULL);
 
             trash_store_check_empty(self);
             break;
@@ -397,6 +437,7 @@ void trash_store_handle_monitor_event(__attribute__((unused)) GFileMonitor *moni
             self->file_count--;
             trash_store_check_empty(self);
             self->trashed_files = g_slist_remove(self->trashed_files, trash_item);
+            g_signal_emit(self, signals[SIGNAL_TRASH_REMOVED], 0, NULL);
             break;
         }
         default:
@@ -404,7 +445,7 @@ void trash_store_handle_monitor_event(__attribute__((unused)) GFileMonitor *moni
     }
 }
 
-void trash_store_load_items(TrashStore *self, GError *err) {
+gint trash_store_load_items(TrashStore *self, GError *err) {
     g_autoptr(GFile) trash_dir = g_file_new_for_path(self->trash_path);
     g_autoptr(GFileEnumerator) enumerator = g_file_enumerate_children(trash_dir,
                                                                       G_FILE_ATTRIBUTE_STANDARD_NAME,
@@ -413,7 +454,7 @@ void trash_store_load_items(TrashStore *self, GError *err) {
                                                                       &err);
     if G_UNLIKELY (!enumerator) {
         g_critical("%s:%d: Error getting file enumerator for trash files in '%s': %s", __BASE_FILE__, __LINE__, self->trash_path, err->message);
-        return;
+        return self->file_count;
     }
 
     // Iterate over the directory's children and append each file name to a list
@@ -442,29 +483,8 @@ void trash_store_load_items(TrashStore *self, GError *err) {
 
     trash_store_check_empty(self);
     g_file_enumerator_close(enumerator, NULL, NULL);
-}
 
-gchar *trash_store_read_trash_info(gchar *trashinfo_path, GError **err) {
-    // Open the file
-    g_autoptr(GFile) info_file = g_file_new_for_path(trashinfo_path);
-    g_autoptr(GFileInputStream) input_stream = g_file_read(info_file, NULL, err);
-    if (!input_stream) {
-        return NULL;
-    }
-
-    // Seek to the Path line
-    g_seekable_seek(G_SEEKABLE(input_stream), TRASH_INFO_PATH_OFFSET, G_SEEK_SET, NULL, err);
-
-    // Read the file contents and extract the line containing the restore path
-    gchar *buffer = (gchar *) malloc(1024 * sizeof(gchar));
-    gssize read;
-    while ((read = g_input_stream_read(G_INPUT_STREAM(input_stream), buffer, 1024, NULL, err))) {
-        buffer[read] = '\0';
-    }
-
-    g_input_stream_close(G_INPUT_STREAM(input_stream), NULL, NULL);
-
-    return buffer;
+    return self->file_count;
 }
 
 gint trash_store_sort(GtkListBoxRow *row1, GtkListBoxRow *row2, TrashStore *self) {
@@ -486,4 +506,8 @@ gint trash_store_sort(GtkListBoxRow *row1, GtkListBoxRow *row2, TrashStore *self
             g_critical("%s:%d: Unknown sort mode '%d', defaulting to by type", __BASE_FILE__, __LINE__, self->sort_mode);
             return trash_item_collate_by_type(item1, item2);
     }
+}
+
+gint trash_store_get_count(TrashStore *self) {
+    return self->file_count;
 }

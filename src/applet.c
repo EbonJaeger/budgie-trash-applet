@@ -27,6 +27,8 @@ struct _TrashAppletPrivate {
     GtkWidget *return_button;
     TrashIconButton *icon_button;
 
+    gint trash_count;
+
     gint uid;
     GVolumeMonitor *volume_monitor;
 };
@@ -124,6 +126,7 @@ static void trash_applet_set_property(GObject *obj, guint prop_id, const GValue 
 static void trash_applet_init(TrashApplet *self) {
     // Create our 'private' struct
     self->priv = trash_applet_get_instance_private(self);
+    self->priv->trash_count = 0;
     self->priv->mounts = g_hash_table_new(g_str_hash, g_str_equal);
     self->priv->settings = g_settings_new(TRASH_SETTINGS_SCHEMA_ID);
     g_signal_connect_object(self->priv->settings, "changed", G_CALLBACK(trash_handle_setting_changed), self, 0);
@@ -236,11 +239,18 @@ GtkWidget *trash_create_main_view(TrashApplet *self, TrashSortMode sort_mode) {
     // Create the trash store widgets
     TrashStore *default_store = trash_store_new("This PC", g_icon_new_for_string("drive-harddisk-symbolic", NULL), sort_mode);
     g_autoptr(GError) err = NULL;
-    trash_store_load_items(default_store, err);
+    self->priv->trash_count = trash_store_load_items(default_store, err);
     if (err) {
         g_critical("%s:%d: Error loading trash items for the default trash store: %s", __BASE_FILE__, __LINE__, err->message);
     }
+
+    if (self->priv->trash_count > 0) {
+        trash_icon_button_set_filled(self->priv->icon_button);
+    }
+
     trash_store_start_monitor(default_store);
+    g_signal_connect_object(TRASH_STORE(default_store), "trash-added", G_CALLBACK(trash_handle_trash_added), self, 0);
+    g_signal_connect_object(TRASH_STORE(default_store), "trash-removed", G_CALLBACK(trash_handle_trash_removed), self, 0);
 
     g_hash_table_insert(self->priv->mounts, "This PC", default_store);
     gtk_list_box_insert(GTK_LIST_BOX(self->priv->drive_box), GTK_WIDGET(default_store), -1);
@@ -341,12 +351,19 @@ void trash_add_mount(GMount *mount, TrashApplet *self) {
         g_autofree gchar *trash_path = g_build_path(G_DIR_SEPARATOR_S, g_file_get_path(location), g_file_info_get_name(current_file), "files", NULL);
         TrashStore *store = trash_store_new_with_path(g_mount_get_name(mount), g_settings_get_enum(self->priv->settings, TRASH_SETTINGS_KEY_SORT_MODE), g_mount_get_symbolic_icon(mount), g_strdup(trash_path));
         g_autoptr(GError) inner_err = NULL;
-        trash_store_load_items(store, inner_err);
+        self->priv->trash_count += trash_store_load_items(store, inner_err);
         if (inner_err) {
             g_critical("%s:%d: Error loading trash items for mount '%s': %s", __BASE_FILE__, __LINE__, g_mount_get_name(mount), err->message);
             break;
         }
+
+        if (self->priv->trash_count > 0) {
+            trash_icon_button_set_filled(self->priv->icon_button);
+        }
+
         trash_store_start_monitor(store);
+        g_signal_connect_object(TRASH_STORE(store), "trash-added", G_CALLBACK(trash_handle_trash_added), self, 0);
+        g_signal_connect_object(TRASH_STORE(store), "trash-removed", G_CALLBACK(trash_handle_trash_removed), self, 0);
 
         gtk_list_box_insert(GTK_LIST_BOX(self->priv->drive_box), GTK_WIDGET(store), -1);
         g_hash_table_insert(self->priv->mounts, g_strdup(g_mount_get_name(mount)), store);
@@ -363,7 +380,12 @@ void trash_handle_mount_added(__budgie_unused__ GVolumeMonitor *monitor, GMount 
 void trash_handle_mount_removed(__budgie_unused__ GVolumeMonitor *monitor, GMount *mount, TrashApplet *self) {
     g_autofree gchar *mount_name = g_mount_get_name(mount);
     TrashStore *store = (TrashStore *) g_hash_table_lookup(self->priv->mounts, mount_name);
-    g_return_if_fail(store != NULL);
+    g_return_if_fail(TRASH_IS_STORE(store));
+
+    self->priv->trash_count -= trash_store_get_count(store);
+    if (self->priv->trash_count == 0) {
+        trash_icon_button_set_empty(self->priv->icon_button);
+    }
 
     GtkWidget *row = gtk_widget_get_parent(GTK_WIDGET(store));
     gtk_container_remove(GTK_CONTAINER(self->priv->drive_box), row);
@@ -391,5 +413,18 @@ void trash_handle_setting_changed(GSettings *settings, gchar *key, TrashApplet *
         }
     } else {
         g_critical("%s:%d: Unknown settings key '%s'", __BASE_FILE__, __LINE__, key);
+    }
+}
+
+void trash_handle_trash_added(__budgie_unused__ TrashStore *store, TrashApplet *self) {
+    self->priv->trash_count++;
+    trash_icon_button_set_filled(self->priv->icon_button);
+}
+
+void trash_handle_trash_removed(__budgie_unused__ TrashStore *store, TrashApplet *self) {
+    self->priv->trash_count--;
+
+    if (self->priv->trash_count == 0) {
+        trash_icon_button_set_empty(self->priv->icon_button);
     }
 }

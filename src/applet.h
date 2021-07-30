@@ -66,12 +66,19 @@ void trash_drag_data_received(TrashApplet *self,
                               guint time);
 
 void trash_add_mount(GMount *mount, TrashApplet *self);
+
 void trash_handle_mount_added(GVolumeMonitor *monitor, GMount *mount, TrashApplet *self);
+
 void trash_handle_mount_removed(GVolumeMonitor *monitor, GMount *mount, TrashApplet *self);
 
 void trash_settings_clicked(GtkButton *sender, TrashApplet *self);
+
 void trash_handle_return(TrashSettings *sender, TrashApplet *self);
 
 void trash_handle_setting_changed(GSettings *settings, gchar *key, TrashApplet *self);
+
+void trash_handle_trash_added(TrashStore *store, TrashApplet *self);
+
+void trash_handle_trash_removed(TrashStore *store, TrashApplet *self);
 
 G_END_DECLS
