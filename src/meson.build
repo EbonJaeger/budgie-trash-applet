@@ -1,4 +1,8 @@
-add_project_arguments('-Db_sanitize=address', language: 'c')
+add_global_arguments([
+    '-I' + meson.current_build_dir(),
+    '-Db_sanitize=address',
+    '-Dwerror=true'
+], language: 'c')
 
 trash_applet_deps = [
     dependency('budgie-1.0', version: '>= 2'),

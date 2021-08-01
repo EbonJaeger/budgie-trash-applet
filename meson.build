@@ -1,14 +1,12 @@
 project('budgie-trash-applet', 'c',
         version: '2.0.0',
+        meson_version: '>= 0.57.0',
         default_options: [
             'warning_level=2',
+            'werror=true',
             'c_std=gnu11',
         ],
 )
-
-add_project_arguments([
-	'-I' + meson.current_build_dir(),
-], language: 'c')
 
 gnome = import('gnome')
 
@@ -20,7 +18,7 @@ prefix = get_option('prefix')
 libdir = join_paths(prefix, get_option('libdir'))
 datadir = join_paths(prefix, get_option('datadir'))
 localedir = join_paths(prefix, get_option('localedir'))
-podir = join_paths(meson.source_root(), 'po')
+podir = join_paths(meson.current_source_dir(), 'po')
 
 APPLET_INSTALL_DIR = join_paths(libdir, 'budgie-desktop', 'plugins', 'com.github.EbonJaeger.budgie-trash-applet')
 
