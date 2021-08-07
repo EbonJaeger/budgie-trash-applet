@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v2.1.0] - 2021-08-07
+
 - Add file size to info displays (credit to brent for the idea)
 - Fix file operations on trashed items failing because of permission issues (#8)
 - Improve error handling and notificiations
@@ -25,5 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add appstream info file
 - Various style changes
 
-[unreleased]: https://github.com/EbonJaeger/budgie-trash-applet/compare/v2.0.0...master
+[unreleased]: https://github.com/EbonJaeger/budgie-trash-applet/compare/v2.1.0...master
+[v2.1.0]: https://github.com/EbonJaeger/budgie-trash-applet/compare/v2.0.0...v2.1.0
 [v2.0.0]: https://github.com/EbonJaeger/budgie-trash-applet/compare/v1.2.0...v2.0.0
