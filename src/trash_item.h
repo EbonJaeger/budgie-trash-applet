@@ -23,8 +23,6 @@ void trash_item_set_btns_sensitive(TrashItem *self, gboolean sensitive);
 gint trash_item_has_name(TrashItem *self, gchar *name);
 
 void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self);
-void trash_item_handle_cancel_clicked(GtkButton *sender, TrashItem *self);
-void trash_item_handle_confirm_clicked(GtkButton *sender, TrashItem *self);
 
 void trash_item_toggle_info_revealer(TrashItem *self);
 

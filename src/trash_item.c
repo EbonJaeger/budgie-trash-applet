@@ -35,6 +35,36 @@ static void trash_item_class_init(TrashItemClass *klazz) {
     class->finalize = trash_item_finalize;
 }
 
+static void response_ok (TrashItem *self) {
+    g_autoptr(GError) err = NULL;
+    self->restoring ? trash_item_restore(self, err) : trash_item_delete(self, err);
+
+    if (err) {
+        g_autofree gchar *body = g_strdup_printf("Error %s '%s' from trash bin: %s",
+                                                 self->restoring ? "restoring" : "deleting",
+                                                 trash_info_get_name(self->trash_info),
+                                                 err->message);
+        trash_notify_try_send("Trash Bin Error", body, "dialog-error-symbolic");
+    }
+}
+
+static void revealer_response_cb (TrashRevealer *revealer, gint response_id, TrashItem *self) {
+    switch (response_id)
+    {
+    case TRASH_REVEALER_RESPONSE_CANCEL:
+        trash_item_set_btns_sensitive (self, TRUE);
+        gtk_revealer_set_reveal_child (GTK_REVEALER (revealer), FALSE);
+        break;
+
+    case TRASH_REVEALER_RESPONSE_OK:
+        response_ok (self);
+        break;
+    
+    default:
+        break;
+    }
+}
+
 static void trash_item_init(TrashItem *self) {
     self->restoring = FALSE;
 
@@ -63,8 +93,13 @@ static void trash_item_init(TrashItem *self) {
     gtk_container_add(GTK_CONTAINER(self->info_revealer), self->info_container);
 
     self->confirm_revealer = trash_revealer_new();
-    g_signal_connect_object(GTK_BUTTON(self->confirm_revealer->cancel_button), "clicked", G_CALLBACK(trash_item_handle_cancel_clicked), self, 0);
-    g_signal_connect_object(GTK_BUTTON(self->confirm_revealer->confirm_button), "clicked", G_CALLBACK(trash_item_handle_confirm_clicked), self, 0);
+
+    g_signal_connect (
+        self->confirm_revealer,
+        "response",
+        G_CALLBACK (revealer_response_cb),
+        self
+    );
 
     gtk_box_pack_end(GTK_BOX(self->header), self->delete_btn, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(self->header), self->restore_btn, FALSE, FALSE, 0);
@@ -155,32 +190,14 @@ gint trash_item_has_name(TrashItem *self, gchar *name) {
 void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self) {
     if (sender == GTK_BUTTON(self->delete_btn)) {
         self->restoring = FALSE;
-        trash_revealer_set_text(self->confirm_revealer, "<b>Permanently delete this item?</b>", TRUE);
+        trash_revealer_show_message(self->confirm_revealer, "<b>Permanently delete this item?</b>", TRUE);
     } else {
         self->restoring = TRUE;
-        trash_revealer_set_text(self->confirm_revealer, "<b>Restore this item?</b>", FALSE);
+        trash_revealer_show_message(self->confirm_revealer, "<b>Restore this item?</b>", FALSE);
     }
 
     trash_item_set_btns_sensitive(self, FALSE);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->confirm_revealer), TRUE);
-}
-
-void trash_item_handle_cancel_clicked(__attribute__((unused)) GtkButton *sender, TrashItem *self) {
-    trash_item_set_btns_sensitive(self, TRUE);
-    gtk_revealer_set_reveal_child(GTK_REVEALER(self->confirm_revealer), FALSE);
-}
-
-void trash_item_handle_confirm_clicked(__attribute__((unused)) GtkButton *sender, TrashItem *self) {
-    g_autoptr(GError) err = NULL;
-    self->restoring ? trash_item_restore(self, err) : trash_item_delete(self, err);
-
-    if (err) {
-        g_autofree gchar *body = g_strdup_printf("Error %s '%s' from trash bin: %s",
-                                                 self->restoring ? "restoring" : "deleting",
-                                                 trash_info_get_name(self->trash_info),
-                                                 err->message);
-        trash_notify_try_send("Trash Bin Error", body, "dialog-error-symbolic");
-    }
 }
 
 void trash_item_toggle_info_revealer(TrashItem *self) {

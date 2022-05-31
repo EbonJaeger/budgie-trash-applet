@@ -127,6 +127,43 @@ static void trash_store_set_property(GObject *obj, guint prop_id, const GValue *
     }
 }
 
+static void response_ok (TrashStore *self) {
+    g_autoptr(GError) err = NULL;
+    g_slist_foreach(self->trashed_files, self->restoring ? (GFunc) trash_item_restore : (GFunc) trash_item_delete, &err);
+
+    if (err) {
+        g_autofree gchar *body = g_strdup_printf("Error %s item from trash bin: %s", self->restoring ? "restoring" : "deleting", err->message);
+        trash_notify_try_send("Trash Bin Error", body, "dialog-error-symbolic");
+    } else {
+        if (self->restoring) {
+            trash_notify_try_send("Trash Restored", "All trashed files have been restored", NULL);
+        } else {
+            trash_notify_try_send("Trash Cleared", "All files cleared from the trash", NULL);
+        }
+    }
+
+    trash_store_set_btns_sensitive(self, TRUE);
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
+}
+
+static void revealer_response_cb (TrashRevealer *revealer, gint response_id, TrashStore *self) {
+    switch (response_id)
+    {
+    case TRASH_REVEALER_RESPONSE_CANCEL:
+        trash_store_set_btns_sensitive(self, TRUE);
+        gtk_revealer_set_reveal_child (GTK_REVEALER (revealer), FALSE);
+        break;
+
+    case TRASH_REVEALER_RESPONSE_OK:
+        response_ok (self);
+        break;
+    
+    default:
+        g_warning ("unknown response type: %d", response_id);
+        break;
+    }
+}
+
 static void trash_store_init(TrashStore *self) {
     self->restoring = FALSE;
     self->file_count = 0;
@@ -159,8 +196,12 @@ static void trash_store_init(TrashStore *self) {
     gtk_revealer_set_transition_type(GTK_REVEALER(self->revealer), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
 
-    g_signal_connect_object(GTK_BUTTON(self->revealer->cancel_button), "clicked", G_CALLBACK(trash_store_handle_cancel_clicked), self, 0);
-    g_signal_connect_object(GTK_BUTTON(self->revealer->confirm_button), "clicked", G_CALLBACK(trash_store_handle_confirm_clicked), self, 0);
+    g_signal_connect (
+        self->revealer,
+        "response",
+        G_CALLBACK (revealer_response_cb),
+        self
+    );
 
     self->file_revealer = gtk_revealer_new();
     gtk_revealer_set_transition_type(GTK_REVEALER(self->file_revealer), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
@@ -315,38 +356,14 @@ gboolean trash_store_handle_header_clicked(__attribute__((unused)) GtkWidget *se
 void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self) {
     if (sender == GTK_BUTTON(self->delete_btn)) {
         self->restoring = FALSE;
-        trash_revealer_set_text(self->revealer, "<b>Permanently delete all items in the trash bin?</b>", TRUE);
+        trash_revealer_show_message(self->revealer, "<b>Permanently delete all items in the trash bin?</b>", TRUE);
     } else {
         self->restoring = TRUE;
-        trash_revealer_set_text(self->revealer, "<b>Restore all items from the trash bin?</b>", FALSE);
+        trash_revealer_show_message(self->revealer, "<b>Restore all items from the trash bin?</b>", FALSE);
     }
 
     trash_store_set_btns_sensitive(self, FALSE);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), TRUE);
-}
-
-void trash_store_handle_cancel_clicked(__attribute__((unused)) GtkButton *sender, TrashStore *self) {
-    trash_store_set_btns_sensitive(self, TRUE);
-    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
-}
-
-void trash_store_handle_confirm_clicked(__attribute__((unused)) GtkButton *sender, TrashStore *self) {
-    g_autoptr(GError) err = NULL;
-    g_slist_foreach(self->trashed_files, self->restoring ? (GFunc) trash_item_restore : (GFunc) trash_item_delete, &err);
-
-    if (err) {
-        g_autofree gchar *body = g_strdup_printf("Error %s item from trash bin: %s", self->restoring ? "restoring" : "deleting", err->message);
-        trash_notify_try_send("Trash Bin Error", body, "dialog-error-symbolic");
-    } else {
-        if (self->restoring) {
-            trash_notify_try_send("Trash Restored", "All trashed files have been restored", NULL);
-        } else {
-            trash_notify_try_send("Trash Cleared", "All files cleared from the trash", NULL);
-        }
-    }
-
-    trash_store_set_btns_sensitive(self, TRUE);
-    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
 }
 
 void trash_store_handle_row_activated(__attribute__((unused)) GtkListBox *sender, GtkListBoxRow *row, __attribute__((unused)) TrashStore *self) {
