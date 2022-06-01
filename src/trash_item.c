@@ -114,7 +114,7 @@ static void trash_item_init(TrashItem *self) {
 static void trash_item_finalize(GObject *obj) {
     TrashItem *self = TRASH_ITEM(obj);
 
-    trash_info_free(self->trash_info);
+    g_object_unref(self->trash_info);
 
     G_OBJECT_CLASS(trash_item_parent_class)->finalize(obj);
 }

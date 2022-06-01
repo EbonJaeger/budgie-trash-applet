@@ -32,73 +32,21 @@ struct _TrashInfo {
     GDateTime *deleted_time;
 };
 
-struct _TrashInfoClass {
-    GObjectClass parent_class;
-};
-
 G_DEFINE_TYPE(TrashInfo, trash_info, G_TYPE_OBJECT)
 
-static void trash_info_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec);
-static void trash_info_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec);
+static void trash_info_finalize(GObject *obj) {
+    g_return_if_fail(obj != NULL);
+    g_return_if_fail(TRASH_IS_INFO(obj));
 
-static void trash_info_class_init(TrashInfoClass *klazz) {
-    GObjectClass *class = G_OBJECT_CLASS(klazz);
-    class->get_property = trash_info_get_property;
-    class->set_property = trash_info_set_property;
+    TrashInfo *self = TRASH_INFO(obj);
 
-    props[PROP_NAME] = g_param_spec_string(
-        "name",
-        "file name",
-        "The name of the file",
-        NULL,
-        G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+    g_free((gchar *) self->name);
+    g_free((gchar *) self->uri);
+    g_free((gchar *) self->restore_path);
 
-    props[PROP_URI] = g_param_spec_string(
-        "uri",
-        "file uri",
-        "The URI of the trashed file",
-        NULL,
-        G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+    g_date_time_unref(self->deleted_time);
 
-    props[PROP_RESTORE_PATH] = g_param_spec_string(
-        "restore-path",
-        "restore path",
-        "The original path to the file",
-        NULL,
-        G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
-
-    props[PROP_ICON] = g_param_spec_variant(
-        "icon",
-        "file icon",
-        "The display icon for the file",
-        G_VARIANT_TYPE_ANY,
-        NULL,
-        G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
-
-    props[PROP_SIZE] = g_param_spec_uint64(
-        "size",
-        "file size",
-        "The size of the file on disk",
-        0,
-        G_MAXINT64,
-        0,
-        G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
-
-    props[PROP_IS_DIR] = g_param_spec_boolean(
-        "is-dir",
-        "is directory",
-        "If the file is a directory or not",
-        FALSE,
-        G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
-
-    props[PROP_DELETION_TIME] = g_param_spec_gtype(
-        "deletion-time",
-        "deletion time",
-        "The timestamp of when the file was deleted",
-        G_TYPE_NONE,
-        G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
-
-    g_object_class_install_properties(class, N_EXP_PROPERTIES, props);
+    G_OBJECT_CLASS(trash_info_parent_class)->finalize(obj);
 }
 
 static void trash_info_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec) {
@@ -163,6 +111,67 @@ static void trash_info_set_property(GObject *obj, guint prop_id, const GValue *v
     }
 }
 
+static void trash_info_class_init(TrashInfoClass *klazz) {
+    GObjectClass *class = G_OBJECT_CLASS(klazz);
+    class->finalize = trash_info_finalize;
+    class->get_property = trash_info_get_property;
+    class->set_property = trash_info_set_property;
+
+    props[PROP_NAME] = g_param_spec_string(
+        "name",
+        "file name",
+        "The name of the file",
+        NULL,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    props[PROP_URI] = g_param_spec_string(
+        "uri",
+        "file uri",
+        "The URI of the trashed file",
+        NULL,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    props[PROP_RESTORE_PATH] = g_param_spec_string(
+        "restore-path",
+        "restore path",
+        "The original path to the file",
+        NULL,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    props[PROP_ICON] = g_param_spec_variant(
+        "icon",
+        "file icon",
+        "The display icon for the file",
+        G_VARIANT_TYPE_ANY,
+        NULL,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    props[PROP_SIZE] = g_param_spec_uint64(
+        "size",
+        "file size",
+        "The size of the file on disk",
+        0,
+        G_MAXINT64,
+        0,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    props[PROP_IS_DIR] = g_param_spec_boolean(
+        "is-dir",
+        "is directory",
+        "If the file is a directory or not",
+        FALSE,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    props[PROP_DELETION_TIME] = g_param_spec_gtype(
+        "deletion-time",
+        "deletion time",
+        "The timestamp of when the file was deleted",
+        G_TYPE_NONE,
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
+
+    g_object_class_install_properties(class, N_EXP_PROPERTIES, props);
+}
+
 static void trash_info_init(__attribute__((unused)) TrashInfo *self) {}
 
 TrashInfo *trash_info_new(const gchar *uri, GError *err) {
@@ -191,17 +200,6 @@ TrashInfo *trash_info_new(const gchar *uri, GError *err) {
                         "deletion-time",
                         g_file_info_get_deletion_date(file_info),
                         NULL);
-}
-
-void trash_info_free(TrashInfo *self) {
-    if (!TRASH_IS_INFO(self)) {
-        return;
-    }
-
-    g_free((gchar *) self->name);
-    g_free((gchar *) self->uri);
-    g_free((gchar *) self->restore_path);
-    g_date_time_unref(self->deleted_time);
 }
 
 /* Property getters */

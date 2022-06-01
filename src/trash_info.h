@@ -15,6 +15,10 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE(TrashInfo, trash_info, TRASH, INFO, GObject)
 
+struct _TrashInfoClass {
+    GObjectClass parent_class;
+};
+
 /**
  * Create a new TrashInfo struct.
  *
@@ -22,11 +26,6 @@ G_DECLARE_FINAL_TYPE(TrashInfo, trash_info, TRASH, INFO, GObject)
  * at the URI, `NULL` will be returned and `err` will be set.
  */
 TrashInfo *trash_info_new(const gchar *uri, GError *err);
-
-/**
- * Free resources used by a TrashInfo struct.
- */
-void trash_info_free(TrashInfo *self);
 
 /* Property getters */
 
