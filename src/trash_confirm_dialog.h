@@ -10,27 +10,8 @@ typedef enum {
 } TrashConfirmResponseType;
 
 #define TRASH_TYPE_CONFIRM_DIALOG (trash_confirm_dialog_get_type ())
-#define TRASH_CONFIRM_DIALOG(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), TRASH_TYPE_CONFIRM_DIALOG, TrashConfirmDialog))
-#define TRASH_CONFIRM_DIALOG_CLASS(obj) (G_TYPE_CHECK_CLASS_CAST((obj), TRASH_TYPE_CONFIRM_DIALOG, TrashConfirmDialogClass))
-#define TRASH_IS_CONFIRM_DIALOG(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), TRASH_TYPE_CONFIRM_DIALOG))
-#define TRASH_IS_CONFIRM_DIALOG_CLASS(obj) (G_TYPE_CHECK_CLASS_TYPE((obj), TRASH_TYPE_CONFIRM_DIALOG))
-#define TRASH_CONFIRM_DIALOG_GET_CLASS(obj) (G_TYPE_CHECK_GET_CLASS((obj), TRASH_TYPE_CONFIRM_DIALOG, TrashConfirmDialogClass))
 
-typedef struct TrashConfirmDialogPrivate TrashConfirmDialogPrivate;
-
-typedef struct {
-    GtkRevealer parent_instance;
-
-    TrashConfirmDialogPrivate *priv;
-} TrashConfirmDialog;
-
-typedef struct {
-    GtkRevealerClass parent_class;
-
-    void (*response)(TrashConfirmDialog *revealer, gint response_id);
-} TrashConfirmDialogClass;
-
-GType trash_confirm_dialog_get_type (void);
+G_DECLARE_FINAL_TYPE (TrashConfirmDialog, trash_confirm_dialog, TRASH, CONFIRM_DIALOG, GtkRevealer)
 
 /**
  * Create a new TrashConfirmDialog widget.

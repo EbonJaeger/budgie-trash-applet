@@ -38,7 +38,7 @@ struct _TrashStore {
     GtkWidget *file_revealer;
     GtkWidget *file_box;
 
-    TrashConfirmDialog *revealer;
+    TrashConfirmDialog *dialog;
 };
 
 struct _TrashStoreClass {
@@ -143,18 +143,18 @@ static void response_ok (TrashStore *self) {
     }
 
     trash_store_set_btns_sensitive(self, TRUE);
-    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->dialog), FALSE);
 }
 
-static void revealer_response_cb (TrashConfirmDialog *revealer, gint response_id, TrashStore *self) {
+static void dialog_response_cb (TrashConfirmDialog *dialog, gint response_id, TrashStore *self) {
     switch (response_id)
     {
-    case TRASH_CONFIRM_RESPONSE_CANCEL:
+    case GTK_RESPONSE_CANCEL:
         trash_store_set_btns_sensitive(self, TRUE);
-        gtk_revealer_set_reveal_child (GTK_REVEALER (revealer), FALSE);
+        gtk_revealer_set_reveal_child (GTK_REVEALER (dialog), FALSE);
         break;
 
-    case TRASH_CONFIRM_RESPONSE_OK:
+    case GTK_RESPONSE_OK:
         response_ok (self);
         break;
     
@@ -192,14 +192,14 @@ static void trash_store_init(TrashStore *self) {
     gtk_box_pack_end(GTK_BOX(self->header), self->restore_btn, FALSE, FALSE, 0);
 
     // Create our revealer object
-    self->revealer = trash_confirm_dialog_new();
-    gtk_revealer_set_transition_type(GTK_REVEALER(self->revealer), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
-    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
+    self->dialog = trash_confirm_dialog_new();
+    gtk_revealer_set_transition_type(GTK_REVEALER(self->dialog), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->dialog), FALSE);
 
     g_signal_connect (
-        self->revealer,
+        self->dialog,
         "response",
-        G_CALLBACK (revealer_response_cb),
+        G_CALLBACK (dialog_response_cb),
         self
     );
 
@@ -238,7 +238,7 @@ static void trash_store_init(TrashStore *self) {
     gtk_container_add(GTK_CONTAINER(header_event_box), self->header);
 
     gtk_box_pack_start(GTK_BOX(self), header_event_box, TRUE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(self), GTK_WIDGET(self->revealer), FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(self), GTK_WIDGET(self->dialog), FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(self), self->file_revealer, TRUE, TRUE, 0);
 }
 
@@ -356,14 +356,14 @@ gboolean trash_store_handle_header_clicked(__attribute__((unused)) GtkWidget *se
 void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self) {
     if (sender == GTK_BUTTON(self->delete_btn)) {
         self->restoring = FALSE;
-        trash_confirm_dialog_show_message(self->revealer, "<b>Permanently delete all items in the trash bin?</b>", TRUE);
+        trash_confirm_dialog_show_message(self->dialog, "<b>Permanently delete all items in the trash bin?</b>", TRUE);
     } else {
         self->restoring = TRUE;
-        trash_confirm_dialog_show_message(self->revealer, "<b>Restore all items from the trash bin?</b>", FALSE);
+        trash_confirm_dialog_show_message(self->dialog, "<b>Restore all items from the trash bin?</b>", FALSE);
     }
 
     trash_store_set_btns_sensitive(self, FALSE);
-    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), TRUE);
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->dialog), TRUE);
 }
 
 void trash_store_handle_row_activated(__attribute__((unused)) GtkListBox *sender, GtkListBoxRow *row, __attribute__((unused)) TrashStore *self) {

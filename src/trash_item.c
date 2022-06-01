@@ -48,15 +48,15 @@ static void response_ok (TrashItem *self) {
     }
 }
 
-static void revealer_response_cb (TrashConfirmDialog *revealer, gint response_id, TrashItem *self) {
+static void dialog_response_cb (TrashConfirmDialog *dialog, gint response_id, TrashItem *self) {
     switch (response_id)
     {
-    case TRASH_CONFIRM_RESPONSE_CANCEL:
+    case GTK_RESPONSE_CANCEL:
         trash_item_set_btns_sensitive (self, TRUE);
-        gtk_revealer_set_reveal_child (GTK_REVEALER (revealer), FALSE);
+        gtk_revealer_set_reveal_child (GTK_REVEALER (dialog), FALSE);
         break;
 
-    case TRASH_CONFIRM_RESPONSE_OK:
+    case GTK_RESPONSE_OK:
         response_ok (self);
         break;
     
@@ -87,7 +87,7 @@ static void trash_item_init(TrashItem *self) {
     gtk_revealer_set_transition_type(GTK_REVEALER(self->info_revealer), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->info_revealer), FALSE);
     GtkStyleContext *revealer_style = gtk_widget_get_style_context(self->info_revealer);
-    gtk_style_context_add_class(revealer_style, "trash-info-revealer");
+    gtk_style_context_add_class(revealer_style, "trash-info-dialog");
 
     self->info_container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_add(GTK_CONTAINER(self->info_revealer), self->info_container);
@@ -97,7 +97,7 @@ static void trash_item_init(TrashItem *self) {
     g_signal_connect (
         self->confirm_revealer,
         "response",
-        G_CALLBACK (revealer_response_cb),
+        G_CALLBACK (dialog_response_cb),
         self
     );
 
