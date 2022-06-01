@@ -1,5 +1,6 @@
 #pragma once
 
+#include "notify.h"
 #include "trash_confirm_dialog.h"
 #include "trash_info.h"
 #include "utils.h"
