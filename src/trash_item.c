@@ -19,7 +19,7 @@ struct _TrashItem {
     GtkWidget *size_label;
     GtkWidget *timestamp_label;
 
-    TrashRevealer *confirm_revealer;
+    TrashConfirmDialog *confirm_revealer;
 };
 
 struct _TrashItemClass {
@@ -48,15 +48,15 @@ static void response_ok (TrashItem *self) {
     }
 }
 
-static void revealer_response_cb (TrashRevealer *revealer, gint response_id, TrashItem *self) {
+static void revealer_response_cb (TrashConfirmDialog *revealer, gint response_id, TrashItem *self) {
     switch (response_id)
     {
-    case TRASH_REVEALER_RESPONSE_CANCEL:
+    case TRASH_CONFIRM_RESPONSE_CANCEL:
         trash_item_set_btns_sensitive (self, TRUE);
         gtk_revealer_set_reveal_child (GTK_REVEALER (revealer), FALSE);
         break;
 
-    case TRASH_REVEALER_RESPONSE_OK:
+    case TRASH_CONFIRM_RESPONSE_OK:
         response_ok (self);
         break;
     
@@ -92,7 +92,7 @@ static void trash_item_init(TrashItem *self) {
     self->info_container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_add(GTK_CONTAINER(self->info_revealer), self->info_container);
 
-    self->confirm_revealer = trash_revealer_new();
+    self->confirm_revealer = trash_confirm_dialog_new();
 
     g_signal_connect (
         self->confirm_revealer,
@@ -190,10 +190,10 @@ gint trash_item_has_name(TrashItem *self, gchar *name) {
 void trash_item_handle_btn_clicked(GtkButton *sender, TrashItem *self) {
     if (sender == GTK_BUTTON(self->delete_btn)) {
         self->restoring = FALSE;
-        trash_revealer_show_message(self->confirm_revealer, "<b>Permanently delete this item?</b>", TRUE);
+        trash_confirm_dialog_show_message(self->confirm_revealer, "<b>Permanently delete this item?</b>", TRUE);
     } else {
         self->restoring = TRUE;
-        trash_revealer_show_message(self->confirm_revealer, "<b>Restore this item?</b>", FALSE);
+        trash_confirm_dialog_show_message(self->confirm_revealer, "<b>Restore this item?</b>", FALSE);
     }
 
     trash_item_set_btns_sensitive(self, FALSE);

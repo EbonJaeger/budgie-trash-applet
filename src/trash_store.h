@@ -1,9 +1,9 @@
 #pragma once
 
 #include "notify.h"
+#include "trash_confirm_dialog.h"
 #include "trash_info.h"
 #include "trash_item.h"
-#include "trash_revealer.h"
 #include "trash_settings.h"
 #include "utils.h"
 #include <gtk/gtk.h>

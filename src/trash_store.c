@@ -38,7 +38,7 @@ struct _TrashStore {
     GtkWidget *file_revealer;
     GtkWidget *file_box;
 
-    TrashRevealer *revealer;
+    TrashConfirmDialog *revealer;
 };
 
 struct _TrashStoreClass {
@@ -146,15 +146,15 @@ static void response_ok (TrashStore *self) {
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
 }
 
-static void revealer_response_cb (TrashRevealer *revealer, gint response_id, TrashStore *self) {
+static void revealer_response_cb (TrashConfirmDialog *revealer, gint response_id, TrashStore *self) {
     switch (response_id)
     {
-    case TRASH_REVEALER_RESPONSE_CANCEL:
+    case TRASH_CONFIRM_RESPONSE_CANCEL:
         trash_store_set_btns_sensitive(self, TRUE);
         gtk_revealer_set_reveal_child (GTK_REVEALER (revealer), FALSE);
         break;
 
-    case TRASH_REVEALER_RESPONSE_OK:
+    case TRASH_CONFIRM_RESPONSE_OK:
         response_ok (self);
         break;
     
@@ -192,7 +192,7 @@ static void trash_store_init(TrashStore *self) {
     gtk_box_pack_end(GTK_BOX(self->header), self->restore_btn, FALSE, FALSE, 0);
 
     // Create our revealer object
-    self->revealer = trash_revealer_new();
+    self->revealer = trash_confirm_dialog_new();
     gtk_revealer_set_transition_type(GTK_REVEALER(self->revealer), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), FALSE);
 
@@ -356,10 +356,10 @@ gboolean trash_store_handle_header_clicked(__attribute__((unused)) GtkWidget *se
 void trash_store_handle_header_btn_clicked(GtkButton *sender, TrashStore *self) {
     if (sender == GTK_BUTTON(self->delete_btn)) {
         self->restoring = FALSE;
-        trash_revealer_show_message(self->revealer, "<b>Permanently delete all items in the trash bin?</b>", TRUE);
+        trash_confirm_dialog_show_message(self->revealer, "<b>Permanently delete all items in the trash bin?</b>", TRUE);
     } else {
         self->restoring = TRUE;
-        trash_revealer_show_message(self->revealer, "<b>Restore all items from the trash bin?</b>", FALSE);
+        trash_confirm_dialog_show_message(self->revealer, "<b>Restore all items from the trash bin?</b>", FALSE);
     }
 
     trash_store_set_btns_sensitive(self, FALSE);

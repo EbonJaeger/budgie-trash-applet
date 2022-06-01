@@ -1,7 +1,7 @@
 #pragma once
 
+#include "trash_confirm_dialog.h"
 #include "trash_info.h"
-#include "trash_revealer.h"
 #include "utils.h"
 #include <gtk/gtk.h>
 

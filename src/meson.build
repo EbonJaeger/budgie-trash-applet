@@ -13,11 +13,11 @@ trash_applet_deps = [
 ]
 
 trash_applet_sources = [
+    'trash_confirm_dialog.c',
     'trash_enum_types.c',
     'trash_icon_button.c',
     'trash_info.c',
     'trash_item.c',
-    'trash_revealer.c',
     'trash_settings.c',
     'trash_store.c',
     'utils.c',

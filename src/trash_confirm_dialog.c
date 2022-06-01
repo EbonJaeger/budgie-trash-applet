@@ -1,8 +1,8 @@
-#include "trash_revealer.h"
+#include "trash_confirm_dialog.h"
 
-static void trash_revealer_finalize (GObject *obj);
+static void trash_confirm_dialog_finalize (GObject *obj);
 
-struct TrashRevealerPrivate {
+struct TrashConfirmDialogPrivate {
     GtkWidget *container;
 
     GtkWidget *label;
@@ -29,35 +29,35 @@ enum {
     PROP_MESSAGE
 };
 
-static guint trash_revealer_signals [LAST_SIGNAL];
+static guint trash_confirm_dialog_signals [LAST_SIGNAL];
 
-static void trash_revealer_response (TrashRevealer *self, gint response_id) {
+static void trash_confirm_response (TrashConfirmDialog *self, gint response_id) {
     int new_response = response_id;
 
-    g_return_if_fail (TRASH_IS_REVEALER (self));
+    g_return_if_fail (TRASH_IS_CONFIRM_DIALOG (self));
 
-    if (!(response_id == TRASH_REVEALER_RESPONSE_OK || response_id == TRASH_REVEALER_RESPONSE_CANCEL)) {
+    if (!(response_id == TRASH_CONFIRM_RESPONSE_OK || response_id == TRASH_CONFIRM_RESPONSE_CANCEL)) {
         return;
     }
 
     g_signal_emit (
         self,
-        trash_revealer_signals [RESPONSE],
+        trash_confirm_dialog_signals [RESPONSE],
         0,
         new_response
     );
 }
 
-G_DEFINE_TYPE_WITH_PRIVATE (TrashRevealer, trash_revealer, GTK_TYPE_REVEALER);
+G_DEFINE_TYPE_WITH_PRIVATE (TrashConfirmDialog, trash_confirm_dialog, GTK_TYPE_REVEALER);
 
-static void trash_revealer_style_set (GtkWidget *widget, GtkStyle *previous_style) {
-    TrashRevealer *self;
+static void trash_confirm_dialog_style_set (GtkWidget *widget, GtkStyle *previous_style) {
+    TrashConfirmDialog *self;
 
-    if (GTK_WIDGET_CLASS (trash_revealer_parent_class)->style_set) {
-        GTK_WIDGET_CLASS (trash_revealer_parent_class)->style_set (widget, previous_style);
+    if (GTK_WIDGET_CLASS (trash_confirm_dialog_parent_class)->style_set) {
+        GTK_WIDGET_CLASS (trash_confirm_dialog_parent_class)->style_set (widget, previous_style);
     }
 
-    self = TRASH_REVEALER (widget);
+    self = TRASH_CONFIRM_DIALOG (widget);
 
     gtk_revealer_set_transition_type (GTK_REVEALER (self), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
     gtk_revealer_set_reveal_child (GTK_REVEALER (self), FALSE);
@@ -66,8 +66,8 @@ static void trash_revealer_style_set (GtkWidget *widget, GtkStyle *previous_styl
     gtk_label_set_line_wrap (GTK_LABEL (self->priv->label), TRUE);
 }
 
-static void trash_revealer_set_message (TrashRevealer *self, const gchar *message) {
-    g_return_if_fail (TRASH_IS_REVEALER (self));
+static void trash_confirm_dialog_set_message (TrashConfirmDialog *self, const gchar *message) {
+    g_return_if_fail (TRASH_IS_CONFIRM_DIALOG (self));
 
     g_free (self->priv->message);
 
@@ -80,7 +80,7 @@ static void trash_revealer_set_message (TrashRevealer *self, const gchar *messag
     }
 }
 
-static void trash_revealer_set_destructive (TrashRevealer *self, gboolean destructive) {
+static void trash_confirm_dialog_set_destructive (TrashConfirmDialog *self, gboolean destructive) {
     GtkStyleContext *confirm_style = gtk_widget_get_style_context(self->priv->confirm_button);
 
     if (destructive) {
@@ -93,13 +93,13 @@ static void trash_revealer_set_destructive (TrashRevealer *self, gboolean destru
 }
 
 static void
-trash_revealer_get_property (
+trash_confirm_dialog_get_property (
     GObject *object,
     guint prop_id,
     GValue *value,
     GParamSpec *pspec
 ) {
-    TrashRevealer *self = TRASH_REVEALER (object);
+    TrashConfirmDialog *self = TRASH_CONFIRM_DIALOG (object);
 
     switch (prop_id)
     {
@@ -116,21 +116,21 @@ trash_revealer_get_property (
 }
 
 static void
-trash_revealer_set_property (
+trash_confirm_dialog_set_property (
     GObject *object,
     guint prop_id,
     const GValue *value,
     GParamSpec *pspec
 ) {
-    TrashRevealer *self = TRASH_REVEALER (object);
+    TrashConfirmDialog *self = TRASH_CONFIRM_DIALOG (object);
 
     switch (prop_id)
     {
     case PROP_DESTRUCTIVE:
-        trash_revealer_set_destructive (self, g_value_get_boolean (value));
+        trash_confirm_dialog_set_destructive (self, g_value_get_boolean (value));
         break;
     case PROP_MESSAGE:
-        trash_revealer_set_message (self, g_value_get_string (value));
+        trash_confirm_dialog_set_message (self, g_value_get_string (value));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -138,21 +138,21 @@ trash_revealer_set_property (
     }
 }
 
-static void trash_revealer_class_init (TrashRevealerClass *klass) {
+static void trash_confirm_dialog_class_init (TrashConfirmDialogClass *klass) {
     GObjectClass *class = G_OBJECT_CLASS (klass);
     GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
 
-    class->finalize = trash_revealer_finalize;
-    class->get_property = trash_revealer_get_property;
-    class->set_property = trash_revealer_set_property;
+    class->finalize = trash_confirm_dialog_finalize;
+    class->get_property = trash_confirm_dialog_get_property;
+    class->set_property = trash_confirm_dialog_set_property;
     
-    widget_class->style_set = trash_revealer_style_set;
+    widget_class->style_set = trash_confirm_dialog_style_set;
 
-    trash_revealer_signals [RESPONSE] = g_signal_new (
+    trash_confirm_dialog_signals [RESPONSE] = g_signal_new (
         "response",
         G_OBJECT_CLASS_TYPE (klass),
         G_SIGNAL_RUN_LAST,
-        G_STRUCT_OFFSET (TrashRevealerClass, response),
+        G_STRUCT_OFFSET (TrashConfirmDialogClass, response),
         NULL, NULL,
         g_cclosure_marshal_VOID__INT,
         G_TYPE_NONE, 1,
@@ -184,16 +184,16 @@ static void trash_revealer_class_init (TrashRevealerClass *klass) {
     );
 }
 
-static void cancel_button_clicked (__attribute__((unused)) GtkButton *button, TrashRevealer *self) {
-    trash_revealer_response (self, TRASH_REVEALER_RESPONSE_CANCEL);
+static void cancel_button_clicked (__attribute__((unused)) GtkButton *button, TrashConfirmDialog *self) {
+    trash_confirm_response (self, TRASH_CONFIRM_RESPONSE_CANCEL);
 }
 
-static void confirm_button_clicked (__attribute__((unused)) GtkButton *button, TrashRevealer *self) {
-    trash_revealer_response (self, TRASH_REVEALER_RESPONSE_OK);
+static void confirm_button_clicked (__attribute__((unused)) GtkButton *button, TrashConfirmDialog *self) {
+    trash_confirm_response (self, TRASH_CONFIRM_RESPONSE_OK);
 }
 
-static void trash_revealer_init (TrashRevealer *self) {
-    self->priv = trash_revealer_get_instance_private (self);
+static void trash_confirm_dialog_init (TrashConfirmDialog *self) {
+    self->priv = trash_confirm_dialog_get_instance_private (self);
 
     self->priv->container = gtk_box_new (GTK_ORIENTATION_VERTICAL, 5);
     self->priv->label = gtk_label_new (NULL);
@@ -240,11 +240,11 @@ static void trash_revealer_init (TrashRevealer *self) {
     gtk_widget_show_all (GTK_WIDGET (self->priv->container));
 }
 
-static void trash_revealer_finalize (GObject *obj) {
+static void trash_confirm_dialog_finalize (GObject *obj) {
     g_return_if_fail (obj != NULL);
-    g_return_if_fail (TRASH_IS_REVEALER (obj));
+    g_return_if_fail (TRASH_IS_CONFIRM_DIALOG (obj));
 
-    TrashRevealer *self = TRASH_REVEALER (obj);
+    TrashConfirmDialog *self = TRASH_CONFIRM_DIALOG (obj);
 
     g_return_if_fail (self->priv != NULL);
 
@@ -252,16 +252,16 @@ static void trash_revealer_finalize (GObject *obj) {
         g_free (self->priv->message);
     }
 
-    G_OBJECT_CLASS (trash_revealer_parent_class)->finalize (obj);
+    G_OBJECT_CLASS (trash_confirm_dialog_parent_class)->finalize (obj);
 }
 
-TrashRevealer *trash_revealer_new() {
-    return g_object_new(TRASH_TYPE_REVEALER, NULL);
+TrashConfirmDialog *trash_confirm_dialog_new() {
+    return g_object_new(TRASH_TYPE_CONFIRM_DIALOG, NULL);
 }
 
-void trash_revealer_show_message (TrashRevealer *self, const gchar *message, gboolean destructive) {
-    g_return_if_fail (TRASH_IS_REVEALER (self));
+void trash_confirm_dialog_show_message (TrashConfirmDialog *self, const gchar *message, gboolean destructive) {
+    g_return_if_fail (TRASH_IS_CONFIRM_DIALOG (self));
 
-    trash_revealer_set_message (self, message ? message : "");
-    trash_revealer_set_destructive (self, destructive);
+    trash_confirm_dialog_set_message (self, message ? message : "");
+    trash_confirm_dialog_set_destructive (self, destructive);
 }
