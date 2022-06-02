@@ -32,7 +32,7 @@ struct _TrashInfo {
     GDateTime *deleted_time;
 };
 
-G_DEFINE_TYPE (TrashInfo, trash_info, G_TYPE_OBJECT)
+G_DEFINE_TYPE (TrashInfo, trash_info, G_TYPE_OBJECT);
 
 static void trash_info_finalize (GObject *obj) {
     g_return_if_fail (obj != NULL);
