@@ -258,6 +258,10 @@ void trash_item_delete (TrashItem *self, GError *err) {
     );
 }
 
+static void restore_finish (GFile *file, GAsyncResult *result, GError *err) {
+    g_file_move_finish (file, result, &err);
+}
+
 void trash_item_restore (TrashItem *self, GError *err) {
     g_autoptr(GFile) trashed_file = g_file_new_for_uri (trash_info_get_uri (self->trash_info));
     g_autoptr(GFile) restored_file = g_file_new_for_path (trash_info_get_restore_path (self->trash_info));
@@ -265,12 +269,14 @@ void trash_item_restore (TrashItem *self, GError *err) {
     g_return_if_fail (G_IS_FILE (trashed_file));
     g_return_if_fail (G_IS_FILE (restored_file));
 
-    g_file_move (
+    g_file_move_async (
         trashed_file,
         restored_file,
         G_FILE_COPY_ALL_METADATA,
+        G_PRIORITY_DEFAULT,
         NULL, NULL, NULL,
-        &err
+        (GAsyncReadyCallback) restore_finish,
+        err
     );
 }
 
