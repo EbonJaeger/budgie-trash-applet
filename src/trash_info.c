@@ -10,10 +10,10 @@ enum {
     PROP_SIZE,
     PROP_IS_DIR,
     PROP_DELETION_TIME,
-    N_EXP_PROPERTIES
+    N_PROPERTIES
 };
 
-static GParamSpec *props[N_EXP_PROPERTIES] = {
+static GParamSpec *props[N_PROPERTIES] = {
     NULL,
 };
 
@@ -176,7 +176,7 @@ static void trash_info_class_init (TrashInfoClass *klazz) {
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE
     );
 
-    g_object_class_install_properties (class, N_EXP_PROPERTIES, props);
+    g_object_class_install_properties (class, N_PROPERTIES, props);
 }
 
 static void trash_info_init (__attribute__((unused)) TrashInfo *self) {}

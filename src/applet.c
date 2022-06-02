@@ -7,10 +7,10 @@
 enum {
     PROP_EXP_0,
     PROP_APPLET_UUID,
-    N_EXP_PROPERTIES
+    N_PROPERTIES
 };
 
-static GParamSpec *applet_props[N_EXP_PROPERTIES] = {NULL};
+static GParamSpec *applet_props[N_PROPERTIES] = {NULL};
 
 struct _TrashAppletPrivate {
     BudgiePopoverManager *manager;
@@ -79,7 +79,7 @@ static void trash_applet_class_init(TrashAppletClass *klazz) {
         NULL,
         G_PARAM_STATIC_STRINGS | G_PARAM_READABLE | G_PARAM_WRITABLE);
 
-    g_object_class_install_properties(class, N_EXP_PROPERTIES, applet_props);
+    g_object_class_install_properties(class, N_PROPERTIES, applet_props);
 
     // Set our function to update popovers
     BUDGIE_APPLET_CLASS(klazz)->update_popovers = trash_applet_update_popovers;

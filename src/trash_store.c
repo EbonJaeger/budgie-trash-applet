@@ -11,10 +11,10 @@ static guint signals[N_SIGNALS] = {0};
 enum {
     PROP_EXP_0,
     PROP_SORT_MODE,
-    N_EXP_PROPERTIES
+    N_PROPERTIES
 };
 
-static GParamSpec *store_props[N_EXP_PROPERTIES] = {NULL};
+static GParamSpec *store_props[N_PROPERTIES] = {NULL};
 
 struct _TrashStore {
     GtkBox parent_instance;
@@ -96,7 +96,7 @@ static void trash_store_class_init(TrashStoreClass *klazz) {
         TRASH_SORT_TYPE,
         G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
-    g_object_class_install_properties(class, N_EXP_PROPERTIES, store_props);
+    g_object_class_install_properties(class, N_PROPERTIES, store_props);
 }
 
 static void trash_store_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec) {
