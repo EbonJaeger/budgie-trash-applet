@@ -9,7 +9,29 @@ struct _TrashIconButton {
 
 G_DEFINE_TYPE (TrashIconButton, trash_icon_button, GTK_TYPE_BUTTON);
 
-static void trash_icon_button_class_init (__attribute__((unused)) TrashIconButtonClass *klass) {}
+static void trash_icon_button_finalize (GObject *object) {
+    TrashIconButton *self;
+
+    g_return_if_fail (object != NULL);
+    g_return_if_fail (TRASH_IS_ICON_BUTTON (object));
+
+    self = TRASH_ICON_BUTTON (object);
+
+    if (self->empty_image != NULL) {
+        g_object_unref (self->empty_image);
+    }
+
+    if (self->full_image != NULL) {
+        g_object_unref (self->full_image);
+    }
+
+    G_OBJECT_CLASS (trash_icon_button_parent_class)->finalize (object);
+}
+
+static void trash_icon_button_class_init (TrashIconButtonClass *klass) {
+    GObjectClass *class = G_OBJECT_CLASS (klass);
+    class->finalize = trash_icon_button_finalize;
+}
 
 static void trash_icon_button_init (TrashIconButton *self) {
     GtkStyleContext *style = gtk_widget_get_style_context (GTK_WIDGET (self));
@@ -19,7 +41,7 @@ static void trash_icon_button_init (TrashIconButton *self) {
     self->empty_image = gtk_image_new_from_icon_name ("user-trash-symbolic", GTK_ICON_SIZE_MENU);
     self->full_image = gtk_image_new_from_icon_name ("user-trash-full-symbolic", GTK_ICON_SIZE_MENU);
 
-    gtk_button_set_image (GTK_BUTTON (self), self->empty_image);
+    gtk_button_set_image (GTK_BUTTON (self), g_object_ref(self->empty_image));
     gtk_widget_set_tooltip_text (GTK_WIDGET (self), "Trash");
 
     gtk_widget_show_all (GTK_WIDGET (self));
@@ -30,9 +52,11 @@ TrashIconButton *trash_icon_button_new (void) {
 }
 
 void trash_icon_button_set_filled (TrashIconButton *self) {
-    gtk_button_set_image (GTK_BUTTON (self), self->full_image);
+    GtkWidget *dup = g_object_ref (self->full_image);
+    gtk_button_set_image (GTK_BUTTON (self), dup);
 }
 
 void trash_icon_button_set_empty (TrashIconButton *self) {
-    gtk_button_set_image (GTK_BUTTON (self), self->empty_image);
+    GtkWidget *dup = g_object_ref (self->empty_image);
+    gtk_button_set_image (GTK_BUTTON (self), dup);
 }
