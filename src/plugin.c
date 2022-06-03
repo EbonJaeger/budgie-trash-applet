@@ -1,7 +1,6 @@
-#include "applet.h"
-#define _GNU_SOURCE
-
 #include "plugin.h"
+
+#define _GNU_SOURCE
 
 static void trash_plugin_iface_init(BudgiePluginIface *iface);
 
