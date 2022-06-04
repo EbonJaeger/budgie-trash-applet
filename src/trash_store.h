@@ -39,6 +39,14 @@ void trash_store_start_monitor(TrashStore *self);
 void trash_store_load_items(TrashStore *self, GError *err);
 
 /**
+ * Set the sort mode for this trash store.
+ * 
+ * Setting this will invalidate the current sorting and re-sort
+ * the items.
+ */
+void trash_store_set_sort_mode (TrashStore *self, TrashSortMode mode);
+
+/**
  * Get the the number of trash items in this store.
  */
 gint trash_store_get_count(TrashStore *self);

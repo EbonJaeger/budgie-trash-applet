@@ -60,9 +60,7 @@ static void trash_store_set_property(GObject *obj, guint prop_id, const GValue *
 
     switch (prop_id) {
         case PROP_SORT_MODE:
-            self->sort_mode = g_value_get_enum(val);
-            gtk_list_box_invalidate_sort(GTK_LIST_BOX(self->file_box));
-            g_object_notify_by_pspec(obj, props[PROP_SORT_MODE]);
+            trash_store_set_sort_mode (self, g_value_get_enum (val));
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
@@ -528,6 +526,12 @@ void trash_store_load_items(TrashStore *self, GError *err) {
 
     check_empty(self);
     g_file_enumerator_close(enumerator, NULL, NULL);
+}
+
+void trash_store_set_sort_mode (TrashStore *self, TrashSortMode mode) {
+    self->sort_mode = mode;
+    gtk_list_box_invalidate_sort (GTK_LIST_BOX (self->file_box));
+    g_object_notify_by_pspec (G_OBJECT (self), props[PROP_SORT_MODE]);
 }
 
 gint trash_store_get_count(TrashStore *self) {

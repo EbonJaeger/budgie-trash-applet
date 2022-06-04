@@ -119,10 +119,14 @@ static void setting_changed(GSettings *settings, gchar *key, TrashApplet *self) 
         TrashSortMode new_mode = g_settings_get_enum(settings, key);
         GHashTableIter iter;
         gpointer hash_key, value;
+
         g_hash_table_iter_init(&iter, self->priv->mounts);
 
         while (g_hash_table_iter_next(&iter, &hash_key, &value)) {
-            g_object_set(value, key, new_mode, NULL);
+            g_assert (TRASH_IS_STORE (value));
+
+            TrashStore *store = TRASH_STORE (value);
+            trash_store_set_sort_mode (store, new_mode);
         }
     } else {
         g_critical("%s:%d: Unknown settings key '%s'", __BASE_FILE__, __LINE__, key);
