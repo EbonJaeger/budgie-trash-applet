@@ -4,11 +4,6 @@
 
 G_BEGIN_DECLS
 
-typedef enum {
-    TRASH_CONFIRM_RESPONSE_OK = 0,
-    TRASH_CONFIRM_RESPONSE_CANCEL = 1
-} TrashConfirmResponseType;
-
 #define TRASH_TYPE_CONFIRM_DIALOG (trash_confirm_dialog_get_type ())
 
 G_DECLARE_FINAL_TYPE (TrashConfirmDialog, trash_confirm_dialog, TRASH, CONFIRM_DIALOG, GtkRevealer)

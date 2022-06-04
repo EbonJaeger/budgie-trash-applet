@@ -1,7 +1,5 @@
 #include "trash_confirm_dialog.h"
 
-static void trash_confirm_dialog_finalize (GObject *obj);
-
 struct _TrashConfirmDialog {
     GtkRevealer parent_instance;
 
@@ -56,6 +54,21 @@ static void trash_confirm_dialog_set_destructive (TrashConfirmDialog *self, gboo
         gtk_style_context_remove_class(confirm_style, "destructive-action");
         gtk_style_context_add_class(confirm_style, "suggested-action");
     }
+}
+
+static void trash_confirm_dialog_finalize (GObject *obj) {
+    g_return_if_fail (obj != NULL);
+    g_return_if_fail (TRASH_IS_CONFIRM_DIALOG (obj));
+
+    TrashConfirmDialog *self = TRASH_CONFIRM_DIALOG (obj);
+
+    g_return_if_fail (self != NULL);
+
+    if (self->message != NULL) {
+        g_free (self->message);
+    }
+
+    G_OBJECT_CLASS (trash_confirm_dialog_parent_class)->finalize (obj);
 }
 
 static void
@@ -217,21 +230,6 @@ static void trash_confirm_dialog_init (TrashConfirmDialog *self) {
     // Pack ourselves up
     gtk_container_add (GTK_CONTAINER (self), self->container);
     gtk_widget_show_all (GTK_WIDGET (self->container));
-}
-
-static void trash_confirm_dialog_finalize (GObject *obj) {
-    g_return_if_fail (obj != NULL);
-    g_return_if_fail (TRASH_IS_CONFIRM_DIALOG (obj));
-
-    TrashConfirmDialog *self = TRASH_CONFIRM_DIALOG (obj);
-
-    g_return_if_fail (self != NULL);
-
-    if (self->message != NULL) {
-        g_free (self->message);
-    }
-
-    G_OBJECT_CLASS (trash_confirm_dialog_parent_class)->finalize (obj);
 }
 
 TrashConfirmDialog *trash_confirm_dialog_new () {
