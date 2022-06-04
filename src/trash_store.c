@@ -6,7 +6,6 @@ enum {
     LAST_SIGNAL
 };
 
-
 enum {
     PROP_0,
     PROP_SORT_MODE,
@@ -40,10 +39,6 @@ struct _TrashStore {
 
     TrashConfirmDialog *dialog;
 };
-
-static void trash_store_finalize(GObject *obj);
-static void trash_store_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec);
-static void trash_store_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec);
 
 G_DEFINE_TYPE(TrashStore, trash_store, GTK_TYPE_BOX);
 
