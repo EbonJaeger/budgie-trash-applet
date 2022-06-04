@@ -1,8 +1,6 @@
 #pragma once
 
-#include "notify.h"
-#include <gio/gio.h>
-#include <math.h>
+#include <glib.h>
 #include <string.h>
 
 #define FILE_ATTRIBUTES_STANDARD_NAME_AND_TYPE "standard::name,standard::type"

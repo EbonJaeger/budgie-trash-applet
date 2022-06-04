@@ -21,16 +21,17 @@ typedef enum {
 #define TRASH_SETTINGS_KEY_SORT_MODE "sort-mode"
 
 #define TRASH_TYPE_SETTINGS (trash_settings_get_type())
-#define TRASH_SETTINGS(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), TRASH_TYPE_SETTINGS, TrashSettings))
-#define TRASH_IS_SETTINGS(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), TRASH_TYPE_SETTINGS))
 
-typedef struct _TrashSettings TrashSettings;
-typedef struct _TrashSettingsClass TrashSettingsClass;
+G_DECLARE_FINAL_TYPE (TrashSettings, trash_settings, TRASH, SETTINGS, GtkBox)
 
+/**
+ * Create a new TrashSettings class.
+ */
 TrashSettings *trash_settings_new();
 
-void trash_settings_sort_changed(GtkWidget *button, TrashSettings *self);
-
-void trash_return_clicked(GtkButton *sender, TrashSettings *self);
+/**
+ * Get the current sort mode for trash items.
+ */
+TrashSortMode trash_settings_get_sort_mode(TrashSettings *self);
 
 G_END_DECLS
