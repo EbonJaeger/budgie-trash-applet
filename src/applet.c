@@ -24,8 +24,6 @@ struct _TrashAppletPrivate {
     GtkWidget *return_button;
     TrashIconButton *icon_button;
 
-    gint trash_count;
-
     gint uid;
     GVolumeMonitor *volume_monitor;
 };
@@ -142,24 +140,50 @@ static void set_main_page(__budgie_unused__ TrashSettings *sender, TrashApplet *
     gtk_stack_set_visible_child_name(GTK_STACK(self->priv->stack), "main");
 }
 
+/**
+ * Iterate over all of the current trash stores, and update the icon
+ * if there are items, or if there aren't.
+ * 
+ * The iteration short-circuits as soon as it finds a trash store
+ * that has items in it.
+ */
+static void maybe_update_icon(TrashApplet *self) {
+    GHashTableIter iter;
+    gpointer key, value;
+    gboolean has_items = FALSE;
+
+    g_hash_table_iter_init(&iter, self->priv->mounts);
+
+    while (g_hash_table_iter_next(&iter, &key, &value)) {
+        g_assert(TRASH_IS_STORE(value));
+
+        TrashStore *store = TRASH_STORE(value);
+        gint count = trash_store_get_count(store);
+        if (count > 0) {
+            has_items = TRUE;
+            break;
+        }
+    }
+
+    if (has_items) {
+        trash_icon_button_set_filled(self->priv->icon_button);
+    } else {
+        trash_icon_button_set_empty(self->priv->icon_button);
+    }
+}
+
 static void trash_added(__budgie_unused__ TrashStore *store, TrashApplet *self) {
-    self->priv->trash_count++;
-    trash_icon_button_set_filled(self->priv->icon_button);
+    maybe_update_icon(self);
 }
 
 static void trash_removed(__budgie_unused__ TrashStore *store, TrashApplet *self) {
-    self->priv->trash_count--;
-
-    if (self->priv->trash_count == 0) {
-        trash_icon_button_set_empty(self->priv->icon_button);
-    }
+    maybe_update_icon(self);
 }
 
 static TrashStore *create_store(TrashApplet *self, GMount *mount, GFile *mount_location, GFileInfo *info, GError *err) {
     TrashStore *store;
     g_autofree gchar *trash_path = NULL;
 
-    // TODO: Make sure we aren't copying this twice
     trash_path = g_build_path(G_DIR_SEPARATOR_S, g_file_get_path(mount_location), g_file_info_get_name(info), "files", NULL);
     store = trash_store_new_with_path(g_mount_get_name(mount), g_settings_get_enum(self->priv->settings, TRASH_SETTINGS_KEY_SORT_MODE), g_mount_get_symbolic_icon(mount), g_strdup(trash_path));
 
@@ -167,8 +191,8 @@ static TrashStore *create_store(TrashApplet *self, GMount *mount, GFile *mount_l
     g_return_val_if_fail(err == NULL, NULL);
 
     trash_store_start_monitor(store);
-    g_signal_connect_object(TRASH_STORE(store), "trash-added", G_CALLBACK(trash_added), self, 0);
-    g_signal_connect_object(TRASH_STORE(store), "trash-removed", G_CALLBACK(trash_removed), self, 0);
+    g_signal_connect(TRASH_STORE(store), "trash-added", G_CALLBACK(trash_added), self);
+    g_signal_connect(TRASH_STORE(store), "trash-removed", G_CALLBACK(trash_removed), self);
 
     return store;
 }
@@ -225,15 +249,7 @@ static void add_mount(GMount *mount, TrashApplet *self) {
     g_file_enumerator_close(enumerator, NULL, NULL);
         
     // Update the icon if needed
-    // TODO: Can this be split into its own function?
-    // See also: the default store creation in the _create_view func
-    if (store != NULL) {
-        gint num_items = trash_store_get_count(store);
-        self->priv->trash_count += num_items;
-        if (self->priv->trash_count > 0) {
-            trash_icon_button_set_filled(self->priv->icon_button);
-        }
-    }
+    maybe_update_icon(self);
 }
 
 static void mount_added(__budgie_unused__ GVolumeMonitor *monitor, GMount *mount, TrashApplet *self) {
@@ -245,14 +261,10 @@ static void mount_removed(__budgie_unused__ GVolumeMonitor *monitor, GMount *mou
     TrashStore *store = (TrashStore *) g_hash_table_lookup(self->priv->mounts, mount_name);
     g_return_if_fail(TRASH_IS_STORE(store));
 
-    self->priv->trash_count -= trash_store_get_count(store);
-    if (self->priv->trash_count == 0) {
-        trash_icon_button_set_empty(self->priv->icon_button);
-    }
-
     GtkWidget *row = gtk_widget_get_parent(GTK_WIDGET(store));
     gtk_container_remove(GTK_CONTAINER(self->priv->drive_box), row);
     g_hash_table_remove(self->priv->mounts, mount_name);
+    maybe_update_icon(self);
 }
 
 static void drag_data_received(
@@ -319,13 +331,9 @@ static GtkWidget *create_main_view(TrashApplet *self, TrashSortMode sort_mode) {
     // Create the trash store widgets
     TrashStore *default_store = trash_store_new("This PC", g_icon_new_for_string("drive-harddisk-symbolic", NULL), sort_mode);
     g_autoptr(GError) err = NULL;
-    self->priv->trash_count = trash_store_load_items(default_store, err);
+    trash_store_load_items(default_store, err);
     if (err) {
         g_critical("Error loading trash items for the default trash store: %s", err->message);
-    }
-
-    if (self->priv->trash_count > 0) {
-        trash_icon_button_set_filled(self->priv->icon_button);
     }
 
     trash_store_start_monitor(default_store);
@@ -355,6 +363,7 @@ static GtkWidget *create_main_view(TrashApplet *self, TrashSortMode sort_mode) {
 
     // Show everything
     gtk_widget_show_all(main_view);
+    maybe_update_icon(self);
 
     return main_view;
 }
@@ -367,7 +376,6 @@ static void trash_applet_init(TrashApplet *self) {
     // Create our 'private' struct
     self->priv = trash_applet_get_instance_private(self);
 
-    self->priv->trash_count = 0;
     self->priv->mounts = g_hash_table_new(g_str_hash, g_str_equal);
     self->priv->settings = g_settings_new(TRASH_SETTINGS_SCHEMA_ID);
     g_signal_connect_object(self->priv->settings, "changed", G_CALLBACK(setting_changed), self, 0);

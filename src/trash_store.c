@@ -495,16 +495,16 @@ void trash_store_start_monitor(TrashStore *self) {
     g_signal_connect_object(self->file_monitor, "changed", G_CALLBACK(handle_monitor_event), self, 0);
 }
 
-gint trash_store_load_items(TrashStore *self, GError *err) {
+void trash_store_load_items(TrashStore *self, GError *err) {
     g_autoptr(GFile) trash_dir = g_file_new_for_path(self->trash_path);
     g_autoptr(GFileEnumerator) enumerator = g_file_enumerate_children(trash_dir,
                                                                       G_FILE_ATTRIBUTE_STANDARD_NAME,
                                                                       G_FILE_QUERY_INFO_NONE,
                                                                       NULL,
                                                                       &err);
-    if G_UNLIKELY (!enumerator) {
+    if (!enumerator) {
         g_critical("%s:%d: Error getting file enumerator for trash files in '%s': %s", __BASE_FILE__, __LINE__, self->trash_path, err->message);
-        return self->file_count;
+        return;
     }
 
     // Iterate over the directory's children and append each file name to a list
@@ -533,8 +533,6 @@ gint trash_store_load_items(TrashStore *self, GError *err) {
 
     check_empty(self);
     g_file_enumerator_close(enumerator, NULL, NULL);
-
-    return self->file_count;
 }
 
 gint trash_store_get_count(TrashStore *self) {

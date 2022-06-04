@@ -36,7 +36,7 @@ void trash_store_start_monitor(TrashStore *self);
  * 
  * If an error is encountered, `err` is set.
  */
-gint trash_store_load_items(TrashStore *self, GError *err);
+void trash_store_load_items(TrashStore *self, GError *err);
 
 /**
  * Get the the number of trash items in this store.
