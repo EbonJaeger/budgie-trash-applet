@@ -31,22 +31,6 @@ static GParamSpec *dialog_properties[N_PROPERTIES] = { NULL, };
 
 G_DEFINE_TYPE (TrashConfirmDialog, trash_confirm_dialog, GTK_TYPE_REVEALER);
 
-static void trash_confirm_dialog_style_set (GtkWidget *widget, GtkStyle *previous_style) {
-    TrashConfirmDialog *self;
-
-    if (GTK_WIDGET_CLASS (trash_confirm_dialog_parent_class)->style_set) {
-        GTK_WIDGET_CLASS (trash_confirm_dialog_parent_class)->style_set (widget, previous_style);
-    }
-
-    self = TRASH_CONFIRM_DIALOG (widget);
-
-    gtk_revealer_set_transition_type (GTK_REVEALER (self), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
-    gtk_revealer_set_reveal_child (GTK_REVEALER (self), FALSE);
-
-    gtk_widget_set_size_request (self->label, 290, 20);
-    gtk_label_set_line_wrap (GTK_LABEL (self->label), TRUE);
-}
-
 static void trash_confirm_dialog_set_message (TrashConfirmDialog *self, const gchar *message) {
     g_return_if_fail (TRASH_IS_CONFIRM_DIALOG (self));
 
@@ -121,14 +105,11 @@ trash_confirm_dialog_set_property (
 
 static void trash_confirm_dialog_class_init (TrashConfirmDialogClass *klass) {
     GObjectClass *class = G_OBJECT_CLASS (klass);
-    GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
 
     class->finalize = trash_confirm_dialog_finalize;
     class->get_property = trash_confirm_dialog_get_property;
     class->set_property = trash_confirm_dialog_set_property;
     
-    widget_class->style_set = trash_confirm_dialog_style_set;
-
     GType types[] = { G_TYPE_INT };
 
     dialog_signals[RESPONSE] = g_signal_newv (
@@ -187,8 +168,13 @@ static void confirm_button_clicked (__attribute__((unused)) GtkButton *button, T
 }
 
 static void trash_confirm_dialog_init (TrashConfirmDialog *self) {
+    gtk_revealer_set_transition_type (GTK_REVEALER (self), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
+    gtk_revealer_set_reveal_child (GTK_REVEALER (self), FALSE);
+
     self->container = gtk_box_new (GTK_ORIENTATION_VERTICAL, 5);
     self->label = gtk_label_new (NULL);
+    gtk_widget_set_size_request (self->label, 290, 20);
+    gtk_label_set_line_wrap (GTK_LABEL (self->label), TRUE);
     gtk_box_pack_start (GTK_BOX (self->container), self->label, TRUE, TRUE, 0);
 
     GtkWidget *revealer_btns = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
