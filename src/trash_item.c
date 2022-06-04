@@ -22,10 +22,6 @@ struct _TrashItem {
     TrashConfirmDialog *confirm_revealer;
 };
 
-struct _TrashItemClass {
-    GtkBoxClass parent_class;
-};
-
 G_DEFINE_TYPE (TrashItem, trash_item, GTK_TYPE_BOX)
 
 static void trash_item_finalize (GObject *obj);

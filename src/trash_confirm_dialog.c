@@ -21,13 +21,14 @@ enum {
 };
 
 enum {
-    PROP_DESTRUCTIVE = 1,
+    PROP_0,
+    PROP_DESTRUCTIVE,
     PROP_MESSAGE,
-    N_PROPERTIES
+    LAST_PROP
 };
 
-static guint dialog_signals [LAST_SIGNAL];
-static GParamSpec *dialog_properties[N_PROPERTIES] = { NULL, };
+static guint signals [LAST_SIGNAL];
+static GParamSpec *props[LAST_PROP];
 
 G_DEFINE_TYPE (TrashConfirmDialog, trash_confirm_dialog, GTK_TYPE_REVEALER);
 
@@ -112,7 +113,7 @@ static void trash_confirm_dialog_class_init (TrashConfirmDialogClass *klass) {
     
     GType types[] = { G_TYPE_INT };
 
-    dialog_signals[RESPONSE] = g_signal_newv (
+    signals[RESPONSE] = g_signal_newv (
         "response",
         G_TYPE_FROM_CLASS (klass),
         G_SIGNAL_RUN_LAST,
@@ -122,7 +123,7 @@ static void trash_confirm_dialog_class_init (TrashConfirmDialogClass *klass) {
         types
     );
 
-    dialog_properties[PROP_DESTRUCTIVE] = g_param_spec_boolean (
+    props[PROP_DESTRUCTIVE] = g_param_spec_boolean (
         "destructive",
         "Destructive",
         "Reflects if the confirm button should have the destructive style",
@@ -130,7 +131,7 @@ static void trash_confirm_dialog_class_init (TrashConfirmDialogClass *klass) {
         G_PARAM_READWRITE
     );
 
-    dialog_properties[PROP_MESSAGE] = g_param_spec_string (
+    props[PROP_MESSAGE] = g_param_spec_string (
         "message",
         "Message",
         "The message shown by the revealer",
@@ -140,8 +141,8 @@ static void trash_confirm_dialog_class_init (TrashConfirmDialogClass *klass) {
 
     g_object_class_install_properties (
         class,
-        N_PROPERTIES,
-        dialog_properties
+        LAST_PROP,
+        props
     );
 }
 
@@ -150,7 +151,7 @@ static void cancel_button_clicked (__attribute__((unused)) GtkButton *button, Tr
 
     g_signal_emit (
         self,
-        dialog_signals[RESPONSE],
+        signals[RESPONSE],
         0,
         GTK_RESPONSE_CANCEL
     );
@@ -161,7 +162,7 @@ static void confirm_button_clicked (__attribute__((unused)) GtkButton *button, T
 
     g_signal_emit (
         self,
-        dialog_signals[RESPONSE],
+        signals[RESPONSE],
         0,
         GTK_RESPONSE_OK
     );

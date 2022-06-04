@@ -2,16 +2,17 @@
 
 enum {
     SIGNAL_RETURN_CLICKED,
-    N_SIGNALS
+    LAST_SIGNAL
 };
 
 enum {
-    PROP_SORT_MODE = 1,
-    N_PROPERTIES
+    PROP_0,
+    PROP_SORT_MODE,
+    LAST_PROP
 };
 
-static guint settings_signals[N_SIGNALS];
-static GParamSpec *settings_props[N_PROPERTIES] = { NULL, };
+static guint signals[LAST_SIGNAL];
+static GParamSpec *props[LAST_PROP];
 
 struct _TrashSettings {
     GtkBox parent_instance;
@@ -71,7 +72,7 @@ static void trash_settings_class_init(TrashSettingsClass *klass) {
     class->set_property = trash_settings_set_property;
 
     // Signals
-    settings_signals[SIGNAL_RETURN_CLICKED] = g_signal_newv(
+    signals[SIGNAL_RETURN_CLICKED] = g_signal_newv(
         "return-clicked",
         G_TYPE_FROM_CLASS(klass),
         G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
@@ -82,7 +83,7 @@ static void trash_settings_class_init(TrashSettingsClass *klass) {
     );
 
     // Properties
-    settings_props[PROP_SORT_MODE] = g_param_spec_enum(
+    props[PROP_SORT_MODE] = g_param_spec_enum(
         "sort-mode",
         "Sort mode",
         "Set how trashed files should be sorted",
@@ -91,11 +92,11 @@ static void trash_settings_class_init(TrashSettingsClass *klass) {
         G_PARAM_CONSTRUCT | G_PARAM_READWRITE
     );
 
-    g_object_class_install_properties(class, N_PROPERTIES, settings_props);
+    g_object_class_install_properties(class, LAST_PROP, props);
 }
 
 static void return_clicked(__attribute__((unused)) GtkButton *sender, TrashSettings *self) {
-    g_signal_emit(self, settings_signals[SIGNAL_RETURN_CLICKED], 0, NULL);
+    g_signal_emit(self, signals[SIGNAL_RETURN_CLICKED], 0, NULL);
 }
 
 static void update_selection(TrashSettings *self) {

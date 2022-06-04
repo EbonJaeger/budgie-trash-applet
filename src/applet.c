@@ -3,11 +3,12 @@
 #define _GNU_SOURCE
 
 enum {
-    PROP_APPLET_UUID = 1,
-    N_PROPERTIES
+    PROP_0,
+    PROP_APPLET_UUID,
+    LAST_PROP
 };
 
-static GParamSpec *applet_props[N_PROPERTIES] = { NULL, };
+static GParamSpec *props[LAST_PROP];
 
 struct _TrashAppletPrivate {
     BudgiePopoverManager *manager;
@@ -95,14 +96,14 @@ static void trash_applet_class_init(TrashAppletClass *klass) {
     budgie_class->update_popovers = update_popovers;
     budgie_class->supports_settings = FALSE;
 
-    applet_props[PROP_APPLET_UUID] = g_param_spec_string(
+    props[PROP_APPLET_UUID] = g_param_spec_string(
         "uuid",
         "uuid",
         "The applet's UUID",
         NULL,
         G_PARAM_STATIC_STRINGS | G_PARAM_READABLE | G_PARAM_WRITABLE);
 
-    g_object_class_install_properties(class, N_PROPERTIES, applet_props);
+    g_object_class_install_properties(class, LAST_PROP, props);
 }
 
 /**
@@ -456,5 +457,5 @@ void trash_applet_update_uuid(TrashApplet *self, const gchar *value) {
     }
 
     self->priv->uuid = g_strdup(value);
-    g_object_notify_by_pspec(G_OBJECT(self), applet_props[PROP_APPLET_UUID]);
+    g_object_notify_by_pspec(G_OBJECT(self), props[PROP_APPLET_UUID]);
 }

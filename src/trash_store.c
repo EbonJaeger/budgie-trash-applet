@@ -3,18 +3,18 @@
 enum {
     SIGNAL_TRASH_ADDED,
     SIGNAL_TRASH_REMOVED,
-    N_SIGNALS
+    LAST_SIGNAL
 };
 
-static guint signals[N_SIGNALS] = {0};
 
 enum {
-    PROP_EXP_0,
+    PROP_0,
     PROP_SORT_MODE,
-    N_PROPERTIES
+    LAST_PROP
 };
 
-static GParamSpec *store_props[N_PROPERTIES] = {NULL};
+static guint signals[LAST_SIGNAL];
+static GParamSpec *props[LAST_PROP];
 
 struct _TrashStore {
     GtkBox parent_instance;
@@ -67,7 +67,7 @@ static void trash_store_set_property(GObject *obj, guint prop_id, const GValue *
         case PROP_SORT_MODE:
             self->sort_mode = g_value_get_enum(val);
             gtk_list_box_invalidate_sort(GTK_LIST_BOX(self->file_box));
-            g_object_notify_by_pspec(obj, store_props[PROP_SORT_MODE]);
+            g_object_notify_by_pspec(obj, props[PROP_SORT_MODE]);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
@@ -121,7 +121,7 @@ static void trash_store_class_init(TrashStoreClass *klass) {
 
     // Properties
 
-    store_props[PROP_SORT_MODE] = g_param_spec_enum(
+    props[PROP_SORT_MODE] = g_param_spec_enum(
         "sort-mode",
         "Sort mode",
         "Set how trashed files should be sorted",
@@ -130,7 +130,7 @@ static void trash_store_class_init(TrashStoreClass *klass) {
         G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE
     );
 
-    g_object_class_install_properties(class, N_PROPERTIES, store_props);
+    g_object_class_install_properties(class, LAST_PROP, props);
 }
 
 static void set_button_sensitivity(TrashStore *self, gboolean sensitive) {
