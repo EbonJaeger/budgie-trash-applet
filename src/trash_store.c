@@ -300,7 +300,11 @@ static void trash_store_init(TrashStore *self) {
     gtk_list_box_set_selection_mode(GTK_LIST_BOX(self->file_box), GTK_SELECTION_NONE);
     gtk_list_box_set_sort_func(GTK_LIST_BOX(self->file_box), (GtkListBoxSortFunc) sort_rows, self, NULL);
 
-    g_signal_connect_object(self->file_box, "row-activated", G_CALLBACK(row_activated), self, 0);
+    g_signal_connect(
+        self->file_box,
+        "row-activated",
+        G_CALLBACK(row_activated),
+        self);
 
     GtkWidget *placeholder = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     GtkStyleContext *placeholder_style_context = gtk_widget_get_style_context(placeholder);
@@ -478,8 +482,21 @@ handle_monitor_event(
 void trash_store_start_monitor(TrashStore *self) {
     GFile *dir = g_file_new_for_path(self->trash_path);
     g_autoptr(GError) err = NULL;
-    self->file_monitor = g_file_monitor_directory(dir, G_FILE_MONITOR_WATCH_MOVES, NULL, &err);
-    g_signal_connect_object(self->file_monitor, "changed", G_CALLBACK(handle_monitor_event), self, 0);
+
+    self->file_monitor = g_file_monitor_directory(dir,
+                                                  G_FILE_MONITOR_WATCH_MOVES,
+                                                  NULL,
+                                                  &err);
+
+    if (!self->file_monitor) {
+        g_critical("error monitoring directory '%s': %s", self->trash_path, err->message);
+        return;
+    }
+
+    g_signal_connect(self->file_monitor,
+                     "changed",
+                     G_CALLBACK(handle_monitor_event),
+                     self);
 }
 
 void trash_store_load_items(TrashStore *self, GError *err) {

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 - Add padding to item information UI
+- Add log message if there is an error monitoring a directory
 
 ## [v2.1.0] - 2021-08-07
 
