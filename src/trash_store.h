@@ -30,21 +30,21 @@ void trash_store_start_monitor(TrashStore *self);
 
 /**
  * Load all of the trashed items for this particular trashbin.
- * 
+ *
  * A new [TrashItem] widget is created for each item and added
  * to our list box.
- * 
+ *
  * If an error is encountered, `err` is set.
  */
 void trash_store_load_items(TrashStore *self, GError *err);
 
 /**
  * Set the sort mode for this trash store.
- * 
+ *
  * Setting this will invalidate the current sorting and re-sort
  * the items.
  */
-void trash_store_set_sort_mode (TrashStore *self, TrashSortMode mode);
+void trash_store_set_sort_mode(TrashStore *self, TrashSortMode mode);
 
 /**
  * Get the the number of trash items in this store.

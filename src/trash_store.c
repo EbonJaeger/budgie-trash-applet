@@ -60,7 +60,7 @@ static void trash_store_set_property(GObject *obj, guint prop_id, const GValue *
 
     switch (prop_id) {
         case PROP_SORT_MODE:
-            trash_store_set_sort_mode (self, g_value_get_enum (val));
+            trash_store_set_sort_mode(self, g_value_get_enum(val));
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
@@ -99,8 +99,7 @@ static void trash_store_class_init(TrashStoreClass *klass) {
         NULL, NULL, NULL, NULL,
         G_TYPE_NONE,
         0,
-        NULL
-    );
+        NULL);
 
     signals[SIGNAL_TRASH_REMOVED] = g_signal_newv(
         "trash-removed",
@@ -109,8 +108,7 @@ static void trash_store_class_init(TrashStoreClass *klass) {
         NULL, NULL, NULL, NULL,
         G_TYPE_NONE,
         0,
-        NULL
-    );
+        NULL);
 
     // Properties
 
@@ -120,8 +118,7 @@ static void trash_store_class_init(TrashStoreClass *klass) {
         "Set how trashed files should be sorted",
         TRASH_TYPE_SORT_MODE,
         TRASH_SORT_TYPE,
-        G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE
-    );
+        G_PARAM_CONSTRUCT | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_READWRITE);
 
     g_object_class_install_properties(class, LAST_PROP, props);
 }
@@ -131,7 +128,7 @@ static void set_button_sensitivity(TrashStore *self, gboolean sensitive) {
     gtk_widget_set_sensitive(self->restore_btn, sensitive);
 }
 
-static void response_ok (TrashStore *self) {
+static void response_ok(TrashStore *self) {
     g_autoptr(GError) err = NULL;
     g_slist_foreach(self->trashed_files, self->restoring ? (GFunc) trash_item_restore : (GFunc) trash_item_delete, &err);
 
@@ -150,21 +147,20 @@ static void response_ok (TrashStore *self) {
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->dialog), FALSE);
 }
 
-static void dialog_response_cb (TrashConfirmDialog *dialog, gint response_id, TrashStore *self) {
-    switch (response_id)
-    {
-    case GTK_RESPONSE_CANCEL:
-        set_button_sensitivity(self, TRUE);
-        gtk_revealer_set_reveal_child (GTK_REVEALER (dialog), FALSE);
-        break;
+static void dialog_response_cb(TrashConfirmDialog *dialog, gint response_id, TrashStore *self) {
+    switch (response_id) {
+        case GTK_RESPONSE_CANCEL:
+            set_button_sensitivity(self, TRUE);
+            gtk_revealer_set_reveal_child(GTK_REVEALER(dialog), FALSE);
+            break;
 
-    case GTK_RESPONSE_OK:
-        response_ok (self);
-        break;
-    
-    default:
-        g_warning ("unknown response type: %d", response_id);
-        break;
+        case GTK_RESPONSE_OK:
+            response_ok(self);
+            break;
+
+        default:
+            g_warning("unknown response type: %d", response_id);
+            break;
     }
 }
 
@@ -285,12 +281,11 @@ static void trash_store_init(TrashStore *self) {
     gtk_revealer_set_transition_type(GTK_REVEALER(self->dialog), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
     gtk_revealer_set_reveal_child(GTK_REVEALER(self->dialog), FALSE);
 
-    g_signal_connect (
+    g_signal_connect(
         self->dialog,
         "response",
-        G_CALLBACK (dialog_response_cb),
-        self
-    );
+        G_CALLBACK(dialog_response_cb),
+        self);
 
     self->file_revealer = gtk_revealer_new();
     gtk_revealer_set_transition_type(GTK_REVEALER(self->file_revealer), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
@@ -374,7 +369,7 @@ TrashStore *trash_store_new_with_path(gchar *drive_name,
 
 /**
  * Constructs a URI from a `GFileInfo` and the `TrashStore` file location.
- * 
+ *
  * If the store is the default store, the URI will have the format `trash:///example.txt`.
  * Otherwise, in the case of mounts, the function will escape the path to the file because
  * that is what seems to happen when GLib(?) puts items in the `trash` URI scheme.
@@ -394,12 +389,12 @@ static GUri *uri_for_file(TrashStore *self, const gchar *file_name) {
         path = g_strdup_printf("/%s", file_name);
     } else {
         /*
-        * This abomination is because GLib does some really weird things with escaping characters
-        * in paths for mounts in trash URIs. Specifically, forward slashes are back slashes and 
-        * spaces are escaped. Then it get's even more special because for some reason at least part
-        * of it gets escaped *before* that happens, because spaces end up as `%2520` (the % gets 
-        * escaped). So, to get a valid URI to a trash file, we have to emulate that behavior.
-        */
+         * This abomination is because GLib does some really weird things with escaping characters
+         * in paths for mounts in trash URIs. Specifically, forward slashes are back slashes and
+         * spaces are escaped. Then it get's even more special because for some reason at least part
+         * of it gets escaped *before* that happens, because spaces end up as `%2520` (the % gets
+         * escaped). So, to get a valid URI to a trash file, we have to emulate that behavior.
+         */
 
         unescaped = g_string_new(g_strdup_printf("%s\\%s", self->trash_path, file_name));
         g_string_replace(unescaped, "/", "\\", 0);
@@ -421,7 +416,7 @@ static GUri *uri_for_file(TrashStore *self, const gchar *file_name) {
 
 /**
  * Handles file events for this store's trash directory.
- * 
+ *
  * We handle G_FILE_MONITOR_EVENT_MOVED_IN, G_FILE_MONITOR_EVENT_MOVED_OUT, and
  * G_FILE_MONITOR_EVENT_DELETED events, adding and removing TrashItems
  * as needed.
@@ -432,8 +427,7 @@ handle_monitor_event(
     GFile *file,
     __attribute__((unused)) GFile *other_file,
     GFileMonitorEvent event_type,
-    TrashStore *self
-) {
+    TrashStore *self) {
     switch (event_type) {
         case G_FILE_MONITOR_EVENT_MOVED_IN: {
             g_autoptr(GUri) uri = uri_for_file(self, g_file_get_basename(file));
@@ -528,10 +522,10 @@ void trash_store_load_items(TrashStore *self, GError *err) {
     g_file_enumerator_close(enumerator, NULL, NULL);
 }
 
-void trash_store_set_sort_mode (TrashStore *self, TrashSortMode mode) {
+void trash_store_set_sort_mode(TrashStore *self, TrashSortMode mode) {
     self->sort_mode = mode;
-    gtk_list_box_invalidate_sort (GTK_LIST_BOX (self->file_box));
-    g_object_notify_by_pspec (G_OBJECT (self), props[PROP_SORT_MODE]);
+    gtk_list_box_invalidate_sort(GTK_LIST_BOX(self->file_box));
+    g_object_notify_by_pspec(G_OBJECT(self), props[PROP_SORT_MODE]);
 }
 
 gint trash_store_get_count(TrashStore *self) {

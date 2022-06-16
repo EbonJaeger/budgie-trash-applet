@@ -123,10 +123,10 @@ static void setting_changed(GSettings *settings, gchar *key, TrashApplet *self) 
         g_hash_table_iter_init(&iter, self->priv->mounts);
 
         while (g_hash_table_iter_next(&iter, &hash_key, &value)) {
-            g_assert (TRASH_IS_STORE (value));
+            g_assert(TRASH_IS_STORE(value));
 
-            TrashStore *store = TRASH_STORE (value);
-            trash_store_set_sort_mode (store, new_mode);
+            TrashStore *store = TRASH_STORE(value);
+            trash_store_set_sort_mode(store, new_mode);
         }
     } else {
         g_critical("%s:%d: Unknown settings key '%s'", __BASE_FILE__, __LINE__, key);
@@ -148,7 +148,7 @@ static void set_main_page(__budgie_unused__ TrashSettings *sender, TrashApplet *
 /**
  * Iterate over all of the current trash stores, and update the icon
  * if there are items, or if there aren't.
- * 
+ *
  * The iteration short-circuits as soon as it finds a trash store
  * that has items in it.
  */
@@ -236,7 +236,7 @@ static void add_mount(GMount *mount, TrashApplet *self) {
         // directory name.
         if (g_file_info_get_file_type(current_file) != G_FILE_TYPE_DIRECTORY ||
             strcmp(g_file_info_get_name(current_file), trash_dir_name) != 0) {
-                continue;
+            continue;
         }
 
         store = create_store(self, mount, location, current_file, inner_err);
@@ -252,7 +252,7 @@ static void add_mount(GMount *mount, TrashApplet *self) {
     }
 
     g_file_enumerator_close(enumerator, NULL, NULL);
-        
+
     // Update the icon if needed
     maybe_update_icon(self);
 }
@@ -279,9 +279,8 @@ static void drag_data_received(
     __budgie_unused__ gint y,
     GtkSelectionData *data,
     guint info,
-    guint time
-) {
-    g_return_if_fail (info == 0);
+    guint time) {
+    g_return_if_fail(info == 0);
 
     g_autofree gchar *uri = g_strdup((gchar *) gtk_selection_data_get_data(data));
     g_autofree gchar *unescaped = NULL;

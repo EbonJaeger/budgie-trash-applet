@@ -22,7 +22,7 @@ typedef enum {
 
 #define TRASH_TYPE_SETTINGS (trash_settings_get_type())
 
-G_DECLARE_FINAL_TYPE (TrashSettings, trash_settings, TRASH, SETTINGS, GtkBox)
+G_DECLARE_FINAL_TYPE(TrashSettings, trash_settings, TRASH, SETTINGS, GtkBox)
 
 /**
  * Create a new TrashSettings class.

@@ -79,8 +79,7 @@ static void trash_settings_class_init(TrashSettingsClass *klass) {
         NULL, NULL, NULL, NULL,
         G_TYPE_NONE,
         0,
-        NULL
-    );
+        NULL);
 
     // Properties
     props[PROP_SORT_MODE] = g_param_spec_enum(
@@ -89,8 +88,7 @@ static void trash_settings_class_init(TrashSettingsClass *klass) {
         "Set how trashed files should be sorted",
         TRASH_TYPE_SORT_MODE,
         TRASH_SORT_TYPE,
-        G_PARAM_CONSTRUCT | G_PARAM_READWRITE
-    );
+        G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
 
     g_object_class_install_properties(class, LAST_PROP, props);
 }
@@ -150,8 +148,7 @@ static void trash_settings_init(TrashSettings *self) {
         TRASH_SETTINGS_KEY_SORT_MODE,
         self,
         "sort-mode",
-        G_SETTINGS_BIND_DEFAULT
-    );
+        G_SETTINGS_BIND_DEFAULT);
 
     GtkWidget *header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     GtkStyleContext *header_style = gtk_widget_get_style_context(header);
