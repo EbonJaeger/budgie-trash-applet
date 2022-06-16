@@ -120,6 +120,8 @@ static void trash_item_init(TrashItem *self) {
     gtk_style_context_add_class(revealer_style, "trash-info-dialog");
 
     self->info_container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    gtk_widget_set_margin_start(self->info_container, 8);
+    gtk_widget_set_margin_end(self->info_container, 8);
     gtk_container_add(GTK_CONTAINER(self->info_revealer), self->info_container);
 
     self->confirm_revealer = trash_confirm_dialog_new();

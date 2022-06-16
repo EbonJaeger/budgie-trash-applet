@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Add padding to item information UI
+
 ## [v2.1.0] - 2021-08-07
 
 - Add file size to info displays (credit to brent for the idea)
