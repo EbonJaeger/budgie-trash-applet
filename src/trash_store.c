@@ -433,7 +433,8 @@ handle_monitor_event(
     GFileMonitorEvent event_type,
     TrashStore *self) {
     switch (event_type) {
-        case G_FILE_MONITOR_EVENT_MOVED_IN: {
+        case G_FILE_MONITOR_EVENT_MOVED_IN:
+        case G_FILE_MONITOR_EVENT_CREATED: {
             g_autoptr(GUri) uri = uri_for_file(self, g_file_get_basename(file));
             g_return_if_fail(uri != NULL);
 
@@ -483,10 +484,10 @@ void trash_store_start_monitor(TrashStore *self) {
     GFile *dir = g_file_new_for_path(self->trash_path);
     g_autoptr(GError) err = NULL;
 
-    self->file_monitor = g_file_monitor_directory(dir,
-                                                  G_FILE_MONITOR_WATCH_MOVES,
-                                                  NULL,
-                                                  &err);
+    self->file_monitor = g_file_monitor(dir,
+                                        G_FILE_MONITOR_NONE,
+                                        NULL,
+                                        &err);
 
     if (!self->file_monitor) {
         g_critical("error monitoring directory '%s': %s", self->trash_path, err->message);
