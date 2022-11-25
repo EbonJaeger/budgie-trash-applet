@@ -391,7 +391,6 @@ static GUri *uri_for_file(TrashStore *self, const gchar *file_name) {
 
     if (self->is_default) {
         escaped = g_uri_escape_string(file_name, NULL, TRUE);
-        path = g_strdup_printf("/%s", escaped);
     } else {
         /*
          * This abomination is because GLib does some really weird things with escaping characters
@@ -405,8 +404,9 @@ static GUri *uri_for_file(TrashStore *self, const gchar *file_name) {
         g_string_replace(unescaped, "/", "\\", 0);
         g_string_replace(unescaped, " ", "%20", 0);
         escaped = g_uri_escape_string(unescaped->str, NULL, TRUE);
-        path = g_strdup_printf("/%s", escaped);
     }
+
+    path = g_strdup_printf("/%s", escaped);
 
     return g_uri_build(
         G_URI_FLAGS_ENCODED,
