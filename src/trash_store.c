@@ -390,7 +390,8 @@ static GUri *uri_for_file(TrashStore *self, const gchar *file_name) {
     }
 
     if (self->is_default) {
-        path = g_strdup_printf("/%s", file_name);
+        escaped = g_uri_escape_string(file_name, NULL, TRUE);
+        path = g_strdup_printf("/%s", escaped);
     } else {
         /*
          * This abomination is because GLib does some really weird things with escaping characters
@@ -439,7 +440,7 @@ handle_monitor_event(
             g_return_if_fail(uri != NULL);
 
             g_autoptr(GError) err = NULL;
-            TrashInfo *trash_info = trash_info_new(g_uri_to_string(uri), err);
+            TrashInfo *trash_info = trash_info_new(g_uri_to_string(uri), &err);
             if (!TRASH_IS_INFO(trash_info)) {
                 g_warning("%s:%d: Error making trash info for URI '%s': %s", __BASE_FILE__, __LINE__, g_uri_to_string(uri), err->message);
                 return;
@@ -515,16 +516,21 @@ void trash_store_load_items(TrashStore *self, GError *err) {
     // Iterate over the directory's children and append each file name to a list
     g_autoptr(GFileInfo) current_file = NULL;
     while ((current_file = g_file_enumerator_next_file(enumerator, NULL, &err))) {
-        g_autoptr(GUri) uri = uri_for_file(self, g_file_info_get_name(current_file));
-
+        g_autoptr(GUri) uri = NULL;
+        TrashInfo *trash_info = NULL;
+        TrashItem *trash_item = NULL;
         g_autoptr(GError) err = NULL;
-        TrashInfo *trash_info = trash_info_new(g_uri_to_string(uri), err);
+
+        uri = uri_for_file(self, g_file_info_get_name(current_file));
+        trash_info = trash_info_new(g_uri_to_string(uri), &err);
+
         if (!TRASH_IS_INFO(trash_info)) {
             g_warning("%s:%d: Error making trash info for URI '%s': %s", __BASE_FILE__, __LINE__, g_uri_to_string(uri), err->message);
             continue;
         }
 
-        TrashItem *trash_item = trash_item_new(trash_info);
+        trash_item = trash_item_new(trash_info);
+
         if (!TRASH_IS_ITEM(trash_item)) {
             g_warning("%s:%d: Unable to make trash item for URI '%s'", __BASE_FILE__, __LINE__, g_uri_to_string(uri));
             continue;

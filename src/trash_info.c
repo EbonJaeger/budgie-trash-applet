@@ -172,13 +172,19 @@ static void trash_info_class_init(TrashInfoClass *klazz) {
 
 static void trash_info_init(__attribute__((unused)) TrashInfo *self) {}
 
-TrashInfo *trash_info_new(const gchar *uri, GError *err) {
-    g_autoptr(GFile) file = g_file_new_for_uri(uri);
-    g_autoptr(GFileInfo) file_info = g_file_query_info(file, TRASH_FILE_ATTRIBUTES, G_FILE_QUERY_INFO_NONE, NULL, &err);
+TrashInfo *trash_info_new(const gchar *uri, GError **err) {
+    g_autoptr(GFile) file = NULL;
+    g_autoptr(GFileInfo) file_info = NULL;
+    GIcon *icon;
 
-    g_return_val_if_fail(G_IS_FILE_INFO(file_info), NULL);
+    file = g_file_new_for_uri(uri);
+    file_info = g_file_query_info(file, TRASH_FILE_ATTRIBUTES, G_FILE_QUERY_INFO_NONE, NULL, err);
 
-    GIcon *icon = g_file_info_get_icon(file_info);
+    if (!G_IS_FILE_INFO(file_info)) {
+        return NULL;
+    }
+
+    icon = g_file_info_get_icon(file_info);
 
     return g_object_new(
         TRASH_TYPE_INFO,

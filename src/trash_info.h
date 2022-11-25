@@ -25,7 +25,7 @@ struct _TrashInfoClass {
  * If there is an error getting the file info for the file
  * at the URI, `NULL` will be returned and `err` will be set.
  */
-TrashInfo *trash_info_new(const gchar *uri, GError *err);
+TrashInfo *trash_info_new(const gchar *uri, GError **err);
 
 /* Property getters */
 
