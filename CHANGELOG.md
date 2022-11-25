@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v2.1.2] - 2022-11-24
+
+- Fix monitoring for given file on FreeBSD
+- Escape file names in all cases as URIs
+- Fix memory safety issue with error handling
+
 ## [v2.1.1] - 2022-06-15
 
 - Restore trashed files asynchronously
@@ -33,7 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add appstream info file
 - Various style changes
 
-[unreleased]: https://github.com/EbonJaeger/budgie-trash-applet/compare/v2.1.1...master
+[unreleased]: https://github.com/EbonJaeger/budgie-trash-applet/compare/v2.1.2...master
+[v2.1.2]: https://github.com/EbonJaeger/budgie-trash-applet/compare/v2.1.1...v2.1.2
 [v2.1.1]: https://github.com/EbonJaeger/budgie-trash-applet/compare/v2.1.0...v2.1.1
 [v2.1.0]: https://github.com/EbonJaeger/budgie-trash-applet/compare/v2.0.0...v2.1.0
 [v2.0.0]: https://github.com/EbonJaeger/budgie-trash-applet/compare/v1.2.0...v2.0.0

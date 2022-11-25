@@ -1,5 +1,5 @@
 project('budgie-trash-applet', 'c',
-        version: '2.1.1',
+        version: '2.1.2',
         meson_version: '>= 0.57.0',
         default_options: [
             'warning_level=2',
