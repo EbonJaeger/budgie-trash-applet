@@ -1,8 +1,8 @@
 [Plugin]
 Module=libtrashapplet.so
 Name=Trash Bin
-Description=Trash bin tool
+Description=Manage your trash right from the Budgie panel
 Authors=EbonJaeger
-Copyright=Copyright © 2019-2022 Evan Maddock
+Copyright=Copyright © Evan Maddock
 Website=https://github.com/EbonJaeger/budgie-trash-applet
 Icon=user-trash-symbolic
