@@ -4,3 +4,7 @@ builddir/
 .clangd/
 
 .vscode/settings.json
+
+justfile
+
+panel.out
