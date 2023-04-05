@@ -83,6 +83,8 @@ static void trash_manager_constructed(GObject *object) {
 
     g_signal_connect(self->volume_monitor, "mount-added", G_CALLBACK(add_mount), self);
     g_signal_connect(self->volume_monitor, "mount-removed", G_CALLBACK(mount_removed), self);
+
+    G_OBJECT_CLASS(trash_manager_parent_class)->constructed(object);
 }
 
 static void trash_manager_finalize(GObject *object) {

@@ -202,6 +202,8 @@ static void trash_store_constructed(GObject *object) {
     }
 
     g_signal_connect(self->file_monitor, "changed", G_CALLBACK(handle_monitor_event), self);
+
+    G_OBJECT_CLASS(trash_store_parent_class)->constructed(object);
 }
 
 static void trash_store_finalize(GObject *object) {
