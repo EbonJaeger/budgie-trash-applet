@@ -22,11 +22,11 @@ enum {
     PROP_0,
     PROP_DESTRUCTIVE,
     PROP_MESSAGE,
-    LAST_PROP
+    N_PROPS
 };
 
 static guint signals[LAST_SIGNAL];
-static GParamSpec *props[LAST_PROP];
+static GParamSpec *props[N_PROPS];
 
 G_DEFINE_TYPE(TrashConfirmDialog, trash_confirm_dialog, GTK_TYPE_REVEALER);
 
@@ -147,7 +147,7 @@ static void trash_confirm_dialog_class_init(TrashConfirmDialogClass *klass) {
 
     g_object_class_install_properties(
         class,
-        LAST_PROP,
+        N_PROPS,
         props);
 }
 

@@ -18,6 +18,7 @@ trash_applet_sources = [
     'trash_icon_button.c',
     'trash_info.c',
     'trash_item.c',
+    'trash_manager.c',
     'trash_popover.c',
     'trash_settings.c',
     'trash_store.c',

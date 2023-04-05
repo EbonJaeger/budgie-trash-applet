@@ -3,10 +3,10 @@
 enum {
     PROP_0,
     PROP_SORT_MODE,
-    LAST_PROP
+    N_PROPS
 };
 
-static GParamSpec *props[LAST_PROP];
+static GParamSpec *props[N_PROPS];
 
 struct _TrashSettings {
     GtkBox parent_instance;
@@ -73,7 +73,7 @@ static void trash_settings_class_init(TrashSettingsClass *klass) {
         TRASH_SORT_TYPE,
         G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
 
-    g_object_class_install_properties(class, LAST_PROP, props);
+    g_object_class_install_properties(class, N_PROPS, props);
 }
 
 static void update_selection(TrashSettings *self) {

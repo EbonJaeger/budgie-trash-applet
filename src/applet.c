@@ -6,25 +6,18 @@
 enum {
     PROP_0,
     PROP_APPLET_UUID,
-    LAST_PROP
+    N_PROPS
 };
 
-static GParamSpec *props[LAST_PROP];
+static GParamSpec *props[N_PROPS];
 
 struct _TrashAppletPrivate {
     BudgiePopoverManager *manager;
-    GHashTable *mounts;
 
     gchar *uuid;
 
-    GSettings *settings;
-
     GtkWidget *popover;
-    GtkWidget *drive_box;
     TrashIconButton *icon_button;
-
-    gint uid;
-    GVolumeMonitor *volume_monitor;
 };
 
 G_DEFINE_DYNAMIC_TYPE_EXTENDED(TrashApplet, trash_applet, BUDGIE_TYPE_APPLET, 0, G_ADD_PRIVATE_DYNAMIC(TrashApplet))
@@ -35,9 +28,6 @@ G_DEFINE_DYNAMIC_TYPE_EXTENDED(TrashApplet, trash_applet, BUDGIE_TYPE_APPLET, 0,
 static void trash_applet_finalize(GObject *object) {
     TrashAppletPrivate *priv = trash_applet_get_instance_private(TRASH_APPLET(object));
 
-    g_hash_table_destroy(priv->mounts);
-    g_object_unref(priv->volume_monitor);
-    g_object_unref(priv->settings);
     g_free(priv->uuid);
 
     G_OBJECT_CLASS(trash_applet_parent_class)->finalize(object);
@@ -101,7 +91,7 @@ static void trash_applet_class_init(TrashAppletClass *klass) {
         NULL,
         G_PARAM_STATIC_STRINGS | G_PARAM_READABLE | G_PARAM_WRITABLE);
 
-    g_object_class_install_properties(class, LAST_PROP, props);
+    g_object_class_install_properties(class, N_PROPS, props);
 }
 
 /**
@@ -111,159 +101,12 @@ static void trash_applet_class_finalize(__budgie_unused__ TrashAppletClass *klas
     notify_uninit();
 }
 
-static void setting_changed(GSettings *settings, gchar *key, TrashApplet *self) {
-    if (strcmp(key, TRASH_SETTINGS_KEY_SORT_MODE) == 0) {
-        // Set the sort mode everywhere
-        TrashSortMode new_mode = g_settings_get_enum(settings, key);
-        GHashTableIter iter;
-        gpointer hash_key, value;
-
-        g_hash_table_iter_init(&iter, self->priv->mounts);
-
-        while (g_hash_table_iter_next(&iter, &hash_key, &value)) {
-            g_assert(TRASH_IS_STORE(value));
-
-            TrashStore *store = TRASH_STORE(value);
-            trash_store_set_sort_mode(store, new_mode);
-        }
-    } else {
-        g_critical("%s:%d: Unknown settings key '%s'", __BASE_FILE__, __LINE__, key);
-    }
-}
-
 static void toggle_popover(__budgie_unused__ GtkButton *sender, TrashApplet *self) {
     if (gtk_widget_is_visible(self->priv->popover)) {
         gtk_widget_hide(self->priv->popover);
     } else {
         budgie_popover_manager_show_popover(self->priv->manager, GTK_WIDGET(self->priv->icon_button));
     }
-}
-
-/**
- * Iterate over all of the current trash stores, and update the icon
- * if there are items, or if there aren't.
- *
- * The iteration short-circuits as soon as it finds a trash store
- * that has items in it.
- */
-static void maybe_update_icon(TrashApplet *self) {
-    GHashTableIter iter;
-    gpointer key, value;
-    gboolean has_items = FALSE;
-
-    g_hash_table_iter_init(&iter, self->priv->mounts);
-
-    while (g_hash_table_iter_next(&iter, &key, &value)) {
-        g_assert(TRASH_IS_STORE(value));
-
-        TrashStore *store = TRASH_STORE(value);
-        gint count = trash_store_get_count(store);
-        if (count > 0) {
-            has_items = TRUE;
-            break;
-        }
-    }
-
-    if (has_items) {
-        trash_icon_button_set_filled(self->priv->icon_button);
-    } else {
-        trash_icon_button_set_empty(self->priv->icon_button);
-    }
-}
-
-static void trash_added(__budgie_unused__ TrashStore *store, TrashApplet *self) {
-    maybe_update_icon(self);
-}
-
-static void trash_removed(__budgie_unused__ TrashStore *store, TrashApplet *self) {
-    maybe_update_icon(self);
-}
-
-static TrashStore *create_store(TrashApplet *self, GMount *mount, GFile *mount_location, GFileInfo *info, GError *err) {
-    TrashStore *store;
-    g_autofree gchar *trash_path = NULL;
-
-    trash_path = g_build_path(G_DIR_SEPARATOR_S, g_file_get_path(mount_location), g_file_info_get_name(info), "files", NULL);
-    store = trash_store_new_with_path(g_mount_get_name(mount), g_settings_get_enum(self->priv->settings, TRASH_SETTINGS_KEY_SORT_MODE), g_mount_get_symbolic_icon(mount), g_strdup(trash_path));
-
-    trash_store_get_items(store, err);
-    g_return_val_if_fail(err == NULL, NULL);
-
-    trash_store_start_monitor(store);
-    g_signal_connect(TRASH_STORE(store), "trash-added", G_CALLBACK(trash_added), self);
-    g_signal_connect(TRASH_STORE(store), "trash-removed", G_CALLBACK(trash_removed), self);
-
-    return store;
-}
-
-static void add_mount(GMount *mount, TrashApplet *self) {
-    TrashStore *store;
-    g_autoptr(GError) err = NULL;
-    g_autoptr(GError) inner_err = NULL;
-
-    g_autoptr(GFile) location = g_mount_get_default_location(mount);
-
-    // Calculate the length of the dir name we're looking for, with an extra
-    // space for a NULL terminator. We use `snprintf` to count the length of
-    // the UID so we can properly allocate space for it in the name string.
-    gint name_length = (7 + snprintf(NULL, 0, "%i", self->priv->uid) + 1);
-    g_autofree gchar *trash_dir_name = (gchar *) malloc(sizeof(gchar) * name_length);
-    g_snprintf(trash_dir_name, name_length, ".Trash-%i", self->priv->uid);
-
-    g_autoptr(GFileEnumerator) enumerator = g_file_enumerate_children(location,
-                                                                      G_FILE_ATTRIBUTE_STANDARD_NAME "," G_FILE_ATTRIBUTE_STANDARD_TYPE,
-                                                                      G_FILE_QUERY_INFO_NONE,
-                                                                      NULL,
-                                                                      &err);
-
-    if (!enumerator) {
-        g_critical("Error getting file enumerator for trash files in '%s': %s", g_file_get_path(location), err->message);
-        return;
-    }
-
-    // Iterate over the items in the mount's default directory.
-    // If a directory matches the name of an expected trash
-    // directory, create a TrashStore for it and add it to the UI.
-    g_autoptr(GFileInfo) current_file = NULL;
-    while ((current_file = g_file_enumerator_next_file(enumerator, NULL, &err))) {
-        // Check if the item is a directory with the matching trash
-        // directory name.
-        if (g_file_info_get_file_type(current_file) != G_FILE_TYPE_DIRECTORY ||
-            strcmp(g_file_info_get_name(current_file), trash_dir_name) != 0) {
-            continue;
-        }
-
-        store = create_store(self, mount, location, current_file, inner_err);
-
-        if (store == NULL) {
-            g_warning("Error creating TrashStore: %s", inner_err->message);
-            break;
-        }
-
-        gtk_list_box_insert(GTK_LIST_BOX(self->priv->drive_box), GTK_WIDGET(store), -1);
-        g_hash_table_insert(self->priv->mounts, g_strdup(g_mount_get_name(mount)), store);
-        break;
-    }
-
-    g_file_enumerator_close(enumerator, NULL, NULL);
-
-    // Update the icon if needed
-    maybe_update_icon(self);
-}
-
-static void mount_added(__budgie_unused__ GVolumeMonitor *monitor, GMount *mount, TrashApplet *self) {
-    add_mount(mount, self);
-}
-
-static void mount_removed(__budgie_unused__ GVolumeMonitor *monitor, GMount *mount, TrashApplet *self) {
-    g_autofree gchar *mount_name = g_mount_get_name(mount);
-    TrashStore *store = (TrashStore *) g_hash_table_lookup(self->priv->mounts, mount_name);
-    g_return_if_fail(TRASH_IS_STORE(store));
-
-    GtkWidget *row = gtk_widget_get_parent(GTK_WIDGET(store));
-    gtk_container_remove(GTK_CONTAINER(self->priv->drive_box), row);
-    g_hash_table_remove(self->priv->mounts, mount_name);
-    maybe_update_icon(self);
 }
 
 static void drag_data_received(
@@ -370,10 +213,6 @@ static void trash_applet_init(TrashApplet *self) {
     // Create our 'private' struct
     self->priv = trash_applet_get_instance_private(self);
 
-    self->priv->mounts = g_hash_table_new(g_str_hash, g_str_equal);
-    self->priv->settings = g_settings_new(TRASH_SETTINGS_SCHEMA_ID);
-    g_signal_connect_object(self->priv->settings, "changed", G_CALLBACK(setting_changed), self, 0);
-
     // Load our CSS
     GtkCssProvider *provider = gtk_css_provider_new();
     gtk_css_provider_load_from_resource(provider, "/com/github/EbonJaeger/budgie-trash-applet/style.css");
@@ -395,16 +234,6 @@ static void trash_applet_init(TrashApplet *self) {
 
     // Register notifications
     notify_init("com.github.EbonJaeger.budgie-trash-applet");
-
-    // Setup our volume monitor to get trashbins for
-    // removable drives
-    self->priv->uid = getuid();
-    self->priv->volume_monitor = g_volume_monitor_get();
-    g_autoptr(GList) mounts = g_volume_monitor_get_mounts(self->priv->volume_monitor);
-    g_list_foreach(mounts, (GFunc) add_mount, self);
-
-    g_signal_connect_object(self->priv->volume_monitor, "mount-added", G_CALLBACK(mount_added), self, G_CONNECT_AFTER);
-    g_signal_connect_object(self->priv->volume_monitor, "mount-removed", G_CALLBACK(mount_removed), self, G_CONNECT_AFTER);
 
     // Setup drag and drop to trash files
     gtk_drag_dest_set(GTK_WIDGET(self),

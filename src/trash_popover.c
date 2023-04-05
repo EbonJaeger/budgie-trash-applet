@@ -1,8 +1,9 @@
 #include "trash_popover.h"
-#include "trash_settings.h"
 
 struct _TrashPopover {
     GtkBox parent_instance;
+
+    TrashManager *trash_manager;
 
     GtkWidget *stack;
     GtkWidget *drive_list;
@@ -11,6 +12,12 @@ struct _TrashPopover {
 G_DEFINE_TYPE(TrashPopover, trash_popover, GTK_TYPE_BOX)
 
 static void trash_popover_finalize(GObject *object) {
+    TrashPopover *self;
+
+    self = TRASH_POPOVER(object);
+
+    g_object_unref(self->trash_manager);
+
     G_OBJECT_CLASS(trash_popover_parent_class)->finalize(object);
 }
 
@@ -42,6 +49,18 @@ static void settings_clicked(GtkButton *button, TrashPopover *self) {
         gtk_button_set_image(button, image);
         gtk_widget_set_tooltip_text(GTK_WIDGET(button), "Settings");
     }
+}
+
+static void bin_added(TrashManager *manager, TrashStore *bin, __attribute__((unused)) TrashPopover *self) {
+    (void) manager;
+
+    g_message("trash bin added: %s", trash_store_get_name(bin));
+}
+
+static void bin_removed(TrashManager *manager, gchar *bin_name, __attribute__((unused)) TrashPopover *self) {
+    (void) manager;
+
+    g_message("trash bin removed: %s", bin_name);
 }
 
 static void trash_popover_init(TrashPopover *self) {
@@ -108,6 +127,13 @@ static void trash_popover_init(TrashPopover *self) {
     gtk_stack_set_transition_type(GTK_STACK(self->stack), GTK_STACK_TRANSITION_TYPE_SLIDE_LEFT_RIGHT);
     gtk_stack_add_named(GTK_STACK(self->stack), main_view, "main");
     gtk_stack_add_named(GTK_STACK(self->stack), GTK_WIDGET(settings_view), "settings");
+
+    // Trash Manager hookups
+
+    self->trash_manager = trash_manager_new();
+
+    g_signal_connect(self->trash_manager, "trash-bin-added", G_CALLBACK(bin_added), self);
+    g_signal_connect(self->trash_manager, "trash-bin-removed", G_CALLBACK(bin_removed), self);
 
     // Pack ourselves up
     gtk_box_pack_start(GTK_BOX(self), header, TRUE, TRUE, 0);
