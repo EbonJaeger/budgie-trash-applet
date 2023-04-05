@@ -1,4 +1,5 @@
 #include "applet.h"
+#include "trash_popover.h"
 
 #define _GNU_SOURCE
 
@@ -19,10 +20,7 @@ struct _TrashAppletPrivate {
     GSettings *settings;
 
     GtkWidget *popover;
-    GtkWidget *stack;
     GtkWidget *drive_box;
-    GtkWidget *settings_button;
-    GtkWidget *return_button;
     TrashIconButton *icon_button;
 
     gint uid;
@@ -141,10 +139,6 @@ static void toggle_popover(__budgie_unused__ GtkButton *sender, TrashApplet *sel
     }
 }
 
-static void set_main_page(__budgie_unused__ TrashSettings *sender, TrashApplet *self) {
-    gtk_stack_set_visible_child_name(GTK_STACK(self->priv->stack), "main");
-}
-
 /**
  * Iterate over all of the current trash stores, and update the icon
  * if there are items, or if there aren't.
@@ -192,7 +186,7 @@ static TrashStore *create_store(TrashApplet *self, GMount *mount, GFile *mount_l
     trash_path = g_build_path(G_DIR_SEPARATOR_S, g_file_get_path(mount_location), g_file_info_get_name(info), "files", NULL);
     store = trash_store_new_with_path(g_mount_get_name(mount), g_settings_get_enum(self->priv->settings, TRASH_SETTINGS_KEY_SORT_MODE), g_mount_get_symbolic_icon(mount), g_strdup(trash_path));
 
-    trash_store_load_items(store, err);
+    trash_store_get_items(store, err);
     g_return_val_if_fail(err == NULL, NULL);
 
     trash_store_start_monitor(store);
@@ -302,75 +296,71 @@ static void drag_data_received(
     gtk_drag_finish(context, TRUE, TRUE, time);
 }
 
-static void trash_settings_clicked(__budgie_unused__ GtkButton *sender, TrashApplet *self) {
-    gtk_stack_set_visible_child_name(GTK_STACK(self->priv->stack), "settings");
-}
+// static GtkWidget *create_main_view(TrashApplet *self, TrashSortMode sort_mode) {
+//     GtkWidget *main_view = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
-static GtkWidget *create_main_view(TrashApplet *self, TrashSortMode sort_mode) {
-    GtkWidget *main_view = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+//     // Create our popover header
+//     GtkWidget *header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+//     GtkStyleContext *header_style = gtk_widget_get_style_context(header);
+//     gtk_style_context_add_class(header_style, "trash-applet-header");
+//     GtkWidget *header_label = gtk_label_new("Trash");
+//     GtkStyleContext *header_label_style = gtk_widget_get_style_context(header_label);
+//     gtk_style_context_add_class(header_label_style, "title");
+//     gtk_box_pack_start(GTK_BOX(header), header_label, TRUE, TRUE, 0);
 
-    // Create our popover header
-    GtkWidget *header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    GtkStyleContext *header_style = gtk_widget_get_style_context(header);
-    gtk_style_context_add_class(header_style, "trash-applet-header");
-    GtkWidget *header_label = gtk_label_new("Trash");
-    GtkStyleContext *header_label_style = gtk_widget_get_style_context(header_label);
-    gtk_style_context_add_class(header_label_style, "title");
-    gtk_box_pack_start(GTK_BOX(header), header_label, TRUE, TRUE, 0);
+//     // Create our scroller
+//     GtkWidget *scroller = gtk_scrolled_window_new(NULL, NULL);
+//     gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scroller), 300);
+//     gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroller), 300);
+//     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 
-    // Create our scroller
-    GtkWidget *scroller = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scroller), 300);
-    gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroller), 300);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+//     // Create the listbox that the mounted drives will go into
+//     self->priv->drive_box = gtk_list_box_new();
+//     gtk_widget_set_size_request(self->priv->drive_box, -1, 300);
+//     gtk_list_box_set_selection_mode(GTK_LIST_BOX(self->priv->drive_box), GTK_SELECTION_NONE);
+//     GtkStyleContext *drive_box_style = gtk_widget_get_style_context(self->priv->drive_box);
+//     gtk_style_context_add_class(drive_box_style, "trash-applet-list");
+//     gtk_container_add(GTK_CONTAINER(scroller), self->priv->drive_box);
 
-    // Create the listbox that the mounted drives will go into
-    self->priv->drive_box = gtk_list_box_new();
-    gtk_widget_set_size_request(self->priv->drive_box, -1, 300);
-    gtk_list_box_set_selection_mode(GTK_LIST_BOX(self->priv->drive_box), GTK_SELECTION_NONE);
-    GtkStyleContext *drive_box_style = gtk_widget_get_style_context(self->priv->drive_box);
-    gtk_style_context_add_class(drive_box_style, "trash-applet-list");
-    gtk_container_add(GTK_CONTAINER(scroller), self->priv->drive_box);
+//     // Create the trash store widgets
+//     TrashStore *default_store = trash_store_new("This PC", g_icon_new_for_string("drive-harddisk-symbolic", NULL), sort_mode);
+//     g_autoptr(GError) err = NULL;
+//     trash_store_load_items(default_store, err);
+//     if (err) {
+//         g_critical("Error loading trash items for the default trash store: %s", err->message);
+//     }
 
-    // Create the trash store widgets
-    TrashStore *default_store = trash_store_new("This PC", g_icon_new_for_string("drive-harddisk-symbolic", NULL), sort_mode);
-    g_autoptr(GError) err = NULL;
-    trash_store_load_items(default_store, err);
-    if (err) {
-        g_critical("Error loading trash items for the default trash store: %s", err->message);
-    }
+//     trash_store_start_monitor(default_store);
+//     g_signal_connect_object(TRASH_STORE(default_store), "trash-added", G_CALLBACK(trash_added), self, 0);
+//     g_signal_connect_object(TRASH_STORE(default_store), "trash-removed", G_CALLBACK(trash_removed), self, 0);
 
-    trash_store_start_monitor(default_store);
-    g_signal_connect_object(TRASH_STORE(default_store), "trash-added", G_CALLBACK(trash_added), self, 0);
-    g_signal_connect_object(TRASH_STORE(default_store), "trash-removed", G_CALLBACK(trash_removed), self, 0);
+//     g_hash_table_insert(self->priv->mounts, "This PC", default_store);
+//     gtk_list_box_insert(GTK_LIST_BOX(self->priv->drive_box), GTK_WIDGET(default_store), -1);
 
-    g_hash_table_insert(self->priv->mounts, "This PC", default_store);
-    gtk_list_box_insert(GTK_LIST_BOX(self->priv->drive_box), GTK_WIDGET(default_store), -1);
+//     // Footer
+//     GtkWidget *footer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+//     GtkStyleContext *footer_style = gtk_widget_get_style_context(footer);
+//     gtk_style_context_add_class(footer_style, "trash-applet-footer");
 
-    // Footer
-    GtkWidget *footer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    GtkStyleContext *footer_style = gtk_widget_get_style_context(footer);
-    gtk_style_context_add_class(footer_style, "trash-applet-footer");
+//     self->priv->settings_button = gtk_button_new_from_icon_name("emblem-system-symbolic", GTK_ICON_SIZE_BUTTON);
+//     gtk_widget_set_tooltip_text(self->priv->settings_button, "Settings");
+//     GtkStyleContext *settings_button_context = gtk_widget_get_style_context(self->priv->settings_button);
+//     gtk_style_context_add_class(settings_button_context, "flat");
+//     gtk_style_context_remove_class(settings_button_context, "button");
+//     gtk_box_pack_start(GTK_BOX(footer), self->priv->settings_button, TRUE, FALSE, 0);
+//     g_signal_connect_object(GTK_BUTTON(self->priv->settings_button), "clicked", G_CALLBACK(trash_settings_clicked), self, 0);
 
-    self->priv->settings_button = gtk_button_new_from_icon_name("emblem-system-symbolic", GTK_ICON_SIZE_BUTTON);
-    gtk_widget_set_tooltip_text(self->priv->settings_button, "Settings");
-    GtkStyleContext *settings_button_context = gtk_widget_get_style_context(self->priv->settings_button);
-    gtk_style_context_add_class(settings_button_context, "flat");
-    gtk_style_context_remove_class(settings_button_context, "button");
-    gtk_box_pack_start(GTK_BOX(footer), self->priv->settings_button, TRUE, FALSE, 0);
-    g_signal_connect_object(GTK_BUTTON(self->priv->settings_button), "clicked", G_CALLBACK(trash_settings_clicked), self, 0);
+//     // Pack it all up
+//     gtk_box_pack_start(GTK_BOX(main_view), header, FALSE, FALSE, 0);
+//     gtk_box_pack_start(GTK_BOX(main_view), scroller, TRUE, TRUE, 0);
+//     gtk_box_pack_end(GTK_BOX(main_view), footer, FALSE, FALSE, 0);
 
-    // Pack it all up
-    gtk_box_pack_start(GTK_BOX(main_view), header, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(main_view), scroller, TRUE, TRUE, 0);
-    gtk_box_pack_end(GTK_BOX(main_view), footer, FALSE, FALSE, 0);
+//     // Show everything
+//     gtk_widget_show_all(main_view);
+//     maybe_update_icon(self);
 
-    // Show everything
-    gtk_widget_show_all(main_view);
-    maybe_update_icon(self);
-
-    return main_view;
-}
+//     return main_view;
+// }
 
 /**
  * Initialization of basic UI elements and loads our CSS
@@ -398,23 +388,9 @@ static void trash_applet_init(TrashApplet *self) {
 
     // Create our popover widget
     self->priv->popover = budgie_popover_new(GTK_WIDGET(self->priv->icon_button));
+    TrashPopover *popover_body = trash_popover_new();
+    gtk_container_add(GTK_CONTAINER(self->priv->popover), GTK_WIDGET(popover_body));
 
-    self->priv->stack = gtk_stack_new();
-    gtk_stack_set_transition_type(GTK_STACK(self->priv->stack), GTK_STACK_TRANSITION_TYPE_SLIDE_LEFT_RIGHT);
-
-    TrashSortMode sort_mode = g_settings_get_enum(self->priv->settings, TRASH_SETTINGS_KEY_SORT_MODE);
-    GtkWidget *main_view = create_main_view(self, sort_mode);
-    gtk_widget_set_size_request(main_view, 300, -1);
-    gtk_stack_add_named(GTK_STACK(self->priv->stack), main_view, "main");
-
-    TrashSettings *settings_view = trash_settings_new();
-    gtk_stack_add_named(GTK_STACK(self->priv->stack), GTK_WIDGET(settings_view), "settings");
-    g_signal_connect_object(settings_view, "return-clicked", G_CALLBACK(set_main_page), self, 0);
-
-    gtk_stack_set_visible_child_name(GTK_STACK(self->priv->stack), "main");
-    gtk_widget_show_all(GTK_WIDGET(self->priv->stack));
-
-    gtk_container_add(GTK_CONTAINER(self->priv->popover), self->priv->stack);
     gtk_widget_show_all(GTK_WIDGET(self));
 
     // Register notifications

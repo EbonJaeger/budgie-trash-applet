@@ -2,6 +2,7 @@
 
 #include "notify.h"
 #include "trash_icon_button.h"
+#include "trash_popover.h"
 #include "trash_settings.h"
 #include "trash_store.h"
 #include "utils.h"

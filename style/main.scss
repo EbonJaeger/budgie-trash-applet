@@ -2,16 +2,6 @@
 @import 'info-revealer.scss';
 @import 'item.scss';
 @import 'list.scss';
-@import 'settings.scss';
 @import 'store.scss';
 @import 'vars.scss';
 
-.trash-applet-header {
-  border-bottom: 1px solid $border-color;
-  min-height: $header-height;
-}
-
-.trash-applet-footer {
-  border-top: 1px solid $border-color;
-  min-height: $header-height;
-}

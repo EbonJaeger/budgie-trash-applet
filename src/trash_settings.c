@@ -1,17 +1,11 @@
 #include "trash_settings.h"
 
 enum {
-    SIGNAL_RETURN_CLICKED,
-    LAST_SIGNAL
-};
-
-enum {
     PROP_0,
     PROP_SORT_MODE,
     LAST_PROP
 };
 
-static guint signals[LAST_SIGNAL];
 static GParamSpec *props[LAST_PROP];
 
 struct _TrashSettings {
@@ -25,7 +19,6 @@ struct _TrashSettings {
     GtkWidget *sort_mode_alphabetical_reverse;
     GtkWidget *sort_mode_date;
     GtkWidget *sort_mode_date_reverse;
-    GtkWidget *return_button;
 };
 
 G_DEFINE_TYPE(TrashSettings, trash_settings, GTK_TYPE_BOX);
@@ -71,16 +64,6 @@ static void trash_settings_class_init(TrashSettingsClass *klass) {
     class->get_property = trash_settings_get_property;
     class->set_property = trash_settings_set_property;
 
-    // Signals
-    signals[SIGNAL_RETURN_CLICKED] = g_signal_newv(
-        "return-clicked",
-        G_TYPE_FROM_CLASS(klass),
-        G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
-        NULL, NULL, NULL, NULL,
-        G_TYPE_NONE,
-        0,
-        NULL);
-
     // Properties
     props[PROP_SORT_MODE] = g_param_spec_enum(
         "sort-mode",
@@ -91,10 +74,6 @@ static void trash_settings_class_init(TrashSettingsClass *klass) {
         G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
 
     g_object_class_install_properties(class, LAST_PROP, props);
-}
-
-static void return_clicked(__attribute__((unused)) GtkButton *sender, TrashSettings *self) {
-    g_signal_emit(self, signals[SIGNAL_RETURN_CLICKED], 0, NULL);
 }
 
 static void update_selection(TrashSettings *self) {
@@ -150,20 +129,10 @@ static void trash_settings_init(TrashSettings *self) {
         "sort-mode",
         G_SETTINGS_BIND_DEFAULT);
 
-    GtkWidget *header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    GtkStyleContext *header_style = gtk_widget_get_style_context(header);
-    gtk_style_context_add_class(header_style, "trash-applet-header");
-    GtkWidget *header_label = gtk_label_new("Settings");
-    GtkStyleContext *header_label_style = gtk_widget_get_style_context(header_label);
-    gtk_style_context_add_class(header_label_style, "title");
-    gtk_box_pack_start(GTK_BOX(header), header_label, TRUE, TRUE, 0);
-
-    gtk_box_pack_start(GTK_BOX(self), header, FALSE, FALSE, 0);
-
     // Create our scroller
     GtkWidget *scroller = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scroller), 300);
     gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroller), 300);
+    gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(scroller), TRUE);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 
     gtk_box_pack_start(GTK_BOX(self), scroller, TRUE, TRUE, 0);
@@ -238,28 +207,12 @@ static void trash_settings_init(TrashSettings *self) {
 
     gtk_box_pack_start(GTK_BOX(settings_box), sort_section, FALSE, FALSE, 0);
 
-    // Create the footer
-    GtkWidget *footer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    GtkStyleContext *footer_style = gtk_widget_get_style_context(footer);
-    gtk_style_context_add_class(footer_style, "trash-applet-footer");
-
-    self->return_button = gtk_button_new_from_icon_name("edit-undo-symbolic", GTK_ICON_SIZE_BUTTON);
-    gtk_widget_set_tooltip_text(self->return_button, "Return");
-    GtkStyleContext *settings_button_context = gtk_widget_get_style_context(self->return_button);
-    gtk_style_context_add_class(settings_button_context, "flat");
-    gtk_style_context_remove_class(settings_button_context, "button");
-    gtk_box_pack_start(GTK_BOX(footer), self->return_button, TRUE, FALSE, 0);
-
-    gtk_box_pack_end(GTK_BOX(self), footer, FALSE, FALSE, 0);
-
     // Signals
     g_signal_connect(self->sort_mode_type, "clicked", G_CALLBACK(sort_changed), self);
     g_signal_connect(self->sort_mode_alphabetical, "clicked", G_CALLBACK(sort_changed), self);
     g_signal_connect(self->sort_mode_alphabetical_reverse, "clicked", G_CALLBACK(sort_changed), self);
     g_signal_connect(self->sort_mode_date, "clicked", G_CALLBACK(sort_changed), self);
     g_signal_connect(self->sort_mode_date_reverse, "clicked", G_CALLBACK(sort_changed), self);
-
-    g_signal_connect(GTK_BUTTON(self->return_button), "clicked", G_CALLBACK(return_clicked), self);
 
     update_selection(self);
 
