@@ -7,6 +7,7 @@ enum {
 };
 
 enum {
+    PROP_0,
     PROP_COUNT,
     PROP_DEFAULT,
     PROP_ICON,
