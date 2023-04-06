@@ -19,7 +19,7 @@ G_DEFINE_FINAL_TYPE(TrashManager, trash_manager, G_TYPE_OBJECT)
 
 static void mount_added(GMount *mount, TrashManager *self) {
     TrashStore *bin;
-    g_autofree gchar *mount_root, *mount_name, *base_trash_path, *trash_dir_name, *trash_dir_path, *uid_str;
+    g_autofree gchar *mount_root, *mount_name, *base_trash_path, *trash_dir_name = NULL, *trash_dir_path, *uid_str = NULL;
     g_autoptr(GFile) location, base_trash_dir, trash_dir;
     g_autoptr(GIcon) icon;
 
