@@ -8,17 +8,14 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE(TrashConfirmDialog, trash_confirm_dialog, TRASH, CONFIRM_DIALOG, GtkRevealer)
 
-/**
- * Create a new TrashConfirmDialog widget.
- */
-TrashConfirmDialog *trash_confirm_dialog_new(void);
+TrashConfirmDialog *trash_confirm_dialog_new(const gchar *message, gboolean destructive);
 
-/**
- * Set the message for the revealer to show.
- *
- * If `destructive` is set to true, the confirm button will have
- * the destructive CSS class applied to it.
- */
-void trash_confirm_dialog_show_message(TrashConfirmDialog *self, const gchar *message, gboolean destructive);
+gboolean trash_confirm_dialog_get_destructive(TrashConfirmDialog *self);
+
+const gchar *trash_confirm_dialog_get_message(TrashConfirmDialog *self);
+
+void trash_confirm_dialog_set_destructive(TrashConfirmDialog *self, gboolean destructive);
+
+void trash_confirm_dialog_set_message(TrashConfirmDialog *self, const gchar *message);
 
 G_END_DECLS

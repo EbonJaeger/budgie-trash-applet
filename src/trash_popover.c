@@ -6,7 +6,9 @@ struct _TrashPopover {
     TrashManager *trash_manager;
 
     GtkWidget *stack;
-    GtkWidget *drive_list;
+    GtkWidget *restore_button;
+    GtkWidget *delete_button;
+    GtkWidget *file_box;
 };
 
 G_DEFINE_TYPE(TrashPopover, trash_popover, GTK_TYPE_BOX)
@@ -51,16 +53,32 @@ static void settings_clicked(GtkButton *button, TrashPopover *self) {
     }
 }
 
-static void bin_added(TrashManager *manager, TrashStore *bin, __attribute__((unused)) TrashPopover *self) {
+static void trash_added(TrashManager *manager, TrashInfo *trash_info, TrashPopover *self) {
     (void) manager;
 
-    g_message("trash bin added: %s", trash_store_get_name(bin));
+    TrashItemRow *row;
+
+    row = trash_item_row_new(trash_info);
+
+    gtk_list_box_insert(GTK_LIST_BOX(self->file_box), GTK_WIDGET(row), -1);
 }
 
-static void bin_removed(TrashManager *manager, gchar *bin_name, __attribute__((unused)) TrashPopover *self) {
+static void foreach_item_cb(TrashItemRow *row, gchar *uri) {
+    TrashInfo *info;
+    g_autofree const gchar *info_uri;
+
+    info = trash_item_row_get_info(row);
+    info_uri = trash_info_get_uri(info);
+
+    if (g_strcmp0(info_uri, uri) == 0) {
+        gtk_widget_destroy(GTK_WIDGET(row));
+    }
+}
+
+static void trash_removed(TrashManager *manager, gchar *name, TrashPopover *self) {
     (void) manager;
 
-    g_message("trash bin removed: %s", bin_name);
+    gtk_container_foreach(GTK_CONTAINER(self->file_box), (GtkCallback) foreach_item_cb, name);
 }
 
 static void trash_popover_init(TrashPopover *self) {
@@ -73,6 +91,8 @@ static void trash_popover_init(TrashPopover *self) {
     GtkWidget *main_view;
     GtkWidget *scroller;
     TrashSettings *settings_view;
+
+    gtk_widget_set_size_request(GTK_WIDGET(self), -1, 256);
 
     // Create our header
     header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -103,16 +123,17 @@ static void trash_popover_init(TrashPopover *self) {
     gtk_box_pack_end(GTK_BOX(header), settings_button, FALSE, FALSE, 0);
 
     // Create our drive list box
-    self->drive_list = gtk_list_box_new();
-    gtk_list_box_set_selection_mode(GTK_LIST_BOX(self->drive_list), GTK_SELECTION_NONE);
+    self->file_box = gtk_list_box_new();
+    gtk_list_box_set_activate_on_single_click(GTK_LIST_BOX(self->file_box), FALSE);
+    gtk_list_box_set_selection_mode(GTK_LIST_BOX(self->file_box), GTK_SELECTION_MULTIPLE);
 
     // Create our scrolled window
     scroller = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroller), 300);
+    gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroller), 256);
     gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(scroller), TRUE);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 
-    gtk_container_add(GTK_CONTAINER(scroller), self->drive_list);
+    gtk_container_add(GTK_CONTAINER(scroller), self->file_box);
 
     // Create our main view
     main_view = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -132,12 +153,14 @@ static void trash_popover_init(TrashPopover *self) {
 
     self->trash_manager = trash_manager_new();
 
-    g_signal_connect(self->trash_manager, "trash-bin-added", G_CALLBACK(bin_added), self);
-    g_signal_connect(self->trash_manager, "trash-bin-removed", G_CALLBACK(bin_removed), self);
+    g_signal_connect(self->trash_manager, "trash-added", G_CALLBACK(trash_added), self);
+    g_signal_connect(self->trash_manager, "trash-removed", G_CALLBACK(trash_removed), self);
+
+    trash_manager_scan_items(self->trash_manager);
 
     // Pack ourselves up
-    gtk_box_pack_start(GTK_BOX(self), header, TRUE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(self), separator, TRUE, TRUE, 2);
+    gtk_box_pack_start(GTK_BOX(self), header, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(self), separator, FALSE, FALSE, 2);
     gtk_box_pack_start(GTK_BOX(self), self->stack, TRUE, TRUE, 0);
     gtk_widget_show_all(GTK_WIDGET(self));
     gtk_stack_set_visible_child_name(GTK_STACK(self->stack), "main");

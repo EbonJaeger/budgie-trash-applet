@@ -1,7 +1,8 @@
 #pragma once
 
 #include "trash_manager.h"
-#include "trash_store.h"
+#include "trash_info.h"
+#include "trash_item_row.h"
 #include "trash_settings.h"
 #include <budgie-desktop/popover.h>
 #include <gtk/gtk.h>
