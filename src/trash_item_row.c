@@ -242,6 +242,44 @@ void trash_item_row_delete(TrashItemRow *self) {
     );
 }
 
+void restore_finish(GObject *object, GAsyncResult *result, gpointer user_data) {
+    (void) user_data;
+
+    gboolean success;
+    g_autoptr(GError) error = NULL;
+
+    success = g_file_move_finish(G_FILE(object), result, &error);
+
+    if (!success) {
+        g_critical("Error restoring file '%s' to '%s': %s", g_file_get_basename(G_FILE(object)), g_file_get_path(G_FILE(object)), error->message);
+    }
+}
+
+/**
+ * Asynchronously restores a trashed item to its original location.
+ */
+void trash_item_row_restore(TrashItemRow *self) {
+    g_autoptr(GFile) file, restored_file;
+    g_autofree const gchar *name;
+    g_autofree gchar *uri;
+    g_autofree const gchar *restore_path;
+
+    name = trash_info_get_name(self->trash_info);
+    uri = g_strdup_printf("trash:///%s", name);
+    file = g_file_new_for_uri(uri);
+    restore_path = trash_info_get_restore_path(self->trash_info);
+    restored_file = g_file_new_for_path(restore_path);
+
+    g_file_move_async(
+        file,
+        restored_file,
+        G_FILE_COPY_ALL_METADATA,
+        G_PRIORITY_DEFAULT,
+        NULL, NULL, NULL,
+        restore_finish,
+        NULL);
+}
+
 /**
  * Compares two TrashItems for sorting, putting them in order by deletion date
  * in ascending order.
