@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <schemalist gettext-domain="budgie-trash-applet">
 
-  <enum id="com.github.ebonjaeger.budgie-trash-applet.SortMode">
+  <enum id="com.solus-project.budgie-trash-applet.SortMode">
     <value nick="type" value="1" />
     <value nick="a-z" value="2" />
     <value nick="z-a" value="3" />
@@ -9,7 +9,7 @@
     <value nick="date-descending" value="5" />
   </enum>
 
-  <schema id="com.github.ebonjaeger.budgie-trash-applet" path="/com/github/ebonjaeger/budgie-trash-applet/">
+  <schema id="com.solus-project.budgie-trash-applet">
     <key enum="com.github.ebonjaeger.budgie-trash-applet.SortMode" name="sort-mode">
       <default>'type'</default>
       <summary>File sort type</summary>

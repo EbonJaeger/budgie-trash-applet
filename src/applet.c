@@ -1,5 +1,4 @@
 #include "applet.h"
-#include "trash_popover.h"
 
 #define _GNU_SOURCE
 
@@ -22,13 +21,40 @@ struct _TrashAppletPrivate {
 
 G_DEFINE_DYNAMIC_TYPE_EXTENDED(TrashApplet, trash_applet, BUDGIE_TYPE_APPLET, 0, G_ADD_PRIVATE_DYNAMIC(TrashApplet))
 
+static void trash_applet_constructed(GObject *object) {
+    TrashApplet *self = TRASH_APPLET(object);
+    TrashPopover *popover_body;
+
+    // Set our settings schema and prefix
+    g_object_set(self,
+                 "settings-schema", "com.solus-project.budgie-trash-applet",
+                 "settings-prefix", "/com/solus-project/budgie-panel/instance/budgie-trash-applet",
+                 NULL);
+    self->settings = budgie_applet_get_applet_settings(BUDGIE_APPLET(self), self->priv->uuid);
+
+    // Create our popover widget
+    self->priv->popover = budgie_popover_new(GTK_WIDGET(self->priv->icon_button));
+    popover_body = trash_popover_new(self->settings);
+    gtk_container_add(GTK_CONTAINER(self->priv->popover), GTK_WIDGET(popover_body));
+
+    G_OBJECT_CLASS(trash_applet_parent_class)->constructed(object);
+}
+
 /**
  * Handle cleanup of the applet.
  */
 static void trash_applet_finalize(GObject *object) {
-    TrashAppletPrivate *priv = trash_applet_get_instance_private(TRASH_APPLET(object));
+    TrashApplet *self;
+    TrashAppletPrivate *priv;
+
+    self = TRASH_APPLET(object);
+    priv = trash_applet_get_instance_private(self);
 
     g_free(priv->uuid);
+
+    if (self->settings) {
+        g_object_unref(self->settings);
+    }
 
     G_OBJECT_CLASS(trash_applet_parent_class)->finalize(object);
 }
@@ -59,6 +85,21 @@ static void trash_applet_set_property(GObject *obj, guint prop_id, const GValue 
     }
 }
 
+static GtkWidget *trash_applet_get_settings_ui(BudgieApplet *base) {
+    TrashApplet *self = TRASH_APPLET(base);
+    TrashSettings *trash_settings;
+
+    trash_settings = trash_settings_new(self->settings);
+    g_object_ref_sink(trash_settings);
+
+    return GTK_WIDGET(trash_settings);
+}
+
+static gboolean trash_applet_supports_settings(BudgieApplet *base) {
+    (void) base;
+    return TRUE;
+}
+
 /**
  * Register our popover with the Budgie popover manager.
  */
@@ -74,22 +115,27 @@ static void update_popovers(BudgieApplet *base, BudgiePopoverManager *manager) {
  * Initialize the Trash Applet class.
  */
 static void trash_applet_class_init(TrashAppletClass *klass) {
-    GObjectClass *class = G_OBJECT_CLASS(klass);
-    BudgieAppletClass *budgie_class = BUDGIE_APPLET_CLASS(klass);
+    GObjectClass *class;
+    BudgieAppletClass *budgie_class;
 
+    class = G_OBJECT_CLASS(klass);
+    budgie_class = BUDGIE_APPLET_CLASS(klass);
+
+    class->constructed = trash_applet_constructed;
     class->finalize = trash_applet_finalize;
     class->get_property = trash_applet_get_property;
     class->set_property = trash_applet_set_property;
 
     budgie_class->update_popovers = update_popovers;
-    budgie_class->supports_settings = FALSE;
+    budgie_class->supports_settings = trash_applet_supports_settings;
+    budgie_class->get_settings_ui = trash_applet_get_settings_ui;
 
     props[PROP_APPLET_UUID] = g_param_spec_string(
         "uuid",
         "uuid",
         "The applet's UUID",
         NULL,
-        G_PARAM_STATIC_STRINGS | G_PARAM_READABLE | G_PARAM_WRITABLE);
+        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(class, N_PROPS, props);
 }
@@ -224,11 +270,6 @@ static void trash_applet_init(TrashApplet *self) {
     self->priv->icon_button = trash_icon_button_new();
     g_signal_connect_object(GTK_BUTTON(self->priv->icon_button), "clicked", G_CALLBACK(toggle_popover), self, 0);
     gtk_container_add(GTK_CONTAINER(self), GTK_WIDGET(self->priv->icon_button));
-
-    // Create our popover widget
-    self->priv->popover = budgie_popover_new(GTK_WIDGET(self->priv->icon_button));
-    TrashPopover *popover_body = trash_popover_new();
-    gtk_container_add(GTK_CONTAINER(self->priv->popover), GTK_WIDGET(popover_body));
 
     gtk_widget_show_all(GTK_WIDGET(self));
 

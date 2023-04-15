@@ -1,233 +1,135 @@
 #include "trash_settings.h"
 
-enum {
-    PROP_0,
-    PROP_SORT_MODE,
-    N_PROPS
-};
-
-static GParamSpec *props[N_PROPS];
-
 struct _TrashSettings {
-    GtkBox parent_instance;
+    GtkGrid parent_instance;
 
     GSettings *settings;
-    gint sort_mode;
 
-    GtkWidget *sort_mode_type;
-    GtkWidget *sort_mode_alphabetical;
-    GtkWidget *sort_mode_alphabetical_reverse;
-    GtkWidget *sort_mode_date;
-    GtkWidget *sort_mode_date_reverse;
+    gboolean update_setting;
+
+    GtkRadioButton *btn_sort_type;
+    GtkRadioButton *btn_sort_alphabetical;
+    GtkRadioButton *btn_sort_reverse_alphabetical;
+    GtkRadioButton *btn_sort_date_ascending;
+    GtkRadioButton *btn_sort_date_descending;
 };
 
-G_DEFINE_TYPE(TrashSettings, trash_settings, GTK_TYPE_BOX);
+G_DEFINE_FINAL_TYPE(TrashSettings, trash_settings, GTK_TYPE_GRID);
 
-static void trash_settings_dispose(GObject *obj) {
+static void trash_settings_finalize(GObject *obj) {
     TrashSettings *self = TRASH_SETTINGS(obj);
 
-    g_settings_unbind(self->settings, TRASH_SETTINGS_KEY_SORT_MODE);
-
-    G_OBJECT_CLASS(trash_settings_parent_class)->dispose(obj);
-}
-
-static void trash_settings_get_property(GObject *obj, guint prop_id, GValue *val, GParamSpec *spec) {
-    TrashSettings *self = TRASH_SETTINGS(obj);
-
-    switch (prop_id) {
-        case PROP_SORT_MODE:
-            g_value_set_enum(val, self->sort_mode);
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
-            break;
+    if (self->settings) {
+        g_object_unref(self->settings);
     }
-}
 
-static void trash_settings_set_property(GObject *obj, guint prop_id, const GValue *val, GParamSpec *spec) {
-    TrashSettings *self = TRASH_SETTINGS(obj);
-
-    switch (prop_id) {
-        case PROP_SORT_MODE:
-            self->sort_mode = g_value_get_enum(val);
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
-            break;
-    }
+    G_OBJECT_CLASS(trash_settings_parent_class)->finalize(obj);
 }
 
 static void trash_settings_class_init(TrashSettingsClass *klass) {
-    GObjectClass *class = G_OBJECT_CLASS(klass);
+    GObjectClass *class;
 
-    class->dispose = trash_settings_dispose;
-    class->get_property = trash_settings_get_property;
-    class->set_property = trash_settings_set_property;
+    class = G_OBJECT_CLASS(klass);
 
-    // Properties
-    props[PROP_SORT_MODE] = g_param_spec_enum(
-        "sort-mode",
-        "Sort mode",
-        "Set how trashed files should be sorted",
-        TRASH_TYPE_SORT_MODE,
-        TRASH_SORT_TYPE,
-        G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
+    gtk_widget_class_set_template_from_resource(GTK_WIDGET_CLASS(klass), "/com/github/EbonJaeger/budgie-trash-applet/settings.ui");
+    gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(klass), TrashSettings, btn_sort_type);
+    gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(klass), TrashSettings, btn_sort_alphabetical);
+    gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(klass), TrashSettings, btn_sort_reverse_alphabetical);
+    gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(klass), TrashSettings, btn_sort_date_ascending);
+    gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(klass), TrashSettings, btn_sort_date_descending);
 
-    g_object_class_install_properties(class, N_PROPS, props);
+    class->finalize = trash_settings_finalize;
 }
 
-static void update_selection(TrashSettings *self) {
-    g_return_if_fail(TRASH_IS_SETTINGS(self));
-
-    switch (self->sort_mode) {
-        case TRASH_SORT_A_Z:
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(self->sort_mode_alphabetical), TRUE);
-            break;
-        case TRASH_SORT_Z_A:
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(self->sort_mode_alphabetical_reverse), TRUE);
-            break;
-        case TRASH_SORT_DATE_ASCENDING:
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(self->sort_mode_date), TRUE);
-            break;
-        case TRASH_SORT_DATE_DESCENDING:
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(self->sort_mode_date_reverse), TRUE);
-            break;
-        case TRASH_SORT_TYPE:
-            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(self->sort_mode_type), TRUE);
-            break;
-        default:
-            g_critical("%s:%d: Unknown trash sort mode '%d'", __BASE_FILE__, __LINE__, (gint) self->sort_mode);
-            break;
-    }
-}
-
-static void sort_changed(GtkWidget *button, TrashSettings *self) {
+static void button_toggled(GtkToggleButton *button, gpointer user_data) {
+    TrashSettings *self = user_data;
+    GtkRadioButton *radio_btn;
     TrashSortMode new_mode;
 
-    if (button == self->sort_mode_alphabetical) {
+    // Do nothing if being toggled off
+    if (!gtk_toggle_button_get_active(button)) {
+        return;
+    }
+
+    // Do nothing if the setting shouldn't be updated, e.g. during a UI update
+    if (!self->update_setting) {
+        return;
+    }
+
+    radio_btn = GTK_RADIO_BUTTON(button);
+
+    if (radio_btn == self->btn_sort_alphabetical) {
         new_mode = TRASH_SORT_A_Z;
-    } else if (button == self->sort_mode_alphabetical_reverse) {
+    } else if (radio_btn == self->btn_sort_reverse_alphabetical) {
         new_mode = TRASH_SORT_Z_A;
-    } else if (button == self->sort_mode_date) {
+    } else if (radio_btn == self->btn_sort_date_ascending) {
         new_mode = TRASH_SORT_DATE_ASCENDING;
-    } else if (button == self->sort_mode_date_reverse) {
+    } else if (radio_btn == self->btn_sort_date_descending) {
         new_mode = TRASH_SORT_DATE_DESCENDING;
     } else {
         new_mode = TRASH_SORT_TYPE;
     }
 
-    g_object_set(self, "sort-mode", new_mode, NULL);
+    g_settings_set_enum(self->settings, TRASH_SETTINGS_KEY_SORT_MODE, new_mode);
 }
 
 static void trash_settings_init(TrashSettings *self) {
-    self->settings = g_settings_new(TRASH_SETTINGS_SCHEMA_ID);
+    gtk_widget_init_template(GTK_WIDGET(self));
 
-    g_settings_bind(
-        self->settings,
-        TRASH_SETTINGS_KEY_SORT_MODE,
-        self,
-        "sort-mode",
-        G_SETTINGS_BIND_DEFAULT);
+    g_signal_connect(self->btn_sort_type, "toggled", G_CALLBACK(button_toggled), self);
+    g_signal_connect(self->btn_sort_alphabetical, "toggled", G_CALLBACK(button_toggled), self);
+    g_signal_connect(self->btn_sort_reverse_alphabetical, "toggled", G_CALLBACK(button_toggled), self);
+    g_signal_connect(self->btn_sort_date_ascending, "toggled", G_CALLBACK(button_toggled), self);
+    g_signal_connect(self->btn_sort_date_descending, "toggled", G_CALLBACK(button_toggled), self);
 
-    // Create our scroller
-    GtkWidget *scroller = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroller), 300);
-    gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(scroller), TRUE);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-
-    gtk_box_pack_start(GTK_BOX(self), scroller, TRUE, TRUE, 0);
-
-    // Create a settings container to put in the scroller
-    GtkWidget *settings_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    GtkStyleContext *box_context = gtk_widget_get_style_context(settings_box);
-    gtk_style_context_add_class(box_context, "trash-settings-box");
-    gtk_container_add(GTK_CONTAINER(scroller), settings_box);
-
-    // Create the sorting settings section
-    GtkWidget *sort_section = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    GtkWidget *sort_label = gtk_label_new("Sort mode");
-    GtkStyleContext *sort_label_style = gtk_widget_get_style_context(sort_label);
-    gtk_style_context_add_class(sort_label_style, GTK_STYLE_CLASS_DIM_LABEL);
-    gtk_widget_set_tooltip_text(sort_label, "Set the sorting mode for trashed files");
-    gtk_widget_set_halign(sort_label, GTK_ALIGN_START);
-    gtk_label_set_justify(GTK_LABEL(sort_label), GTK_JUSTIFY_LEFT);
-
-    gtk_box_pack_start(GTK_BOX(sort_section), sort_label, FALSE, FALSE, 0);
-
-    GtkWidget *type_container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    GtkWidget *type_label = gtk_label_new("Type");
-    gtk_widget_set_halign(type_label, GTK_ALIGN_START);
-    gtk_label_set_justify(GTK_LABEL(type_label), GTK_JUSTIFY_LEFT);
-    self->sort_mode_type = gtk_radio_button_new(NULL);
-
-    gtk_box_pack_start(GTK_BOX(type_container), type_label, TRUE, TRUE, 0);
-    gtk_box_pack_end(GTK_BOX(type_container), self->sort_mode_type, FALSE, FALSE, 0);
-
-    GtkWidget *alphabetical_container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    GtkWidget *alphabetical_label = gtk_label_new("A-Z");
-    gtk_widget_set_halign(alphabetical_label, GTK_ALIGN_START);
-    gtk_label_set_justify(GTK_LABEL(alphabetical_label), GTK_JUSTIFY_LEFT);
-    self->sort_mode_alphabetical = gtk_radio_button_new_from_widget(GTK_RADIO_BUTTON(self->sort_mode_type));
-
-    gtk_box_pack_start(GTK_BOX(alphabetical_container), alphabetical_label, TRUE, TRUE, 0);
-    gtk_box_pack_end(GTK_BOX(alphabetical_container), self->sort_mode_alphabetical, FALSE, FALSE, 0);
-
-    GtkWidget *alphabetical_reverse_container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    GtkWidget *alphabetical_reverse_label = gtk_label_new("Z-A");
-    gtk_widget_set_halign(alphabetical_reverse_label, GTK_ALIGN_START);
-    gtk_label_set_justify(GTK_LABEL(alphabetical_reverse_label), GTK_JUSTIFY_LEFT);
-    self->sort_mode_alphabetical_reverse = gtk_radio_button_new_from_widget(GTK_RADIO_BUTTON(self->sort_mode_type));
-
-    gtk_box_pack_start(GTK_BOX(alphabetical_reverse_container), alphabetical_reverse_label, TRUE, TRUE, 0);
-    gtk_box_pack_end(GTK_BOX(alphabetical_reverse_container), self->sort_mode_alphabetical_reverse, FALSE, FALSE, 0);
-
-    GtkWidget *date_container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    GtkWidget *date_label = gtk_label_new("Date Ascending");
-    gtk_widget_set_halign(date_label, GTK_ALIGN_START);
-    gtk_label_set_justify(GTK_LABEL(date_label), GTK_JUSTIFY_LEFT);
-    self->sort_mode_date = gtk_radio_button_new_from_widget(GTK_RADIO_BUTTON(self->sort_mode_type));
-
-    gtk_box_pack_start(GTK_BOX(date_container), date_label, TRUE, TRUE, 0);
-    gtk_box_pack_end(GTK_BOX(date_container), self->sort_mode_date, FALSE, FALSE, 0);
-
-    GtkWidget *date_reverse_container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    GtkWidget *date_reverse_label = gtk_label_new("Date Descending");
-    gtk_widget_set_halign(date_reverse_label, GTK_ALIGN_START);
-    gtk_label_set_justify(GTK_LABEL(date_reverse_label), GTK_JUSTIFY_LEFT);
-    self->sort_mode_date_reverse = gtk_radio_button_new_from_widget(GTK_RADIO_BUTTON(self->sort_mode_type));
-
-    gtk_box_pack_start(GTK_BOX(date_reverse_container), date_reverse_label, TRUE, TRUE, 0);
-    gtk_box_pack_end(GTK_BOX(date_reverse_container), self->sort_mode_date_reverse, FALSE, FALSE, 0);
-
-    gtk_box_pack_start(GTK_BOX(sort_section), type_container, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(sort_section), alphabetical_container, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(sort_section), alphabetical_reverse_container, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(sort_section), date_container, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(sort_section), date_reverse_container, FALSE, FALSE, 0);
-
-    gtk_box_pack_start(GTK_BOX(settings_box), sort_section, FALSE, FALSE, 0);
-
-    // Signals
-    g_signal_connect(self->sort_mode_type, "clicked", G_CALLBACK(sort_changed), self);
-    g_signal_connect(self->sort_mode_alphabetical, "clicked", G_CALLBACK(sort_changed), self);
-    g_signal_connect(self->sort_mode_alphabetical_reverse, "clicked", G_CALLBACK(sort_changed), self);
-    g_signal_connect(self->sort_mode_date, "clicked", G_CALLBACK(sort_changed), self);
-    g_signal_connect(self->sort_mode_date_reverse, "clicked", G_CALLBACK(sort_changed), self);
-
-    update_selection(self);
-
-    gtk_widget_show_all(GTK_WIDGET(self));
+    self->update_setting = TRUE;
 }
 
-TrashSettings *trash_settings_new() {
-    return g_object_new(TRASH_TYPE_SETTINGS,
-                        "orientation", GTK_ORIENTATION_VERTICAL,
-                        "spacing", 0,
-                        NULL);
+static void settings_changed(GSettings *settings, gchar *key, gpointer user_data) {
+    TrashSettings *self = user_data;
+    TrashSortMode new_mode;
+
+    if (g_strcmp0(key, TRASH_SETTINGS_KEY_SORT_MODE) == 0) {
+        new_mode = (TrashSortMode) g_settings_get_enum(settings, key);
+
+        // We don't want to trigger an infinite update loop, so don't update the GSettings
+        // until after our UI state is updated.
+        self->update_setting = FALSE;
+
+        switch (new_mode) {
+            case TRASH_SORT_A_Z:
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(self->btn_sort_alphabetical), TRUE);
+                break;
+            case TRASH_SORT_Z_A:
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(self->btn_sort_reverse_alphabetical), TRUE);
+                break;
+            case TRASH_SORT_DATE_ASCENDING:
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(self->btn_sort_date_ascending), TRUE);
+                break;
+            case TRASH_SORT_DATE_DESCENDING:
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(self->btn_sort_date_descending), TRUE);
+                break;
+            case TRASH_SORT_TYPE:
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(self->btn_sort_type), TRUE);
+                break;
+        }
+
+        // Turn settings updates on again
+        self->update_setting = TRUE;
+    }
 }
 
-TrashSortMode trash_settings_get_sort_mode(TrashSettings *self) {
-    g_return_val_if_fail(TRASH_IS_SETTINGS(self), TRASH_SORT_TYPE);
+/**
+ * Create a new TrashSettings widget.
+ */
+TrashSettings *trash_settings_new(GSettings *settings) {
+    TrashSettings *self;
 
-    return self->sort_mode;
+    self = g_object_new(TRASH_TYPE_SETTINGS, NULL);
+
+    self->settings = g_object_ref(settings);
+
+    g_signal_connect(self->settings, "changed", G_CALLBACK(settings_changed), self);
+
+    return self;
 }

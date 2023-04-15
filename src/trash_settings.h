@@ -22,16 +22,8 @@ typedef enum {
 
 #define TRASH_TYPE_SETTINGS (trash_settings_get_type())
 
-G_DECLARE_FINAL_TYPE(TrashSettings, trash_settings, TRASH, SETTINGS, GtkBox)
+G_DECLARE_FINAL_TYPE(TrashSettings, trash_settings, TRASH, SETTINGS, GtkGrid)
 
-/**
- * Create a new TrashSettings class.
- */
-TrashSettings *trash_settings_new();
-
-/**
- * Get the current sort mode for trash items.
- */
-TrashSortMode trash_settings_get_sort_mode(TrashSettings *self);
+TrashSettings *trash_settings_new(GSettings *settings);
 
 G_END_DECLS

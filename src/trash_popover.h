@@ -13,6 +13,6 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE(TrashPopover, trash_popover, TRASH, POPOVER, GtkBox)
 
-TrashPopover *trash_popover_new();
+TrashPopover *trash_popover_new(GSettings *settings);
 
 G_END_DECLS

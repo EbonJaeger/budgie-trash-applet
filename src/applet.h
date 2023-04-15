@@ -33,6 +33,7 @@ struct _TrashApplet {
     BudgieApplet parent;
 
     TrashAppletPrivate *priv;
+    GSettings *settings;
 };
 
 GType trash_applet_get_type(void);
