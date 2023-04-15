@@ -12,7 +12,7 @@ struct _TrashConfirmDialog {
 };
 
 enum {
-    RESPONSE_SIGNAL,
+    RESPONSE,
     N_SIGNALS
 };
 
@@ -87,7 +87,7 @@ static void trash_confirm_dialog_class_init(TrashConfirmDialogClass *klass) {
 
     // Signals
 
-    signals[RESPONSE_SIGNAL] = g_signal_new(
+    signals[RESPONSE] = g_signal_new(
         "response",
         G_TYPE_FROM_CLASS(klass),
         G_SIGNAL_RUN_LAST,
@@ -119,13 +119,13 @@ static void trash_confirm_dialog_class_init(TrashConfirmDialogClass *klass) {
 static void cancel_button_clicked(GtkButton *button, TrashConfirmDialog *self) {
     (void) button;
 
-    g_signal_emit(self, signals[RESPONSE_SIGNAL], 0, GTK_RESPONSE_CANCEL);
+    g_signal_emit(self, signals[RESPONSE], 0, GTK_RESPONSE_CANCEL);
 }
 
 static void confirm_button_clicked(GtkButton *button, TrashConfirmDialog *self) {
     (void) button;
 
-    g_signal_emit(self, signals[RESPONSE_SIGNAL], 0, GTK_RESPONSE_OK);
+    g_signal_emit(self, signals[RESPONSE], 0, GTK_RESPONSE_OK);
 }
 
 static void trash_confirm_dialog_init(TrashConfirmDialog *self) {

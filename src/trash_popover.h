@@ -1,5 +1,6 @@
 #pragma once
 
+#include "trash_button_bar.h"
 #include "trash_manager.h"
 #include "trash_info.h"
 #include "trash_item_row.h"
