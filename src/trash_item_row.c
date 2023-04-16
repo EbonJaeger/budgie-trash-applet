@@ -1,12 +1,11 @@
 #include "trash_item_row.h"
 
 enum {
-    PROPERTY_0,
-    TRASH_INFO_PROPERTY,
+    TRASH_INFO_PROPERTY = 1,
     N_PROPERTIES
 };
 
-static GParamSpec *props[N_PROPERTIES];
+static GParamSpec *props[N_PROPERTIES] = { NULL, };
 
 struct _TrashItemRow {
     GtkListBoxRow parent_instance;
@@ -15,7 +14,7 @@ struct _TrashItemRow {
 
     GtkWidget *header;
     GtkWidget *delete_btn;
-    TrashConfirmDialog *confirm_revealer;
+    TrashButtonBar *confirm_bar;
 };
 
 G_DEFINE_FINAL_TYPE(TrashItemRow, trash_item_row, GTK_TYPE_LIST_BOX_ROW)
@@ -24,17 +23,24 @@ static void delete_clicked_cb(GtkButton *source, gpointer user_data) {
     (void) source;
     
     TrashItemRow *self = user_data;
-    
-    gtk_revealer_set_reveal_child(GTK_REVEALER(self->confirm_revealer), TRUE);
+    gboolean revealed;
+
+    revealed = trash_button_bar_get_revealed(self->confirm_bar);
+
+    if (revealed) {
+        trash_button_bar_set_revealed(self->confirm_bar, FALSE);
+    } else {
+        trash_button_bar_set_revealed(self->confirm_bar, TRUE);
+    }
 }
 
-static void confirm_response_cb(TrashConfirmDialog *source, GtkResponseType type, gpointer user_data) {
+static void confirm_response_cb(TrashButtonBar *source, GtkResponseType type, gpointer user_data) {
     TrashItemRow *self = user_data;
     
-    gtk_revealer_set_reveal_child(GTK_REVEALER(source), FALSE);
+    trash_button_bar_set_revealed(source, FALSE);
     
     switch (type) {
-        case GTK_RESPONSE_OK:
+        case GTK_RESPONSE_YES:
             trash_item_row_delete(self);
             break;
         default:
@@ -60,8 +66,8 @@ static void trash_item_row_constructed(GObject *object) {
     PangoAttrList *attr_list;
     PangoFontDescription *font_description;
     PangoAttribute *font_attr;
-
     GtkStyleContext *delete_button_style;
+    GtkWidget *content_area, *confirm_label;
 
     self = TRASH_ITEM_ROW(object);
 
@@ -106,8 +112,26 @@ static void trash_item_row_constructed(GObject *object) {
     gtk_style_context_add_class(delete_button_style, GTK_STYLE_CLASS_FLAT);
     gtk_style_context_add_class(delete_button_style, "circular");
     gtk_widget_set_tooltip_text(self->delete_btn, "Permanently this item");
+
+    // Confirmation widget
     
-    self->confirm_revealer = trash_confirm_dialog_new("Are you sure you want to delete this item?", TRUE);
+    self->confirm_bar = trash_button_bar_new();
+    trash_button_bar_set_revealed(self->confirm_bar, FALSE);
+
+    confirm_label = gtk_label_new("Are you sure you want to delete this item?");
+    gtk_label_set_line_wrap(GTK_LABEL(confirm_label), TRUE);
+
+    content_area = trash_button_bar_get_content_area(self->confirm_bar);
+    gtk_box_pack_start(GTK_BOX(content_area), confirm_label, TRUE, TRUE, 6);
+
+    trash_button_bar_add_button(self->confirm_bar, "No", GTK_RESPONSE_NO);
+    trash_button_bar_add_button(self->confirm_bar, "Yes", GTK_RESPONSE_YES);
+
+    trash_button_bar_add_response_style_class(self->confirm_bar, GTK_RESPONSE_YES, GTK_STYLE_CLASS_DESTRUCTIVE_ACTION);
+
+    g_signal_connect(self->confirm_bar, "response", G_CALLBACK(confirm_response_cb), self);
+
+    // Grid
 
     grid = gtk_grid_new();
     gtk_grid_set_column_spacing(GTK_GRID(grid), 6);
@@ -118,7 +142,7 @@ static void trash_item_row_constructed(GObject *object) {
     gtk_grid_attach(GTK_GRID(grid), name_label, 2, 0, 1, 1);
     gtk_grid_attach(GTK_GRID(grid), self->delete_btn, 3, 0, 1, 1);
     gtk_grid_attach(GTK_GRID(grid), date_label, 2, 1, 1, 1);
-    gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(self->confirm_revealer), 0, 3, 4, 1);
+    gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(self->confirm_bar), 0, 3, 4, 1);
 
     gtk_container_add(GTK_CONTAINER(self), grid);
 
@@ -126,7 +150,6 @@ static void trash_item_row_constructed(GObject *object) {
     gtk_widget_show_all(GTK_WIDGET(self));
     
     g_signal_connect(self->delete_btn, "clicked", G_CALLBACK(delete_clicked_cb), self);
-    g_signal_connect(self->confirm_revealer, "response", G_CALLBACK(confirm_response_cb), self);
 
     G_OBJECT_CLASS(trash_item_row_parent_class)->constructed(object);
 }

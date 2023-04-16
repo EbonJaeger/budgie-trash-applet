@@ -1,7 +1,6 @@
 #pragma once
 
 #include <gtk/gtk.h>
-#include <stdlib.h>
 
 G_BEGIN_DECLS
 
@@ -13,6 +12,14 @@ TrashButtonBar *trash_button_bar_new(void);
 
 GtkWidget *trash_button_bar_add_button(TrashButtonBar *self, const gchar *text, gint response_id);
 
+GtkWidget *trash_button_bar_get_content_area(TrashButtonBar *self);
+
+gboolean trash_button_bar_get_revealed(TrashButtonBar *self);
+
+void trash_button_bar_add_response_style_class(TrashButtonBar *self, gint response_id, const gchar *style);
+
 void trash_button_bar_set_response_sensitive(TrashButtonBar *self, gint response_id, gboolean sensitive);
+
+void trash_button_bar_set_revealed(TrashButtonBar *self, gboolean reveal);
 
 G_END_DECLS

@@ -1,29 +1,49 @@
 #include "trash_button_bar.h"
+#include "gtk/gtkrevealer.h"
 
 enum {
     RESPONSE,
-    N_SIGNALS
+    LAST_SIGNAL
 };
 
-static guint signals[N_SIGNALS];
+static guint signals[LAST_SIGNAL];
 
 struct _TrashButtonBar {
     GtkBox parent_instance;
     
+    GtkWidget *revealer;
+    GtkWidget *content_area;
     GtkWidget *action_area;
+};
+
+struct _TrashButtonBarClass {
+    GtkBoxClass parent_class;
+
+    /* Signals */
+
+    void (* response)(TrashButtonBar *self, gint response_id);
 };
 
 typedef struct {
     gint response_id;
 } ResponseData;
 
-G_DEFINE_FINAL_TYPE(TrashButtonBar, trash_button_bar, GTK_TYPE_BOX)
+G_DEFINE_TYPE(TrashButtonBar, trash_button_bar, GTK_TYPE_BOX)
 
 static void trash_button_bar_class_init(TrashButtonBarClass *klass) {
-    (void) klass;
+    
     
     // Signals
     
+    /**
+     * TrashButtonBar::response:
+     * @self: a #TrashButtonBar
+     * @response_id: a response ID
+     *
+     * Emitted when a button is clicked to generate
+     * a response. The @reponse_id depends on which
+     * widget was clicked.
+     */
     signals[RESPONSE] = g_signal_new("response",
                  G_TYPE_FROM_CLASS(klass),
                  G_SIGNAL_RUN_LAST,
@@ -35,14 +55,30 @@ static void trash_button_bar_class_init(TrashButtonBarClass *klass) {
 }
 
 static void trash_button_bar_init(TrashButtonBar *self) {
-    GtkStyleContext *button_bar_style, *action_area_style;
+    GtkStyleContext *button_bar_style, *content_area_style, *action_area_style;
+    GtkWidget *box;
     
+    self->content_area = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
     self->action_area = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+
+    content_area_style = gtk_widget_get_style_context(self->content_area);
+    gtk_style_context_add_class(content_area_style, "trash-button-bar-content");
     
     action_area_style = gtk_widget_get_style_context(self->action_area);
     gtk_style_context_add_class(action_area_style, "trash-button-bar-actions");
+
+    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     
-    gtk_box_pack_start(GTK_BOX(self), self->action_area, TRUE, TRUE, 6);
+    gtk_box_pack_start(GTK_BOX(box), self->content_area, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(box), self->action_area, TRUE, TRUE, 6);
+
+    self->revealer = gtk_revealer_new();
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), TRUE);
+    gtk_revealer_set_transition_type(GTK_REVEALER(self->revealer), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
+
+    gtk_container_add(GTK_CONTAINER(self->revealer), box);
+
+    gtk_container_add(GTK_CONTAINER(self), self->revealer);
     
     button_bar_style = gtk_widget_get_style_context(GTK_WIDGET(self));
     gtk_style_context_add_class(button_bar_style, "trash-button-bar");
@@ -50,6 +86,13 @@ static void trash_button_bar_init(TrashButtonBar *self) {
     gtk_widget_show_all(GTK_WIDGET(self));
 }
 
+/**
+ * trash_button_bar_new:
+ * 
+ * Creates a new #TrashButtonBar object.
+ *
+ * Returns: a new #TrashButtonBar object.
+ */
 TrashButtonBar *trash_button_bar_new(void) {
     return g_object_new(TRASH_TYPE_BUTTON_BAR, "orientation", GTK_ORIENTATION_VERTICAL, "spacing", 0, NULL);
 }
@@ -104,9 +147,16 @@ static void button_clicked(GtkButton *button, gpointer user_data) {
 }
 
 /**
- * Adds a new button to the bar with the given label and response id.
+ * trash_button_bar_add_button:
+ * @self: a #TrashButtonBar
+ * @text: (transfer none): the text for the button
+ * @response_id: a response ID
  *
- * The resulting widget is returned, though you generally don't need it.
+ * Adds a new button to the bar with a and response ID.
+ *
+ * The resulting button is returned, though you generally don't need it.
+ *
+ * Returns: (type Gtk.Button) (transfer none): the created button.
  */
 GtkWidget *trash_button_bar_add_button(TrashButtonBar *self, const gchar *text, gint response_id) {
     GtkWidget *button;
@@ -132,7 +182,67 @@ GtkWidget *trash_button_bar_add_button(TrashButtonBar *self, const gchar *text, 
 }
 
 /**
- * Sets the sensitivity of the button that has the given `response_id`.
+ * trash_button_bar_get_content_area:
+ * @self: a #TrashButtonBar
+ *
+ * Get the content area for @self.
+ *
+ * Returns: (type Gtk.Box) (transfer none): the content area.
+ */
+GtkWidget *trash_button_bar_get_content_area(TrashButtonBar *self) {
+    g_return_val_if_fail(self != NULL, NULL);
+
+    return self->content_area;
+}
+
+/**
+ * trash_button_bar_get_revealed:
+ * @self: a #TrashButtonBar
+ *
+ * Get whether or not the revealer is showing its contents.
+ *
+ * Returns: the reveal state of the revealer.
+ */
+gboolean trash_button_bar_get_revealed(TrashButtonBar *self) {
+    g_return_val_if_fail(self != NULL, FALSE);
+
+    return gtk_revealer_get_reveal_child(GTK_REVEALER(self->revealer));
+}
+
+/**
+ * trash_button_bar_add_response_style_class:
+ * @self: a #TrashButtonBar
+ * @response_id: a response ID
+ * @style: (transfer none): a style class
+ *
+ * Adds a style class to any button with the given @response_id.
+ */
+void trash_button_bar_add_response_style_class(TrashButtonBar *self, gint response_id, const gchar *style) {
+    GtkWidget *widget;
+    GtkStyleContext *widget_style;
+
+    g_return_if_fail(self != NULL);
+    g_return_if_fail(style != NULL);
+
+    widget = find_button(self, response_id);
+
+    if (widget == NULL) {
+        g_warning("Could not find widget for response id");
+        return;
+    }
+
+    widget_style = gtk_widget_get_style_context(widget);
+
+    gtk_style_context_add_class(widget_style, style);
+}
+
+/**
+ * trash_button_bar_set_response_sensitive:
+ * @self: a #TrashInfoBar
+ * @response_id: a response ID
+ * @sensitive: TRUE for sensitive
+ *
+ * Sets the sensitivity of any button that has the given @response_id.
  */
 void trash_button_bar_set_response_sensitive(TrashButtonBar *self, gint response_id, gboolean sensitive) {
     GtkWidget *widget;
@@ -147,4 +257,17 @@ void trash_button_bar_set_response_sensitive(TrashButtonBar *self, gint response
     }
     
     gtk_widget_set_sensitive(widget, sensitive);
+}
+
+/**
+ * trash_button_bar_set_revealed:
+ * @self: a #TrashButtonBar
+ * @reveal: whether or not to show
+ *
+ * Sets whether or not the revealer should show its contents.
+ */
+void trash_button_bar_set_revealed(TrashButtonBar *self, gboolean reveal) {
+    g_return_if_fail(self != NULL);
+
+    gtk_revealer_set_reveal_child(GTK_REVEALER(self->revealer), reveal);
 }
