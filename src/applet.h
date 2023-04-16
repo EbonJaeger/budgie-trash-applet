@@ -4,7 +4,6 @@
 #include "trash_icon_button.h"
 #include "trash_popover.h"
 #include "trash_settings.h"
-#include "utils.h"
 #include <budgie-desktop/applet.h>
 #include <gtk/gtk.h>
 #include <libnotify/notify.h>

@@ -21,7 +21,6 @@ trash_applet_sources = [
     'trash_manager.c',
     'trash_popover.c',
     'trash_settings.c',
-    'utils.c',
     'applet.c',
     'plugin.c',
     'notify.c',

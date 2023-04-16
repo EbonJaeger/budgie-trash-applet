@@ -1,6 +1,5 @@
 #pragma once
 
-#include "utils.h"
 #include <gio/gio.h>
 
 G_BEGIN_DECLS
