@@ -23,6 +23,8 @@ struct _TrashPopover {
 
     GtkWidget *stack;
     GtkWidget *file_box;
+    TrashButtonBar *button_bar;
+    TrashButtonBar *confirm_bar;
 };
 
 G_DEFINE_TYPE(TrashPopover, trash_popover, GTK_TYPE_BOX)
@@ -132,6 +134,12 @@ static void selected_rows_changed(GtkListBox *source, gpointer user_data) {
   g_list_free(selected_rows);
 }
 
+static void delete_item(GtkWidget *widget, gpointer user_data) {
+  (void) user_data;
+
+  trash_item_row_delete(TRASH_ITEM_ROW(widget));
+}
+
 static void restore_item(gpointer data, gpointer user_data) {
   (void) user_data;
   TrashItemRow *row = data;
@@ -139,7 +147,7 @@ static void restore_item(gpointer data, gpointer user_data) {
   trash_item_row_restore(row);
 }
 
-static void handle_response(TrashButtonBar *source, gint response, gpointer user_data) {
+static void handle_response_cb(TrashButtonBar *source, gint response, gpointer user_data) {
   (void) source;
   TrashPopover *self = user_data;
   GList *selected_rows;
@@ -151,8 +159,25 @@ static void handle_response(TrashButtonBar *source, gint response, gpointer user
     g_list_free(selected_rows);
     break;
   case TRASH_RESPONSE_EMPTY:
+    trash_button_bar_set_revealed(self->button_bar, FALSE);
+    trash_button_bar_set_revealed(self->confirm_bar, TRUE);
     break;
   }
+}
+
+static void confirm_response_cb(TrashButtonBar *source, gint response_id, gpointer user_data) {
+  TrashPopover *self = user_data;
+
+  switch (response_id) {
+    case GTK_RESPONSE_YES:
+      gtk_container_foreach(GTK_CONTAINER(self->file_box), delete_item, NULL);
+      break;
+    default:
+      break;
+  }
+
+  trash_button_bar_set_revealed(source, FALSE);
+  trash_button_bar_set_revealed(self->button_bar, TRUE);
 }
 
 static void trash_popover_constructed(GObject *object) {
@@ -168,7 +193,7 @@ static void trash_popover_constructed(GObject *object) {
     GtkWidget *separator;
     GtkWidget *main_view;
     GtkWidget *scroller;
-    TrashButtonBar *button_bar;
+    GtkWidget *content_area, *confirm_label;
     GtkWidget *btn;
     TrashSettings *settings_view;
 
@@ -218,17 +243,34 @@ static void trash_popover_constructed(GObject *object) {
 
     // Create our main view
 
-    button_bar = trash_button_bar_new();
+    self->button_bar = trash_button_bar_new();
 
-    btn = trash_button_bar_add_button(button_bar, "Restore", TRASH_RESPONSE_RESTORE);
+    btn = trash_button_bar_add_button(self->button_bar, "Restore", TRASH_RESPONSE_RESTORE);
     gtk_widget_set_tooltip_text(btn, "Restore selected items");
-    gtk_widget_set_hexpand(btn, TRUE);
 
-    btn = trash_button_bar_add_button(button_bar, "Empty", TRASH_RESPONSE_EMPTY);
+    btn = trash_button_bar_add_button(self->button_bar, "Empty", TRASH_RESPONSE_EMPTY);
     gtk_widget_set_tooltip_text(btn, "Empty the trash bin");
-    gtk_widget_set_hexpand(btn, TRUE);
 
-    g_signal_connect(button_bar, "response", G_CALLBACK(handle_response), self);
+    g_signal_connect(self->button_bar, "response", G_CALLBACK(handle_response_cb), self);
+
+    self->confirm_bar = trash_button_bar_new();
+    trash_button_bar_set_revealed(self->confirm_bar, FALSE);
+
+    confirm_label = gtk_label_new("Are you sure you want to empty the trash bin?");
+    gtk_label_set_attributes(GTK_LABEL(confirm_label), attr_list);
+    gtk_label_set_line_wrap(GTK_LABEL(confirm_label), TRUE);
+    gtk_label_set_max_width_chars(GTK_LABEL(confirm_label), 32);
+    gtk_label_set_width_chars(GTK_LABEL(confirm_label), 32);
+
+    content_area = trash_button_bar_get_content_area(self->confirm_bar);
+    gtk_box_pack_start(GTK_BOX(content_area), confirm_label, TRUE, TRUE, 6);
+
+    trash_button_bar_add_button(self->confirm_bar, "No", GTK_RESPONSE_NO);
+    trash_button_bar_add_button(self->confirm_bar, "Yes", GTK_RESPONSE_YES);
+
+    trash_button_bar_add_response_style_class(self->confirm_bar, GTK_RESPONSE_YES, GTK_STYLE_CLASS_DESTRUCTIVE_ACTION);
+
+    g_signal_connect(self->confirm_bar, "response", G_CALLBACK(confirm_response_cb), self);
 
     // Create our drive list box
     self->file_box = gtk_list_box_new();
@@ -236,7 +278,7 @@ static void trash_popover_constructed(GObject *object) {
     gtk_list_box_set_selection_mode(GTK_LIST_BOX(self->file_box), GTK_SELECTION_MULTIPLE);
     gtk_list_box_set_sort_func(GTK_LIST_BOX(self->file_box), list_box_sort_func, self, NULL);
 
-    g_signal_connect(self->file_box, "selected-rows-changed", G_CALLBACK(selected_rows_changed), button_bar);
+    g_signal_connect(self->file_box, "selected-rows-changed", G_CALLBACK(selected_rows_changed), self->button_bar);
 
     // Create our scrolled window
     scroller = gtk_scrolled_window_new(NULL, NULL);
@@ -247,8 +289,9 @@ static void trash_popover_constructed(GObject *object) {
     gtk_container_add(GTK_CONTAINER(scroller), self->file_box);
 
     main_view = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    selected_rows_changed(GTK_LIST_BOX(self->file_box), button_bar);
-    gtk_container_add(GTK_CONTAINER(main_view), GTK_WIDGET(button_bar));
+    selected_rows_changed(GTK_LIST_BOX(self->file_box), self->button_bar);
+    gtk_container_add(GTK_CONTAINER(main_view), GTK_WIDGET(self->button_bar));
+    gtk_container_add(GTK_CONTAINER(main_view), GTK_WIDGET(self->confirm_bar));
     gtk_container_add(GTK_CONTAINER(main_view), scroller);
     gtk_widget_show_all(main_view);
 
