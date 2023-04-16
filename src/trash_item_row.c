@@ -111,7 +111,7 @@ static void trash_item_row_constructed(GObject *object) {
     gtk_style_context_add_class(delete_button_style, GTK_STYLE_CLASS_DESTRUCTIVE_ACTION);
     gtk_style_context_add_class(delete_button_style, GTK_STYLE_CLASS_FLAT);
     gtk_style_context_add_class(delete_button_style, "circular");
-    gtk_widget_set_tooltip_text(self->delete_btn, "Permanently this item");
+    gtk_widget_set_tooltip_text(self->delete_btn, "Permanently delete this item");
 
     // Confirmation widget
     
