@@ -241,6 +241,9 @@ static void delete_finish(GObject *object, GAsyncResult *result, gpointer user_d
 
     if (error) {
         g_critical("Error deleting file '%s': %s", g_file_get_basename(file), error->message);
+        trash_notify_try_send("Trash Error",
+                              g_strdup_printf("Unable to delete '%s': %s", g_file_get_basename(G_FILE(object)), error->message),
+                              "user-trash-symbolic");
     }
 }
 
@@ -275,6 +278,9 @@ static void restore_finish(GObject *object, GAsyncResult *result, gpointer user_
 
     if (!success) {
         g_critical("Error restoring file '%s' to '%s': %s", g_file_get_basename(G_FILE(object)), g_file_get_path(G_FILE(object)), error->message);
+        trash_notify_try_send("Trash Error",
+                              g_strdup_printf("Unable to restore '%s': %s", g_file_get_basename(G_FILE(object)), error->message),
+                              "user-trash-symbolic");
     }
 }
 
