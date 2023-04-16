@@ -158,6 +158,9 @@ static void handle_response(TrashButtonBar *source, gint response, gpointer user
 static void trash_popover_constructed(GObject *object) {
     TrashPopover *self;
     GtkWidget *header;
+    PangoAttrList *attr_list;
+    PangoFontDescription *font_description;
+    PangoAttribute *font_attr;
     GtkWidget *header_label;
     GtkWidget *settings_button;
     GtkStyleContext *header_label_style;
@@ -182,9 +185,17 @@ static void trash_popover_constructed(GObject *object) {
     gtk_widget_set_margin_start(header, 4);
     gtk_widget_set_margin_end(header, 4);
 
-    // TODO: Text attribute to make the label bold
+    // Text attribute to make the label bold
 
+    attr_list = pango_attr_list_new();
+    font_description = pango_font_description_new();
+    pango_font_description_set_weight(font_description, PANGO_WEIGHT_BOLD);
+    font_attr = pango_attr_font_desc_new(font_description);
+    pango_attr_list_insert(attr_list, font_attr);
+
+    // Header label
     header_label = gtk_label_new("Trash");
+    gtk_label_set_attributes(GTK_LABEL(header_label), attr_list);
     gtk_widget_set_halign(header_label, GTK_ALIGN_START);
     gtk_widget_set_margin_start(header_label, 4);
 
