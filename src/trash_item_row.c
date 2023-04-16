@@ -265,7 +265,7 @@ void trash_item_row_delete(TrashItemRow *self) {
     );
 }
 
-void restore_finish(GObject *object, GAsyncResult *result, gpointer user_data) {
+static void restore_finish(GObject *object, GAsyncResult *result, gpointer user_data) {
     (void) user_data;
 
     gboolean success;
