@@ -1,11 +1,11 @@
 #include "trash_item_row.h"
 
 enum {
-    TRASH_INFO_PROPERTY = 1,
-    N_PROPERTIES
+    PROP_TRASH_INFO = 1,
+    LAST_PROP
 };
 
-static GParamSpec *props[N_PROPERTIES] = { NULL, };
+static GParamSpec *props[LAST_PROP] = { NULL, };
 
 struct _TrashItemRow {
     GtkListBoxRow parent_instance;
@@ -170,7 +170,7 @@ static void trash_item_row_get_property(GObject *object, guint prop_id, GValue *
     self = TRASH_ITEM_ROW(object);
 
     switch (prop_id) {
-        case TRASH_INFO_PROPERTY:
+        case PROP_TRASH_INFO:
             g_value_set_pointer(value, trash_item_row_get_info(self));
             break;
         default:
@@ -186,7 +186,7 @@ static void trash_item_row_set_property(GObject *object, guint prop_id, const GV
     self = TRASH_ITEM_ROW(object);
 
     switch (prop_id) {
-        case TRASH_INFO_PROPERTY:
+        case PROP_TRASH_INFO:
             pointer = g_value_get_pointer(value);
             self->trash_info = g_object_ref_sink(pointer);
             break;
@@ -207,14 +207,14 @@ static void trash_item_row_class_init(TrashItemRowClass *klazz) {
 
     // Properties
 
-    props[TRASH_INFO_PROPERTY] = g_param_spec_pointer(
+    props[PROP_TRASH_INFO] = g_param_spec_pointer(
         "trash-info",
         "Trash info",
         "The information for this row",
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS
     );
 
-    g_object_class_install_properties(class, N_PROPERTIES, props);
+    g_object_class_install_properties(class, LAST_PROP, props);
 }
 
 static void trash_item_row_init(TrashItemRow *self) {

@@ -1,8 +1,7 @@
 #include "trash_info.h"
 
 enum {
-    PROP_0,
-    PROP_NAME,
+    PROP_NAME = 1,
     PROP_DISPLAY_NAME,
     PROP_URI,
     PROP_RESTORE_PATH,
@@ -10,10 +9,10 @@ enum {
     PROP_SIZE,
     PROP_IS_DIR,
     PROP_DELETION_TIME,
-    N_PROPS
+    LAST_PROP
 };
 
-static GParamSpec *props[N_PROPS];
+static GParamSpec *props[LAST_PROP] = { NULL, };
 
 struct _TrashInfo {
     GObject parent_instance;
@@ -198,7 +197,7 @@ static void trash_info_class_init(TrashInfoClass *klazz) {
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS
     );
 
-    g_object_class_install_properties(class, N_PROPS, props);
+    g_object_class_install_properties(class, LAST_PROP, props);
 }
 
 static void trash_info_init(__attribute__((unused)) TrashInfo *self) {}

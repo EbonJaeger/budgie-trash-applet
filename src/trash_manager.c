@@ -1,12 +1,12 @@
 #include "trash_manager.h"
 
 enum {
-    SIGNAL_TRASH_ADDED,
-    SIGNAL_TRASH_REMOVED,
-    N_SIGNALS
+    TRASH_ADDED,
+    TRASH_REMOVED,
+    LAST_SIGNAL
 };
 
-static guint signals[N_SIGNALS];
+static guint signals[LAST_SIGNAL];
 
 struct _TrashManager {
     GObject parent_instance;
@@ -37,7 +37,7 @@ static void trash_manager_class_init(TrashManagerClass *klass) {
 
     // Signals
 
-    signals[SIGNAL_TRASH_ADDED] = g_signal_new(
+    signals[TRASH_ADDED] = g_signal_new(
         "trash-added",
         G_TYPE_FROM_CLASS(klass),
         G_SIGNAL_RUN_LAST,
@@ -48,7 +48,7 @@ static void trash_manager_class_init(TrashManagerClass *klass) {
         G_TYPE_POINTER
     );
 
-    signals[SIGNAL_TRASH_REMOVED] = g_signal_new(
+    signals[TRASH_REMOVED] = g_signal_new(
         "trash-removed",
         G_TYPE_FROM_CLASS(klass),
         G_SIGNAL_RUN_LAST,
@@ -76,7 +76,7 @@ static void trash_query_info_cb(GObject *source, GAsyncResult *result, gpointer 
     trash_info = trash_info_new(info, unescaped_uri);
 
     self->file_count++;
-    g_signal_emit(self, signals[SIGNAL_TRASH_ADDED], 0, trash_info);
+    g_signal_emit(self, signals[TRASH_ADDED], 0, trash_info);
 }
 
 static void file_changed(GFileMonitor *monitor, GFile *file, GFile *other_file, GFileMonitorEvent event, TrashManager *self) {
@@ -104,7 +104,7 @@ static void file_changed(GFileMonitor *monitor, GFile *file, GFile *other_file, 
             self->file_count--;
             uri = g_file_get_uri(file);
             unescaped_uri = g_uri_unescape_string(uri, NULL);
-            g_signal_emit(self, signals[SIGNAL_TRASH_REMOVED], 0, unescaped_uri);
+            g_signal_emit(self, signals[TRASH_REMOVED], 0, unescaped_uri);
             break;
         default:
             break;
@@ -143,7 +143,7 @@ static void next_file_cb(gpointer data, gpointer user_data) {
     trash_info = trash_info_new(file_info, uri);
 
     self->file_count++;
-    g_signal_emit(self, signals[SIGNAL_TRASH_ADDED], 0, trash_info);
+    g_signal_emit(self, signals[TRASH_ADDED], 0, trash_info);
 }
 
 static void next_files_cb(GObject *source, GAsyncResult *result, gpointer user_data) {

@@ -6,12 +6,11 @@ enum {
 };
 
 enum {
-    _0_PROPERTY,
-    SETTINGS_PROPERTY,
-    N_PROPERTIES
+    PROP_SETTINGS = 1,
+    LAST_PROP
 };
 
-static GParamSpec *props[N_PROPERTIES];
+static GParamSpec *props[LAST_PROP] = { NULL, };
 
 struct _TrashPopover {
     GtkBox parent_instance;
@@ -341,7 +340,7 @@ static void trash_popover_get_property(GObject *object, guint prop_id, GValue *v
     self = TRASH_POPOVER(object);
 
     switch (prop_id) {
-        case SETTINGS_PROPERTY:
+        case PROP_SETTINGS:
             g_value_set_pointer(value, g_object_ref(self->settings));
             break;
         default:
@@ -356,7 +355,7 @@ static void trash_popover_set_property(GObject *object, guint prop_id, const GVa
     self = TRASH_POPOVER(object);
 
     switch (prop_id) {
-        case SETTINGS_PROPERTY:
+        case PROP_SETTINGS:
             self->settings = g_object_ref(g_value_get_pointer(value));
             break;
         default:
@@ -376,13 +375,13 @@ static void trash_popover_class_init(TrashPopoverClass *klass) {
 
     // Properties
 
-    props[SETTINGS_PROPERTY] = g_param_spec_pointer(
+    props[PROP_SETTINGS] = g_param_spec_pointer(
         "settings",
         "Settings",
         "The applet instance settings for this Trash Applet",
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
-    g_object_class_install_properties(class, N_PROPERTIES, props);
+    g_object_class_install_properties(class, LAST_PROP, props);
 }
 
 static void trash_popover_init(TrashPopover *self) {
