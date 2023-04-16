@@ -6,7 +6,17 @@ G_BEGIN_DECLS
 
 #define TRASH_TYPE_BUTTON_BAR (trash_button_bar_get_type())
 
-G_DECLARE_FINAL_TYPE(TrashButtonBar, trash_button_bar, TRASH, BUTTON_BAR, GtkBox)
+G_DECLARE_DERIVABLE_TYPE(TrashButtonBar, trash_button_bar, TRASH, BUTTON_BAR, GtkBox)
+
+struct _TrashButtonBarClass {
+    GtkBoxClass parent_class;
+
+    /* Signals */
+
+    void (* response)(TrashButtonBar *self, gint response_id);
+
+    gpointer padding[12];
+};
 
 TrashButtonBar *trash_button_bar_new(void);
 
