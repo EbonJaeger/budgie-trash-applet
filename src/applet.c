@@ -3,12 +3,11 @@
 #define _GNU_SOURCE
 
 enum {
-    PROP_0,
-    PROP_APPLET_UUID,
-    N_PROPS
+    PROP_UUID = 1,
+    LAST_PROP
 };
 
-static GParamSpec *props[N_PROPS];
+static GParamSpec *props[LAST_PROP] = { NULL, };
 
 struct _TrashAppletPrivate {
     BudgiePopoverManager *manager;
@@ -63,7 +62,7 @@ static void trash_applet_get_property(GObject *obj, guint prop_id, GValue *val, 
     TrashApplet *self = TRASH_APPLET(obj);
 
     switch (prop_id) {
-        case PROP_APPLET_UUID:
+        case PROP_UUID:
             g_value_set_string(val, self->priv->uuid);
             break;
         default:
@@ -76,8 +75,8 @@ static void trash_applet_set_property(GObject *obj, guint prop_id, const GValue 
     TrashApplet *self = TRASH_APPLET(obj);
 
     switch (prop_id) {
-        case PROP_APPLET_UUID:
-            trash_applet_update_uuid(self, g_value_get_string(val));
+        case PROP_UUID:
+            trash_applet_set_uuid(self, g_value_get_string(val));
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, prop_id, spec);
@@ -130,14 +129,21 @@ static void trash_applet_class_init(TrashAppletClass *klass) {
     budgie_class->supports_settings = trash_applet_supports_settings;
     budgie_class->get_settings_ui = trash_applet_get_settings_ui;
 
-    props[PROP_APPLET_UUID] = g_param_spec_string(
+    /**
+     * TrashApplet:uuid:
+     *
+     * The UUID for the applet.
+     *
+     * The UUID is used to get the per-instance settings for the applet.
+     */
+    props[PROP_UUID] = g_param_spec_string(
         "uuid",
         "uuid",
         "The applet's UUID",
         NULL,
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
-    g_object_class_install_properties(class, N_PROPS, props);
+    g_object_class_install_properties(class, LAST_PROP, props);
 }
 
 /**
@@ -185,82 +191,18 @@ static void drag_data_received(
     gtk_drag_finish(context, TRUE, TRUE, time);
 }
 
-// static GtkWidget *create_main_view(TrashApplet *self, TrashSortMode sort_mode) {
-//     GtkWidget *main_view = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-
-//     // Create our popover header
-//     GtkWidget *header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-//     GtkStyleContext *header_style = gtk_widget_get_style_context(header);
-//     gtk_style_context_add_class(header_style, "trash-applet-header");
-//     GtkWidget *header_label = gtk_label_new("Trash");
-//     GtkStyleContext *header_label_style = gtk_widget_get_style_context(header_label);
-//     gtk_style_context_add_class(header_label_style, "title");
-//     gtk_box_pack_start(GTK_BOX(header), header_label, TRUE, TRUE, 0);
-
-//     // Create our scroller
-//     GtkWidget *scroller = gtk_scrolled_window_new(NULL, NULL);
-//     gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scroller), 300);
-//     gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroller), 300);
-//     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-
-//     // Create the listbox that the mounted drives will go into
-//     self->priv->drive_box = gtk_list_box_new();
-//     gtk_widget_set_size_request(self->priv->drive_box, -1, 300);
-//     gtk_list_box_set_selection_mode(GTK_LIST_BOX(self->priv->drive_box), GTK_SELECTION_NONE);
-//     GtkStyleContext *drive_box_style = gtk_widget_get_style_context(self->priv->drive_box);
-//     gtk_style_context_add_class(drive_box_style, "trash-applet-list");
-//     gtk_container_add(GTK_CONTAINER(scroller), self->priv->drive_box);
-
-//     // Create the trash store widgets
-//     TrashStore *default_store = trash_store_new("This PC", g_icon_new_for_string("drive-harddisk-symbolic", NULL), sort_mode);
-//     g_autoptr(GError) err = NULL;
-//     trash_store_load_items(default_store, err);
-//     if (err) {
-//         g_critical("Error loading trash items for the default trash store: %s", err->message);
-//     }
-
-//     trash_store_start_monitor(default_store);
-//     g_signal_connect_object(TRASH_STORE(default_store), "trash-added", G_CALLBACK(trash_added), self, 0);
-//     g_signal_connect_object(TRASH_STORE(default_store), "trash-removed", G_CALLBACK(trash_removed), self, 0);
-
-//     g_hash_table_insert(self->priv->mounts, "This PC", default_store);
-//     gtk_list_box_insert(GTK_LIST_BOX(self->priv->drive_box), GTK_WIDGET(default_store), -1);
-
-//     // Footer
-//     GtkWidget *footer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-//     GtkStyleContext *footer_style = gtk_widget_get_style_context(footer);
-//     gtk_style_context_add_class(footer_style, "trash-applet-footer");
-
-//     self->priv->settings_button = gtk_button_new_from_icon_name("emblem-system-symbolic", GTK_ICON_SIZE_BUTTON);
-//     gtk_widget_set_tooltip_text(self->priv->settings_button, "Settings");
-//     GtkStyleContext *settings_button_context = gtk_widget_get_style_context(self->priv->settings_button);
-//     gtk_style_context_add_class(settings_button_context, "flat");
-//     gtk_style_context_remove_class(settings_button_context, "button");
-//     gtk_box_pack_start(GTK_BOX(footer), self->priv->settings_button, TRUE, FALSE, 0);
-//     g_signal_connect_object(GTK_BUTTON(self->priv->settings_button), "clicked", G_CALLBACK(trash_settings_clicked), self, 0);
-
-//     // Pack it all up
-//     gtk_box_pack_start(GTK_BOX(main_view), header, FALSE, FALSE, 0);
-//     gtk_box_pack_start(GTK_BOX(main_view), scroller, TRUE, TRUE, 0);
-//     gtk_box_pack_end(GTK_BOX(main_view), footer, FALSE, FALSE, 0);
-
-//     // Show everything
-//     gtk_widget_show_all(main_view);
-//     maybe_update_icon(self);
-
-//     return main_view;
-// }
-
 /**
  * Initialization of basic UI elements and loads our CSS
  * style stuff.
  */
 static void trash_applet_init(TrashApplet *self) {
+    GtkCssProvider *provider;
+
     // Create our 'private' struct
     self->priv = trash_applet_get_instance_private(self);
 
     // Load our CSS
-    GtkCssProvider *provider = gtk_css_provider_new();
+    provider = gtk_css_provider_new();
     gtk_css_provider_load_from_resource(provider, "/com/github/EbonJaeger/budgie-trash-applet/style.css");
     gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
                                               GTK_STYLE_PROVIDER(provider),
@@ -286,25 +228,56 @@ static void trash_applet_init(TrashApplet *self) {
     g_signal_connect_object(self, "drag-data-received", G_CALLBACK(drag_data_received), self, 0);
 }
 
+/**
+ * trash_applet_init_gtype:
+ * @module: a #GTypeModule
+ *
+ * Initializes and registers the #GType for a #TrashApplet object.
+ */
 void trash_applet_init_gtype(GTypeModule *module) {
     trash_applet_register_type(module);
 }
 
+/**
+ * trash_applet_new:
+ * @uuid: a UUID
+ *
+ * Creates a new #TrashApplet object.
+ *
+ * Returns: a new #TrashApplet object
+ */
 TrashApplet *trash_applet_new(const gchar *uuid) {
     return g_object_new(TRASH_TYPE_APPLET, "uuid", uuid, NULL);
 }
 
-void trash_applet_update_uuid(TrashApplet *self, const gchar *value) {
+/**
+ * trash_applet_get_uuid:
+ * @self: a #TrashApplet
+ *
+ * Get the UUID of @self.
+ *
+ * Returns: (type gchar *) (transfer full): the UUID
+ */
+gchar *trash_applet_get_uuid(TrashApplet *self) {
+    g_return_val_if_fail(TRASH_IS_APPLET(self), NULL);
+
+    return g_strdup(self->priv->uuid);
+}
+
+/**
+ * trash_applet_set_uuid:
+ * @self: a #TrashApplet
+ * @value: (transfer full): a UUID
+ *
+ * Set the UUID for this applet instance.
+ */
+void trash_applet_set_uuid(TrashApplet *self, const gchar *value) {
     g_return_if_fail(TRASH_IS_APPLET(self));
+    g_return_if_fail(value != NULL);
 
-    if (!trash_utils_is_string_valid((char *) value)) {
-        return;
-    }
-
-    if (trash_utils_is_string_valid(self->priv->uuid)) {
+    if (self->priv->uuid) {
         g_free(self->priv->uuid);
     }
 
     self->priv->uuid = g_strdup(value);
-    g_object_notify_by_pspec(G_OBJECT(self), props[PROP_APPLET_UUID]);
 }

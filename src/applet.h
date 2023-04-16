@@ -8,7 +8,6 @@
 #include <budgie-desktop/applet.h>
 #include <gtk/gtk.h>
 #include <libnotify/notify.h>
-#include <unistd.h>
 
 #define __budgie_unused__ __attribute__((unused))
 
@@ -38,19 +37,12 @@ struct _TrashApplet {
 
 GType trash_applet_get_type(void);
 
-/**
- * Public for the plugin to allow registration of types.
- */
 void trash_applet_init_gtype(GTypeModule *module);
 
-/**
- * Constructs a new  Trash Applet instance.
- */
 TrashApplet *trash_applet_new(const gchar *uuid);
 
-/**
- * Update the applet's UUID.
- */
-void trash_applet_update_uuid(TrashApplet *self, const gchar *value);
+gchar *trash_applet_get_uuid(TrashApplet *self);
+
+void trash_applet_set_uuid(TrashApplet *self, const gchar *value);
 
 G_END_DECLS
