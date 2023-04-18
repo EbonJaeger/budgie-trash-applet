@@ -15,7 +15,6 @@ trash_applet_deps = [
 trash_applet_sources = [
     'trash_button_bar.c',
     'trash_enum_types.c',
-    'trash_icon_button.c',
     'trash_info.c',
     'trash_item_row.c',
     'trash_manager.c',

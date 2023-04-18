@@ -15,7 +15,7 @@ struct _TrashAppletPrivate {
     gchar *uuid;
 
     GtkWidget *popover;
-    TrashIconButton *icon_button;
+    GtkWidget *icon_button;
 };
 
 G_DEFINE_DYNAMIC_TYPE_EXTENDED(TrashApplet, trash_applet, BUDGIE_TYPE_APPLET, 0, G_ADD_PRIVATE_DYNAMIC(TrashApplet))
@@ -23,15 +23,21 @@ G_DEFINE_DYNAMIC_TYPE_EXTENDED(TrashApplet, trash_applet, BUDGIE_TYPE_APPLET, 0,
 static void trash_empty_cb(TrashPopover *source, gpointer user_data) {
     (void) source;
     TrashApplet *self = user_data;
+    GtkWidget *image;
 
-    trash_icon_button_set_empty(self->priv->icon_button);
+    image = gtk_image_new_from_icon_name("user-trash-symbolic", GTK_ICON_SIZE_MENU);
+
+    gtk_button_set_image(GTK_BUTTON(self->priv->icon_button), image);
 }
 
 static void trash_filled_cb(TrashPopover *source, gpointer user_data) {
     (void) source;
     TrashApplet *self = user_data;
+    GtkWidget *image;
 
-    trash_icon_button_set_filled(self->priv->icon_button);
+    image = gtk_image_new_from_icon_name("user-trash-full-symbolic", GTK_ICON_SIZE_MENU);
+
+    gtk_button_set_image(GTK_BUTTON(self->priv->icon_button), image);
 }
 
 static void trash_applet_constructed(GObject *object) {
@@ -214,6 +220,7 @@ static void drag_data_received(
  */
 static void trash_applet_init(TrashApplet *self) {
     GtkCssProvider *provider;
+    GtkStyleContext *button_style;
 
     // Create our 'private' struct
     self->priv = trash_applet_get_instance_private(self);
@@ -226,8 +233,15 @@ static void trash_applet_init(TrashApplet *self) {
                                               GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
     // Create our panel widget
-    self->priv->icon_button = trash_icon_button_new();
-    g_signal_connect_object(GTK_BUTTON(self->priv->icon_button), "clicked", G_CALLBACK(toggle_popover), self, 0);
+    self->priv->icon_button = gtk_button_new_from_icon_name("user-trash-symbolic", GTK_ICON_SIZE_MENU);
+    gtk_widget_set_tooltip_text(self->priv->icon_button, "Trash");
+
+    g_signal_connect(self->priv->icon_button, "clicked", G_CALLBACK(toggle_popover), self);
+
+    button_style = gtk_widget_get_style_context(self->priv->icon_button);
+    gtk_style_context_add_class(button_style, GTK_STYLE_CLASS_FLAT);
+    gtk_style_context_remove_class(button_style, GTK_STYLE_CLASS_BUTTON);
+
     gtk_container_add(GTK_CONTAINER(self), GTK_WIDGET(self->priv->icon_button));
 
     gtk_widget_show_all(GTK_WIDGET(self));
