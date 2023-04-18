@@ -23,14 +23,14 @@ typedef struct _TrashAppletClass TrashAppletClass;
 #define TRASH_APPLET_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS((o), TRASH_TYPE_APPLET, TrashAppletClass))
 
 struct _TrashAppletClass {
-    BudgieAppletClass parent_class;
+	BudgieAppletClass parent_class;
 };
 
 struct _TrashApplet {
-    BudgieApplet parent;
+	BudgieApplet parent;
 
-    TrashAppletPrivate *priv;
-    GSettings *settings;
+	TrashAppletPrivate *priv;
+	GSettings *settings;
 };
 
 GType trash_applet_get_type(void);

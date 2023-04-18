@@ -9,13 +9,13 @@ G_BEGIN_DECLS
 G_DECLARE_DERIVABLE_TYPE(TrashButtonBar, trash_button_bar, TRASH, BUTTON_BAR, GtkBox)
 
 struct _TrashButtonBarClass {
-    GtkBoxClass parent_class;
+	GtkBoxClass parent_class;
 
-    /* Signals */
+	/* Signals */
 
-    void (* response)(TrashButtonBar *self, gint response_id);
+	void (*response)(TrashButtonBar *self, gint response_id);
 
-    gpointer padding[12];
+	gpointer padding[12];
 };
 
 TrashButtonBar *trash_button_bar_new(void);

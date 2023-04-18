@@ -5,40 +5,40 @@
 static void trash_plugin_iface_init(BudgiePluginIface *iface);
 
 G_DEFINE_DYNAMIC_TYPE_EXTENDED(TrashPlugin, trash_plugin, G_TYPE_OBJECT, 0,
-                               G_IMPLEMENT_INTERFACE_DYNAMIC(BUDGIE_TYPE_PLUGIN,
-                                                             trash_plugin_iface_init))
+	G_IMPLEMENT_INTERFACE_DYNAMIC(BUDGIE_TYPE_PLUGIN,
+		trash_plugin_iface_init))
 
 /**
  * Return a new panel widget.
  */
 static BudgieApplet *trash_applet_get_panel_widget(__budgie_unused__ BudgiePlugin *base,
-                                                   gchar *uuid) {
-    TrashApplet *self = trash_applet_new(uuid);
-    return BUDGIE_APPLET(g_object_ref_sink(self));
+	gchar *uuid) {
+	TrashApplet *self = trash_applet_new(uuid);
+	return BUDGIE_APPLET(g_object_ref_sink(self));
 }
 
 /**
  * Handle cleanup.
  */
 static void trash_plugin_dispose(GObject *object) {
-    G_OBJECT_CLASS(trash_plugin_parent_class)->dispose(object);
+	G_OBJECT_CLASS(trash_plugin_parent_class)->dispose(object);
 }
 
 /**
  * Class initialisation.
  */
 static void trash_plugin_class_init(TrashPluginClass *klazz) {
-    GObjectClass *obj_class = G_OBJECT_CLASS(klazz);
+	GObjectClass *obj_class = G_OBJECT_CLASS(klazz);
 
-    // gobject vtable hookup
-    obj_class->dispose = trash_plugin_dispose;
+	// gobject vtable hookup
+	obj_class->dispose = trash_plugin_dispose;
 }
 
 /**
  * Implement the BudgiePlugin interface, i.e the factory method get_panel_widget.
  */
 static void trash_plugin_iface_init(BudgiePluginIface *iface) {
-    iface->get_panel_widget = trash_applet_get_panel_widget;
+	iface->get_panel_widget = trash_applet_get_panel_widget;
 }
 
 /**
@@ -57,10 +57,10 @@ static void trash_plugin_class_finalize(__budgie_unused__ TrashPluginClass *klaz
  * Export the types to the GObject type system.
  */
 G_MODULE_EXPORT void peas_register_types(PeasObjectModule *module) {
-    trash_plugin_register_type(G_TYPE_MODULE(module));
+	trash_plugin_register_type(G_TYPE_MODULE(module));
 
-    // Register the actual dynamic types contained in the resulting plugin
-    trash_applet_init_gtype(G_TYPE_MODULE(module));
+	// Register the actual dynamic types contained in the resulting plugin
+	trash_applet_init_gtype(G_TYPE_MODULE(module));
 
-    peas_object_module_register_extension_type(module, BUDGIE_TYPE_PLUGIN, TRASH_TYPE_PLUGIN);
+	peas_object_module_register_extension_type(module, BUDGIE_TYPE_PLUGIN, TRASH_TYPE_PLUGIN);
 }
