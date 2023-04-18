@@ -1,3 +1,21 @@
+/**
+ * SECTION:trashitemrow
+ * @Short_description: A widget representing a trashed file
+ * @Title: TrashItemRow
+ *
+ * The #TrashItemRow widget displays a trashed file in the trash popover.
+ * It conists of a #GtkGrid containing an icon, labels for the file name
+ * and timestamp when the file was sent to the trash, and a button to
+ * delete the file.
+ *
+ * Confirming the deletion of a file is done by using a #TrashButtonBar
+ * widget.
+ *
+ * CSS nodes
+ *
+ * TrashItemRow has a single CSS node with name trashitemrow.
+ */
+
 #include "trash_item_row.h"
 
 enum {
@@ -196,10 +214,13 @@ static void trash_item_row_set_property(GObject *object, guint prop_id, const GV
     }
 }
 
-static void trash_item_row_class_init(TrashItemRowClass *klazz) {
+static void trash_item_row_class_init(TrashItemRowClass *klass) {
     GObjectClass *class;
+    GtkWidgetClass *widget_class;
 
-    class = G_OBJECT_CLASS(klazz);
+    class = G_OBJECT_CLASS(klass);
+    widget_class = GTK_WIDGET_CLASS(klass);
+
     class->constructed = trash_item_row_constructed;
     class->finalize = trash_item_row_finalize;
     class->get_property = trash_item_row_get_property;
@@ -215,6 +236,8 @@ static void trash_item_row_class_init(TrashItemRowClass *klazz) {
     );
 
     g_object_class_install_properties(class, LAST_PROP, props);
+
+    gtk_widget_class_set_css_name(widget_class, "trashitemrow");
 }
 
 static void trash_item_row_init(TrashItemRow *self) {

@@ -1,3 +1,26 @@
+/**
+ * SECTION:trashbuttonbar
+ * @Short_description: A widget that emits a signal when a button is clicked
+ * @Title: TrashButtonBar
+ *
+ * The #TrashButtonBar widget is meant to be used similar to a #GtkDialog. It
+ * closely resembles a #GtkInfoBar in terms of API and use. The layout of this
+ * widget is more focused and thus less flexible than the #GtkInfoBar it resembles.
+ *
+ * There is a @content_area at the top that can be filled with any widgets of your
+ * choice. Or you can leave it empty and it will take up no extra space.
+ *
+ * Below the content area is a horizontal button bar where the added buttons are put.
+ * Clicking one of the buttons will emit the #TrashButtonBar::response signal with
+ * the response ID set when the button was created.
+ *
+ * # CSS nodes
+ *
+ * TrashButtonBar has a single CSS node with name trashbuttonbar. It has child
+ * content areas with the style classes .trash-button-bar-content and
+ * .trash-button-bar-actions for the content area and button area, respectively.
+ */
+
 #include "trash_button_bar.h"
 
 enum {
@@ -22,6 +45,10 @@ typedef struct {
 G_DEFINE_TYPE_WITH_PRIVATE(TrashButtonBar, trash_button_bar, GTK_TYPE_BOX)
 
 static void trash_button_bar_class_init(TrashButtonBarClass *klass) {
+    GtkWidgetClass* widget_class;
+
+    widget_class = GTK_WIDGET_CLASS(klass);
+
     // Signals
     
     /**
@@ -41,11 +68,13 @@ static void trash_button_bar_class_init(TrashButtonBarClass *klass) {
                  G_TYPE_NONE,
                  1,
                  G_TYPE_INT);
+
+    gtk_widget_class_set_css_name(widget_class, "trashbuttonbar");
 }
 
 static void trash_button_bar_init(TrashButtonBar *self) {
     TrashButtonBarPrivate *priv;
-    GtkStyleContext *button_bar_style, *content_area_style, *action_area_style;
+    GtkStyleContext *content_area_style, *action_area_style;
     GtkWidget *box;
 
     priv = trash_button_bar_get_instance_private(self);
@@ -71,9 +100,6 @@ static void trash_button_bar_init(TrashButtonBar *self) {
     gtk_container_add(GTK_CONTAINER(priv->revealer), box);
 
     gtk_container_add(GTK_CONTAINER(self), priv->revealer);
-    
-    button_bar_style = gtk_widget_get_style_context(GTK_WIDGET(self));
-    gtk_style_context_add_class(button_bar_style, "trash-button-bar");
     
     gtk_widget_show_all(GTK_WIDGET(self));
 }

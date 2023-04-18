@@ -1,3 +1,11 @@
+/**
+ * SECTION:trashsettings
+ * @Short_description: A widget that exposes the applet's settings
+ * @Title: TrashSettings
+ *
+ * The #TrashSettings widget contains controls that bind to the applet settings.
+ */
+
 #include "trash_settings.h"
 
 struct _TrashSettings {

@@ -1,3 +1,13 @@
+/**
+ * SECTION:trashpopover
+ * @Short_description: A widget that makes up the body of a popover
+ * @Title: TrashPopover
+ *
+ * The #TrashPopover widget is the contents of the trash applet's popover. It
+ * consists of a header and a list of files below it, as well as buttons to
+ * restore items or empty the trash bin.
+ */
+
 #include "trash_popover.h"
 
 enum {
