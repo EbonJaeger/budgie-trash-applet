@@ -2,7 +2,7 @@ install_data('TrashApplet.plugin',
     install_dir: APPLET_INSTALL_DIR
 )
 
-install_data('com.github.ebonjaeger.budgie-trash-applet.gschema.xml',
+install_data('com.solus-project.budgie-desktop.budgie-trash-applet.gschema.xml',
     install_dir: join_paths(get_option('datadir'), 'glib-2.0', 'schemas')
 )
 

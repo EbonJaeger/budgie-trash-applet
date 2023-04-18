@@ -1,14 +1,11 @@
 #pragma once
 
 #include "notify.h"
-#include "trash_icon_button.h"
+#include "trash_popover.h"
 #include "trash_settings.h"
-#include "trash_store.h"
-#include "utils.h"
 #include <budgie-desktop/applet.h>
 #include <gtk/gtk.h>
 #include <libnotify/notify.h>
-#include <unistd.h>
 
 #define __budgie_unused__ __attribute__((unused))
 
@@ -26,30 +23,24 @@ typedef struct _TrashAppletClass TrashAppletClass;
 #define TRASH_APPLET_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS((o), TRASH_TYPE_APPLET, TrashAppletClass))
 
 struct _TrashAppletClass {
-    BudgieAppletClass parent_class;
+	BudgieAppletClass parent_class;
 };
 
 struct _TrashApplet {
-    BudgieApplet parent;
+	BudgieApplet parent;
 
-    TrashAppletPrivate *priv;
+	TrashAppletPrivate *priv;
+	GSettings *settings;
 };
 
 GType trash_applet_get_type(void);
 
-/**
- * Public for the plugin to allow registration of types.
- */
 void trash_applet_init_gtype(GTypeModule *module);
 
-/**
- * Constructs a new  Trash Applet instance.
- */
 TrashApplet *trash_applet_new(const gchar *uuid);
 
-/**
- * Update the applet's UUID.
- */
-void trash_applet_update_uuid(TrashApplet *self, const gchar *value);
+gchar *trash_applet_get_uuid(TrashApplet *self);
+
+void trash_applet_set_uuid(TrashApplet *self, const gchar *value);
 
 G_END_DECLS

@@ -11,7 +11,7 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE(TrashPlugin, trash_plugin, TRASH, PLUGIN, GObject)
 
 struct _TrashPlugin {
-    GObject parent;
+	GObject parent;
 };
 
 GType trash_plugin_get_type(void);

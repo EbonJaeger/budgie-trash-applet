@@ -13,14 +13,13 @@ trash_applet_deps = [
 ]
 
 trash_applet_sources = [
-    'trash_confirm_dialog.c',
+    'trash_button_bar.c',
     'trash_enum_types.c',
-    'trash_icon_button.c',
     'trash_info.c',
-    'trash_item.c',
+    'trash_item_row.c',
+    'trash_manager.c',
+    'trash_popover.c',
     'trash_settings.c',
-    'trash_store.c',
-    'utils.c',
     'applet.c',
     'plugin.c',
     'notify.c',
@@ -29,7 +28,6 @@ trash_applet_sources = [
 # Compile our gresource file
 trash_applet_sources += gnome.compile_resources('budgie-trash-applet-resources',
     'budgie-trash-applet.gresource.xml',
-    dependencies: [ style ],
     c_name: 'budgie_trash_applet',
 )
 
