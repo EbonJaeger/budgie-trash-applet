@@ -19,4 +19,6 @@ TrashManager *trash_manager_new(void);
 
 void trash_manager_scan_items(TrashManager *self);
 
+gint trash_manager_get_item_count(TrashManager *self);
+
 G_END_DECLS

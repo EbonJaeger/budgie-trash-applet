@@ -205,3 +205,17 @@ void trash_manager_scan_items(TrashManager *self) {
         self
     );
 }
+
+/**
+ * trash_manager_get_item_count:
+ * @self: a #TrashManager
+ *
+ * Gets the number of items in the trash bin.
+ *
+ * Returns: the number of trashed items
+ */
+gint trash_manager_get_item_count(TrashManager *self) {
+    g_return_val_if_fail(self != NULL, -1);
+
+    return self->file_count;
+}

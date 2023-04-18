@@ -20,6 +20,20 @@ struct _TrashAppletPrivate {
 
 G_DEFINE_DYNAMIC_TYPE_EXTENDED(TrashApplet, trash_applet, BUDGIE_TYPE_APPLET, 0, G_ADD_PRIVATE_DYNAMIC(TrashApplet))
 
+static void trash_empty_cb(TrashPopover *source, gpointer user_data) {
+    (void) source;
+    TrashApplet *self = user_data;
+
+    trash_icon_button_set_empty(self->priv->icon_button);
+}
+
+static void trash_filled_cb(TrashPopover *source, gpointer user_data) {
+    (void) source;
+    TrashApplet *self = user_data;
+
+    trash_icon_button_set_filled(self->priv->icon_button);
+}
+
 static void trash_applet_constructed(GObject *object) {
     TrashApplet *self = TRASH_APPLET(object);
     TrashPopover *popover_body;
@@ -35,6 +49,9 @@ static void trash_applet_constructed(GObject *object) {
     self->priv->popover = budgie_popover_new(GTK_WIDGET(self->priv->icon_button));
     popover_body = trash_popover_new(self->settings);
     gtk_container_add(GTK_CONTAINER(self->priv->popover), GTK_WIDGET(popover_body));
+
+    g_signal_connect(popover_body, "trash-empty", G_CALLBACK(trash_empty_cb), self);
+    g_signal_connect(popover_body, "trash-filled", G_CALLBACK(trash_filled_cb), self);
 
     G_OBJECT_CLASS(trash_applet_parent_class)->constructed(object);
 }

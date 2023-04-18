@@ -10,7 +10,14 @@ enum {
     LAST_PROP
 };
 
+enum {
+    TRASH_EMPTY,
+    TRASH_FILLED,
+    LAST_SIGNAL
+};
+
 static GParamSpec *props[LAST_PROP] = { NULL, };
+static guint signals[LAST_SIGNAL];
 
 struct _TrashPopover {
     GtkBox parent_instance;
@@ -91,7 +98,6 @@ static void settings_clicked(GtkButton *button, TrashPopover *self) {
 
 static void trash_added(TrashManager *manager, TrashInfo *trash_info, TrashPopover *self) {
   (void) manager;
-
   TrashItemRow *row;
 
   row = trash_item_row_new(trash_info);
@@ -99,6 +105,8 @@ static void trash_added(TrashManager *manager, TrashInfo *trash_info, TrashPopov
   gtk_list_box_insert(GTK_LIST_BOX(self->file_box), GTK_WIDGET(row), -1);
 
   gtk_list_box_invalidate_sort(GTK_LIST_BOX(self->file_box));
+
+  g_signal_emit(self, signals[TRASH_FILLED], 0, NULL);
 }
 
 static void foreach_item_cb(TrashItemRow *row, gchar *uri) {
@@ -115,10 +123,16 @@ static void foreach_item_cb(TrashItemRow *row, gchar *uri) {
 
 static void trash_removed(TrashManager *manager, gchar *name, TrashPopover *self) {
   (void) manager;
+  gint count;
 
   gtk_container_foreach(GTK_CONTAINER(self->file_box), (GtkCallback) foreach_item_cb, name);
 
   gtk_list_box_invalidate_sort(GTK_LIST_BOX(self->file_box));
+
+  count = trash_manager_get_item_count(self->trash_manager);
+  if (count == 0) {
+    g_signal_emit(self, signals[TRASH_EMPTY], 0, NULL);
+  }
 }
 
 static void selected_rows_changed(GtkListBox *source, gpointer user_data) {
@@ -380,6 +394,38 @@ static void trash_popover_class_init(TrashPopoverClass *klass) {
         "Settings",
         "The applet instance settings for this Trash Applet",
         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+    // Signals
+
+    /**
+     * TrashPopover::trash-empty:
+     * @self: a #TrashPopover
+     *
+     * Emitted when there are no more items in the trash bin.
+     */
+    signals[TRASH_EMPTY] = g_signal_new("trash-empty",
+                                        G_TYPE_FROM_CLASS(klass),
+                                        G_SIGNAL_RUN_LAST,
+                                        0,
+                                        NULL, NULL, NULL,
+                                        G_TYPE_NONE,
+                                        0,
+                                        NULL);
+
+    /**
+     * TrashPopover::trash-filled:
+     * @self: a #TrashPopover
+     *
+     * Emitted when something has been added to the trash bin.
+     */
+    signals[TRASH_FILLED] = g_signal_new("trash-filled",
+                                        G_TYPE_FROM_CLASS(klass),
+                                        G_SIGNAL_RUN_LAST,
+                                        0,
+                                        NULL, NULL, NULL,
+                                        G_TYPE_NONE,
+                                        0,
+                                        NULL);
 
     g_object_class_install_properties(class, LAST_PROP, props);
 }
