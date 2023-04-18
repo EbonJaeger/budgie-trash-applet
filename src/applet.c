@@ -219,18 +219,10 @@ static void drag_data_received(
  * style stuff.
  */
 static void trash_applet_init(TrashApplet *self) {
-    GtkCssProvider *provider;
     GtkStyleContext *button_style;
 
     // Create our 'private' struct
     self->priv = trash_applet_get_instance_private(self);
-
-    // Load our CSS
-    provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_resource(provider, "/com/github/EbonJaeger/budgie-trash-applet/style.css");
-    gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
-                                              GTK_STYLE_PROVIDER(provider),
-                                              GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
     // Create our panel widget
     self->priv->icon_button = gtk_button_new_from_icon_name("user-trash-symbolic", GTK_ICON_SIZE_MENU);

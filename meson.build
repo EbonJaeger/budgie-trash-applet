@@ -23,7 +23,6 @@ podir = join_paths(meson.current_source_dir(), 'po')
 APPLET_INSTALL_DIR = join_paths(libdir, 'budgie-desktop', 'plugins', 'com.github.EbonJaeger.budgie-trash-applet')
 
 subdir('data')
-subdir('style')
 subdir('src')
 
 gnome.post_install(

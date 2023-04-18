@@ -13,7 +13,7 @@
  *
  * CSS nodes
  *
- * TrashItemRow has a single CSS node with name trashitemrow.
+ * TrashItemRow has a single CSS class with name .trash-item-row
  */
 
 #include "trash_item_row.h"
@@ -216,10 +216,8 @@ static void trash_item_row_set_property(GObject *object, guint prop_id, const GV
 
 static void trash_item_row_class_init(TrashItemRowClass *klass) {
     GObjectClass *class;
-    GtkWidgetClass *widget_class;
 
     class = G_OBJECT_CLASS(klass);
-    widget_class = GTK_WIDGET_CLASS(klass);
 
     class->constructed = trash_item_row_constructed;
     class->finalize = trash_item_row_finalize;
@@ -236,12 +234,14 @@ static void trash_item_row_class_init(TrashItemRowClass *klass) {
     );
 
     g_object_class_install_properties(class, LAST_PROP, props);
-
-    gtk_widget_class_set_css_name(widget_class, "trashitemrow");
 }
 
 static void trash_item_row_init(TrashItemRow *self) {
-    (void) self;
+    GtkStyleContext *style;
+
+    style = gtk_widget_get_style_context(GTK_WIDGET(self));
+
+    gtk_style_context_add_class(style, "trash-item-row");
 }
 
 /**

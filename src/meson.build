@@ -28,7 +28,6 @@ trash_applet_sources = [
 # Compile our gresource file
 trash_applet_sources += gnome.compile_resources('budgie-trash-applet-resources',
     'budgie-trash-applet.gresource.xml',
-    dependencies: [ style ],
     c_name: 'budgie_trash_applet',
 )
 
