@@ -8,12 +8,10 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE(TrashIconButton, trash_icon_button, TRASH, ICON_BUTTON, GtkButton)
 
-struct _TrashIconButtonClass {
-    GtkButtonClass parent_class;
-};
-
 TrashIconButton *trash_icon_button_new(void);
+
 void trash_icon_button_set_filled(TrashIconButton *self);
+
 void trash_icon_button_set_empty(TrashIconButton *self);
 
 G_END_DECLS
