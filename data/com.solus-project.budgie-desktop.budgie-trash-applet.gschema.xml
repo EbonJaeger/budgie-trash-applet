@@ -11,7 +11,7 @@
 
   <schema id="com.solus-project.budgie-trash-applet">
     <key enum="com.github.ebonjaeger.budgie-trash-applet.SortMode" name="sort-mode">
-      <default>'type'</default>
+      <default>'date-descending'</default>
       <summary>File sort type</summary>
       <description>Set how trashed files should be sorted</description>
     </key>
