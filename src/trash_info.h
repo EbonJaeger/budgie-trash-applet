@@ -8,10 +8,6 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE(TrashInfo, trash_info, TRASH, INFO, GObject)
 
-struct _TrashInfoClass {
-    GObjectClass parent_class;
-};
-
 TrashInfo *trash_info_new(GFileInfo *info, const char *uri);
 
 /* Property getters */

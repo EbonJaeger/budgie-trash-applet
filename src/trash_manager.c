@@ -123,6 +123,13 @@ static void trash_manager_init(TrashManager *self) {
     g_signal_connect(self->trash_monitor, "changed", G_CALLBACK(file_changed), self);
 }
 
+/**
+ * trash_manager_new:
+ *
+ * Creates a new #TrashManager object.
+ *
+ * Returns: a new #TrashManager object
+ */
 TrashManager *trash_manager_new(void) {
     return g_object_new(TRASH_TYPE_MANAGER, NULL);
 }
@@ -185,6 +192,9 @@ static void trash_enumerate_cb(GObject *source, GAsyncResult *result, gpointer u
 }
 
 /**
+ * trash_manager_scan_items:
+ * @self: a #TrashManager
+ *
  * Scan the trash bin for items. The `trash-added` signal will be called for each
  * item found in the bin.
  *

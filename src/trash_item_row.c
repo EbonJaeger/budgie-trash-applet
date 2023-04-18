@@ -221,10 +221,26 @@ static void trash_item_row_init(TrashItemRow *self) {
     (void) self;
 }
 
+/**
+ * trash_item_row_new:
+ * @trash_info: (transfer full): a #TrashInfo
+ *
+ * Creates a new #TrashItemRow.
+ *
+ * Returns: a new #TrashItemRow
+ */
 TrashItemRow *trash_item_row_new(TrashInfo *trash_info) {
     return g_object_new(TRASH_TYPE_ITEM_ROW, "trash-info", trash_info, NULL);
 }
 
+/**
+ * trash_item_row_get_info:
+ * @self: a #TrashItemRow
+ *
+ * Gets the #TrashInfo for this row.
+ *
+ * Returns: (type Trash.Info) (transfer full): the file information for the row
+ */
 TrashInfo *trash_item_row_get_info(TrashItemRow *self) {
     return g_object_ref(self->trash_info);
 }
@@ -248,6 +264,9 @@ static void delete_finish(GObject *object, GAsyncResult *result, gpointer user_d
 }
 
 /**
+ * trash_item_row_delete:
+ * @self: a #TrashItemRow
+ *
  * Asynchronously deletes a trashed item.
  */
 void trash_item_row_delete(TrashItemRow *self) {
@@ -285,6 +304,9 @@ static void restore_finish(GObject *object, GAsyncResult *result, gpointer user_
 }
 
 /**
+ * trash_item_row_restore:
+ * @self: a #TrashItemRow
+ *
  * Asynchronously restores a trashed item to its original location.
  */
 void trash_item_row_restore(TrashItemRow *self) {
@@ -310,8 +332,14 @@ void trash_item_row_restore(TrashItemRow *self) {
 }
 
 /**
+ * trash_item_row_collate_by_date:
+ * @self: a #TrashItemRow
+ * @other: a #TrashItemRow
+ *
  * Compares two TrashItems for sorting, putting them in order by deletion date
  * in ascending order.
+ *
+ * Returns: < 0 if @self compares before @other, 0 if they compare equal, > 0 if @self compares after @other
  */
 gint trash_item_row_collate_by_date(TrashItemRow *self, TrashItemRow *other) {
     return g_date_time_compare(
@@ -321,7 +349,13 @@ gint trash_item_row_collate_by_date(TrashItemRow *self, TrashItemRow *other) {
 }
 
 /**
+ * trash_item_row_collate_by_name:
+ * @self: a #TrashItemRow
+ * @other: a #TrashItemRow
+ *
  * Compares two TrashItems for sorting, putting them in alphabetical order.
+ *
+ * Returns: < 0 if @self compares before @other, 0 if they compare equal, > 0 if @self compares after @other
  */
 gint trash_item_row_collate_by_name(TrashItemRow *self, TrashItemRow *other) {
     return strcoll(
@@ -331,11 +365,17 @@ gint trash_item_row_collate_by_name(TrashItemRow *self, TrashItemRow *other) {
 }
 
 /**
+ * trash_item_row_collate_by_type:
+ * @self: a #TrashItemRow
+ * @other: a #TrashItemRow
+ *
  * Compares two TrashItems for sorting. This function uses the following rules:
  *
  * 1. Directories should be above regular files
  * 2. Directories should be sorted alphabetically
  * 3. Files should be sorted alphabetically
+ *
+ * Returns: < 0 if @self compares before @other, 0 if they compare equal, > 0 if @self compares after @other
  */
 gint trash_item_row_collate_by_type(TrashItemRow *self, TrashItemRow *other) {
     gint ret = 0;

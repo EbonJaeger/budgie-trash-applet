@@ -200,8 +200,19 @@ static void trash_info_class_init(TrashInfoClass *klazz) {
     g_object_class_install_properties(class, LAST_PROP, props);
 }
 
-static void trash_info_init(__attribute__((unused)) TrashInfo *self) {}
+static void trash_info_init(TrashInfo *self) {
+    (void) self;
+}
 
+/**
+ * trash_info_new:
+ * @info: a #GFileInfo
+ * @uri: (transfer full): a URI to the file
+ *
+ * Creates a new #TrashInfo object.
+ *
+ * Returns: a new #TrashInfo object
+ */
 TrashInfo *trash_info_new(GFileInfo *info, const gchar *uri) {
     GIcon *icon;
 
@@ -223,34 +234,98 @@ TrashInfo *trash_info_new(GFileInfo *info, const gchar *uri) {
 
 /* Property getters */
 
+/**
+ * trash_info_get_name:
+ * @self: a #TrashInfo
+ *
+ * Gets the file's name.
+ *
+ * Returns: (transfer full): the file name
+ */
 const gchar *trash_info_get_name(TrashInfo *self) {
     return g_strdup(self->name);
 }
 
+/**
+ * trash_info_get_display_name:
+ * @self: a #TrashInfo
+ *
+ * Gets the display name for the file.
+ *
+ * Returns: (transfer full): the file's display name
+ */
 const gchar *trash_info_get_display_name(TrashInfo *self) {
     return g_strdup(self->display_name);
 }
 
+/**
+ * trash_info_get_uri:
+ * @self: a #TrashInfo
+ *
+ * Gets the URI for the file.
+ *
+ * Returns: (transfer full): the URI to the file
+ */
 const gchar *trash_info_get_uri(TrashInfo *self) {
     return g_strdup(self->uri);
 }
 
+/**
+ * trash_info_get_restore_path:
+ * @self: a #TrashInfo
+ *
+ * Gets the original path of this file.
+ *
+ * Returns: (transfer full): the file's original path
+ */
 const gchar *trash_info_get_restore_path(TrashInfo *self) {
     return g_strdup(self->restore_path);
 }
 
+/**
+ * trash_info_get_icon:
+ * @self: a #TrashInfo
+ *
+ * Gets the icon for the file.
+ *
+ * Returns: (transfer full): an icon for this file
+ */
 GIcon *trash_info_get_icon(TrashInfo *self) {
     return g_object_ref(self->icon);
 }
 
+/**
+ * trash_info_get_size:
+ * @self: a #TrashInfo
+ *
+ * Gets the size of the file.
+ *
+ * Returns: the size of the file
+ */
 goffset trash_info_get_size(TrashInfo *self) {
     return self->size;
 }
 
+/**
+ * trash_info_is_directory:
+ * @self: a #TrashInfo
+ *
+ * Gets whether or not this file is a directory.
+ *
+ * Returns: if the file is a directory
+ */
 gboolean trash_info_is_directory(TrashInfo *self) {
     return self->is_directory;
 }
 
+/**
+ * trash_info_get_deletion_time:
+ * @self: a #TrashInfo
+ *
+ * Gets the time that this file was trashed.
+ *
+ * Returns: (transfer full): when the file was trashed
+ */
 GDateTime *trash_info_get_deletion_time(TrashInfo *self) {
     return g_date_time_ref(self->deleted_time);
 }

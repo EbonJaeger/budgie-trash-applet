@@ -434,6 +434,14 @@ static void trash_popover_init(TrashPopover *self) {
     (void) self;
 }
 
+/**
+ * trash_popover_new:
+ * @settings: (transfer full): a #GSettings object
+ *
+ * Creates a new #TrashPopover.
+ *
+ * Retruns: a new #TrashPopover
+ */
 TrashPopover *trash_popover_new(GSettings *settings) {
     return g_object_new(TRASH_TYPE_POPOVER, "settings", settings, "orientation", GTK_ORIENTATION_VERTICAL, "spacing", 0, NULL);
 }

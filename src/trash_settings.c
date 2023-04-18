@@ -120,7 +120,12 @@ static void settings_changed(GSettings *settings, gchar *key, gpointer user_data
 }
 
 /**
- * Create a new TrashSettings widget.
+ * trash_settings_new:
+ * @settings: (transfer full): A #GSettings object
+ *
+ * Create a new #TrashSettings widget.
+ *
+ * Returns: a new #TrashSettings widget
  */
 TrashSettings *trash_settings_new(GSettings *settings) {
     TrashSettings *self;
